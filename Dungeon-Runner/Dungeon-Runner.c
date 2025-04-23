@@ -2,6 +2,8 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
+
+
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
@@ -9,6 +11,14 @@
 #define XBOUND 9
 #define YBOUND 9
 #define DEBUG 1
+
+#ifdef _WIN32
+#define CLEAR_COMMAND "cls"
+#elif __unix__ || __APPLE__
+#define CLEAR_COMMAND "clear"
+#else
+#define CLEAR_COMMAND "" // Define it to nothing if OS is not detected
+#endif
 
 struct Player {
 	int location[2];
@@ -43,18 +53,21 @@ struct Room collection[XBOUND][YBOUND];
 struct Player you;
 struct entity enemies[10];
 int steps[3][2] = { { -1,-1 },{ -1,-1 },{ -1,-1 } };
+int stepCount = 0;
 
 void roomGenerator();
 void savePlayer();
 int countLines(FILE* file);
 int loadPlayer();
-int loadEntities();
+int loadEntities(int ovr);
 void roomRunner();
+void clearScreen();
 void changePosition();
 void inspectElement(int pos[]);
 void actOnYourOwn();
 void exitAction(int ec);
 void logStep(int step[2]);
+void drawMap();
 int goUp();
 int goRight();
 int goDown();
@@ -62,7 +75,7 @@ int goLeft();
 
 void main() {
 
-
+	loadEntities(0);
 	if (loadPlayer() != 0) {
 		printf("Error loading player position. Starting at default position.\n");
 		// Y Position
@@ -104,7 +117,7 @@ int loadPlayer() {
 	if (file == NULL) {
 		printf("Error: Could not open file for loading.\n");
 		return 1;
-	}
+	} else 
 
 	// Check return value of fscanf and handle errors
 	if (fscanf(file, "Location:[%4d,%4d]\n", &you.location[0], &you.location[1]) != 2) {
@@ -167,23 +180,44 @@ void roomGenerator() {
 	}
 }
 
+void drawMap() {
+	printf("\n+----------------------------------------------------------------+\n");
+	for (int x = 0;x < XBOUND;x++) {
+		printf("\t");
+		for (int y = 0;y < YBOUND;y++) {
+			if (((you.location[0] * 10) + you.location[1]) == collection[x][y].roomID) {
+				printf("  ><");
+			}
+			else {
+				printf("%4d", collection[x][y].roomID);
+			}
+
+		}
+		printf("\n");
+	}
+	printf("\n\n\n+----------------------------------------------------------------+\n\n");
+}
+
+void clearScreen() {
+	if (CLEAR_COMMAND[0] != '\0') { // Check if CLEAR_COMMAND is not empty
+		system(CLEAR_COMMAND);
+	}
+	else {
+		//printf("Operating system not detected.  Cannot clear screen.\n");
+		//  You could use the following as a fallback.
+		//  for (int i = 0; i < 50; ++i)
+		//      printf("\n");
+	}
+}
+
 void roomRunner() {
 	do {
-		printf("\n+----------------------------------------------------------------+\n");
-		for (int x = 0;x < XBOUND;x++) {
-			printf("\t");
-			for (int y = 0;y < YBOUND;y++) {
-				if (((you.location[0] * 10) + you.location[1]) == collection[x][y].roomID) {
-					printf("  ><");
-				}
-				else {
-					printf("%4d", collection[x][y].roomID);
-				}
 
-			}
-			printf("\n");
+		
+		drawMap();
+		if (DEBUG || stepCount!=0) {
+			printf("Previous steps: [%d,%d] [%d,%d], [%d,%d]\n", steps[0][0], steps[0][1], steps[1][0], steps[1][1], steps[2][0], steps[2][1]);
 		}
-		printf("\n\n\n+----------------------------------------------------------------+\n");
 		int choice = 0;
 		printf("\nYour current position is:%4d,%4d\n\n", you.location[1], you.location[0]);
 		printf("What will you do?\n");
@@ -196,7 +230,12 @@ void roomRunner() {
 		if (DEBUG) {
 			printf("6 - Debug\n");
 		}
+		printf("\n\n");
 		scanf("%d", &choice);
+		
+		clearScreen();
+
+		drawMap();
 
 		switch (choice) {
 		case 0:
@@ -211,12 +250,14 @@ void roomRunner() {
 			break;
 		case 5: loadPlayer();
 			break;
-		case 6: loadEntities();
+		case 6: if (DEBUG) {
+			loadEntities(0);
 			break;
+		} else {continue;}
 		default:printf("Could you try that again?\n");
 			continue;
 		}
-
+		
 	} while (1);
 }
 
@@ -225,7 +266,7 @@ void changePosition() {
 	printf("1 - Move Left\n");
 	printf("2 - Move Down\n");
 	printf("3 - Move Right\n");
-	printf("4 - Move Up\n");
+	printf("4 - Move Up\n\n");
 	int dir = 0;
 	scanf("%d", &dir);
 	switch (dir) {
@@ -283,11 +324,13 @@ int countLines(FILE* file) {
 		}
 	}
 	rewind(file); // Reset file pointer to the beginning
-	printf("Number of lines: %d\n", lines);
+	if (DEBUG) {
+		printf("Number of lines: %d\n", lines);
+	}
 	return lines;
 }
 
-int loadEntities() {
+int loadEntities(int ovr) {
 	FILE* file = fopen("entities.dat", "r");
 	if (file == NULL) {
 		printf("Error: Could not open file for loading.\n");
@@ -309,9 +352,9 @@ int loadEntities() {
 			&entities[i].health, &entities[i].atk, &entities[i].hit, &entities[i].def, &entities[i].exp, &entities[i].eva, &entities[i].level, &entities[i].name
 		);
 	}
-	if (DEBUG) {
+	if (DEBUG || ovr) {
 		for (int i = 0; i < numLines; i++) {
-			printf("Entity %3d: %31s:[HP:%3d,ATK:%3d,TOH:%3d,DEF:%3d,EXP:%3d,EVA:%3d,LVL:%3d]\n\n",
+			printf("Entity %3d: %31s:[HP:%3d,ATK:%3d,TOH:%3d,DEF:%3d,EXP:%3d,EVA:%3d,LVL:%3d]\n",
 				i + 1,
 				entities[i].name,
 				entities[i].health,
@@ -323,10 +366,7 @@ int loadEntities() {
 				entities[i].level
 			);
 		}
-		printf("Entities loaded successfully.\n");
-	}
-	else {
-		printf("Could you try that again?\n");
+		printf("\nEntities loaded successfully.\n");
 	}
 	fclose(file);
 	free(entities);
@@ -334,7 +374,35 @@ int loadEntities() {
 }
 
 void inspectElement(int pos[]) {
-	printf("%s\n", collection[pos[0]][pos[1]].contents);
+	int res = 0;
+	printf("Inspect what?\n");
+	printf("0 - Go back\n");
+	printf("1 - Inspect yourself\n");
+	printf("2 - Inspect the room\n");
+	printf("3 - Trace your steps\n\n");
+	scanf("%d", &res);
+	clearScreen();
+	switch (res) {
+		case 1: {
+			printf("You are:\n");
+			printf("Name: %s\n", you.name);
+			printf("Health: %d\n", you.health);
+			printf("Attack: %d\n", you.atk);
+			printf("To-Hit: %d\n", you.hit);
+			printf("Defense: %d\n", you.def);
+			printf("Experience: %d\n", you.exp);
+			printf("Evasion: %d\n", you.eva);
+			printf("Level: %d\n", you.level);
+			break;
+		}
+		case 2: {
+			printf("You are in room %d\n", collection[pos[0]][pos[1]].roomID);
+			printf("Contents: %s\n", collection[pos[0]][pos[1]].contents);
+			break;
+		}
+		case 3: printf("Previous steps: [%d,%d] [%d,%d], [%d,%d]\n", steps[0][0], steps[0][1], steps[1][0], steps[1][1], steps[2][0], steps[2][1]); break;
+		default: return;
+	}
 }
 
 void actOnYourOwn() {
@@ -350,6 +418,7 @@ int goLeft() {
 	else {
 		you.location[1] -= 1;
 		logStep(you.location);
+		stepCount++;
 		return 0;
 	}
 }
@@ -363,6 +432,7 @@ int goDown() {
 	else {
 		you.location[0] += 1;
 		logStep(you.location);
+		stepCount++;
 		return 0;
 	}
 }
@@ -376,6 +446,7 @@ int goRight() {
 	else {
 		you.location[1] += 1;
 		logStep(you.location);
+		stepCount++;
 		return 0;
 	}
 }
@@ -389,6 +460,7 @@ int goUp() {
 	else {
 		you.location[0] -= 1;
 		logStep(you.location);
+		stepCount++;
 		return 0;
 	}
 }
@@ -405,8 +477,5 @@ void logStep(int step[2]) {
 	steps[1][1] = temp[0][1];
 	steps[2][0] = temp[1][0];
 	steps[2][1] = temp[1][1];
-	if (DEBUG) {
-		printf("Previous steps: [%d,%d] [%d,%d], [%d,%d]\n", steps[0][0], steps[0][1], steps[1][0], steps[1][1], steps[2][0], steps[2][1]);
-	}
 
 }
