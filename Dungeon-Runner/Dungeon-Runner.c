@@ -104,7 +104,7 @@ int loadPlayer() {
 	if (file == NULL) {
 		printf("Error: Could not open file for loading.\n");
 		return 1;
-	}
+	} else 
 
 	// Check return value of fscanf and handle errors
 	if (fscanf(file, "Location:[%4d,%4d]\n", &you.location[0], &you.location[1]) != 2) {
