@@ -2,12 +2,11 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
-
-
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
+
 #define XBOUND 9
 #define YBOUND 9
 #define DEBUG 1
@@ -20,7 +19,7 @@
 #define CLEAR_COMMAND "" // Define it to nothing if OS is not detected
 #endif
 
-struct Player {
+typedef struct {
 	int location[2];
 	char name[32];
 	int health;
@@ -30,9 +29,9 @@ struct Player {
 	int exp;
 	int eva;
 	int level;
-};
+} Player;
 
-struct entity {
+typedef struct {
 	int location[2];
 	char name[32];
 	int health;
@@ -42,16 +41,16 @@ struct entity {
 	int exp;
 	int eva;
 	int level;
-};
+} entity;
 
-struct Room {
+typedef struct {
 	int roomID;
 	char contents[32];
-};
+} Room;
 
-struct Room collection[XBOUND][YBOUND];
-struct Player you;
-struct entity enemies[10];
+Room collection[XBOUND][YBOUND];
+Player you;
+entity enemies[10];
 int steps[3][2] = { { -1,-1 },{ -1,-1 },{ -1,-1 } };
 int stepCount = 0;
 
@@ -338,7 +337,7 @@ int loadEntities(int ovr) {
 		return 1;
 	}
 	int numLines = countLines(file);
-	struct entity* entities = malloc(numLines * sizeof(struct entity));
+	entity* entities = malloc(numLines * sizeof(entity));
 	if (entities == NULL) {
 		printf("Error: Memory allocation failed.\n");
 		fclose(file);
