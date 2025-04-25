@@ -9,6 +9,7 @@
 
 #define XBOUND 9
 #define YBOUND 9
+#define LOGCOUNT 8
 #define DEBUG 1
 
 #ifdef _WIN32
@@ -19,8 +20,14 @@
 #define CLEAR_COMMAND "" // Define it to nothing if OS is not detected
 #endif
 
+//Dungeon Vector ;)
 typedef struct {
-	int location[2];
+    int x;
+    int y;
+} dung_vec;
+
+typedef struct {
+	dung_vec pos;
 	char name[32];
 	int health;
 	int atk;
@@ -32,7 +39,7 @@ typedef struct {
 } Player;
 
 typedef struct {
-	int location[2];
+	dung_vec pos;
 	char name[32];
 	int health;
 	int atk;
@@ -51,7 +58,10 @@ typedef struct {
 Room collection[XBOUND][YBOUND];
 Player you;
 entity enemies[10];
-int steps[3][2] = { { -1,-1 },{ -1,-1 },{ -1,-1 } };
+
+//Our current position in the stepLog ring buffer
+unsigned int currentPos = 0;
+dung_vec stepLog[LOGCOUNT] = {0};
 int stepCount = 0;
 
 void roomGenerator();
@@ -65,7 +75,7 @@ void changePosition();
 void inspectElement(int pos[]);
 void actOnYourOwn();
 void exitAction(int ec);
-void logStep(int step[2]);
+void logStep(dung_vec finalPos);
 void drawMap();
 int goUp();
 int goRight();
@@ -78,9 +88,9 @@ void main() {
 	if (loadPlayer() != 0) {
 		printf("Error loading player position. Starting at default position.\n");
 		// Y Position
-		you.location[0] = YBOUND / 2;
+		you.pos.y = YBOUND / 2;
 		// X Position
-		you.location[1] = XBOUND / 2;
+		you.pos.x = XBOUND / 2;
 		// Name
 		printf("Please enter your name:\n");
 		if (scanf("%31s", you.name) != 1) { // Limit input to 31 characters to prevent buffer overflow
@@ -119,7 +129,7 @@ int loadPlayer() {
 	} else 
 
 	// Check return value of fscanf and handle errors
-	if (fscanf(file, "Location:[%4d,%4d]\n", &you.location[0], &you.location[1]) != 2) {
+	if (fscanf(file, "Location:[%4d,%4d]\n", &you.pos.x, &you.pos.y) != 2) {
 		printf("Error: Failed to read player location.\n");
 		fclose(file);
 		return 1;
@@ -184,7 +194,7 @@ void drawMap() {
 	for (int x = 0;x < XBOUND;x++) {
 		printf("\t");
 		for (int y = 0;y < YBOUND;y++) {
-			if (((you.location[0] * 10) + you.location[1]) == collection[x][y].roomID) {
+			if (((you.pos.y * 10) + you.pos.x) == collection[x][y].roomID) {
 				printf("  ><");
 			}
 			else {
@@ -209,16 +219,29 @@ void clearScreen() {
 	}
 }
 
+//Prints the previous steps starting at the current step
+void printPreviousSteps(){
+    printf("Previous Steps:");
+    for(unsigned int i = 0; i < LOGCOUNT; i ++){
+        printf(" [%d, %d]", 
+                stepLog[(currentPos - i - 1) % LOGCOUNT].x, 
+                stepLog[(currentPos - i - 1) % LOGCOUNT].y
+               );
+    }
+    printf("\n");
+}
+
 void roomRunner() {
 	do {
 
 		
 		drawMap();
 		if (DEBUG || stepCount!=0) {
-			printf("Previous steps: [%d,%d] [%d,%d], [%d,%d]\n", steps[0][0], steps[0][1], steps[1][0], steps[1][1], steps[2][0], steps[2][1]);
+            printPreviousSteps();
+			//printf("Previous steps: [%d,%d] [%d,%d], [%d,%d]\n", steps[0][0], steps[0][1], steps[1][0], steps[1][1], steps[2][0], steps[2][1]);
 		}
 		int choice = 0;
-		printf("\nYour current position is:%4d,%4d\n\n", you.location[1], you.location[0]);
+		printf("\nYour current position is:%4d,%4d\n\n", you.pos.x, you.pos.y);
 		printf("What will you do?\n");
 		printf("0 - Exit\n");
 		printf("1 - Move\n");
@@ -241,7 +264,7 @@ void roomRunner() {
 			exitAction(0);
 		case 1: changePosition();
 			break;
-		case 2: inspectElement(you.location);
+		case 2: inspectElement(&you.pos); //ayyye lamo, it's c calm down
 			break;
 		case 3: actOnYourOwn();
 			break;
@@ -287,7 +310,7 @@ void savePlayer() {
 	}
 
 	// Write the player's position to the file  
-	fprintf(file, "Location:[%4d,%4d]\n", you.location[0], you.location[1]);
+	fprintf(file, "Location:[%4d,%4d]\n", you.pos.y, you.pos.x);
 	fprintf(file, "Name:%s\n", you.name);
 	fprintf(file, "Health:%d\n", you.health);
 	fprintf(file, "Attack:%d\n", you.atk);
@@ -399,82 +422,59 @@ void inspectElement(int pos[]) {
 			printf("Contents: %s\n", collection[pos[0]][pos[1]].contents);
 			break;
 		}
-		case 3: printf("Previous steps: [%d,%d] [%d,%d], [%d,%d]\n", steps[0][0], steps[0][1], steps[1][0], steps[1][1], steps[2][0], steps[2][1]); break;
+		case 3: printPreviousSteps();
+                
 		default: return;
-	}
+    }
 }
 
 void actOnYourOwn() {
 	printf("You act out your fantasies.\n\n");
 }
 
+// Generic displacement function for shifting player relative to current 
+// position and bounded by 0 and X/YBOUNDS
+int shiftPlayer(dung_vec disp){
+    you.pos = (dung_vec){
+        //clip displacement to bounds
+        .y = max(0, min(YBOUND -1, you.pos.y + disp.y)),
+        .x = max(0, min(XBOUND -1, you.pos.x + disp.x))
+    };
+}
+
 int goLeft() {
-	if (you.location[1] <= 0) {
-		printf("You can't go any further that way...\n");
-		you.location[1] = 0;
-		return 1;
-	}
-	else {
-		you.location[1] -= 1;
-		logStep(you.location);
-		stepCount++;
-		return 0;
-	}
+    shiftPlayer((dung_vec){.x = -1, .y=0});
+    logStep(you.pos);
+    //It's not really important that you move, but the thought that counts
+    stepCount ++;
 }
 
 int goDown() {
-	if (you.location[0] >= (XBOUND - 1)) {
-		printf("You can't go any further that way...\n");
-		you.location[0] = (XBOUND - 1);
-		return 1;
-	}
-	else {
-		you.location[0] += 1;
-		logStep(you.location);
-		stepCount++;
-		return 0;
-	}
+    shiftPlayer((dung_vec){.x = 0, .y=1});
+    logStep(you.pos);
+    //It's not really important that you move, but the thought that counts
+    stepCount ++;
 }
 
 int goRight() {
-	if (you.location[1] >= (YBOUND - 1)) {
-		printf("You can't go any further that way...\n");
-		you.location[1] = (YBOUND - 1);
-		return 1;
-	}
-	else {
-		you.location[1] += 1;
-		logStep(you.location);
-		stepCount++;
-		return 0;
-	}
+    shiftPlayer((dung_vec){.x = 1, .y=0});
+    logStep(you.pos);
+    //It's not really important that you move, but the thought that counts
+    stepCount ++;
 }
 
 int goUp() {
-	if (you.location[0] <= 0) {
-		printf("You can't go any further that way...\n");
-		you.location[0] = 0;
-		return 1;
-	}
-	else {
-		you.location[0] -= 1;
-		logStep(you.location);
-		stepCount++;
-		return 0;
-	}
+    shiftPlayer((dung_vec){.x = 0, .y=-1});
+    logStep(you.pos);
+    //It's not really important that you move, but the thought that counts
+    stepCount ++;
 }
 
-void logStep(int step[2]) {
-	int temp[2][2] = { { -1,-1 },{ -1,-1 } };
-	temp[0][0] = steps[0][0];
-	temp[0][1] = steps[0][1];
-	temp[1][0] = steps[1][0];
-	temp[1][1] = steps[1][1];
-	steps[0][0] = step[0];
-	steps[0][1] = step[1];
-	steps[1][0] = temp[0][0];
-	steps[1][1] = temp[0][1];
-	steps[2][0] = temp[1][0];
-	steps[2][1] = temp[1][1];
+void logStep(dung_vec finalPos) {
 
+    //This produces a "ring buffer"
+    stepLog[currentPos] = finalPos;
+
+    //Just ask the machine about this one
+    currentPos = currentPos >= LOGCOUNT ? 0: currentPos + 1;
 }
