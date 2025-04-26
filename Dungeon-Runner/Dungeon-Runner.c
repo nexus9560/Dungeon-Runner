@@ -12,6 +12,7 @@
 #define XBOUND 9
 #define YBOUND 9
 #define DEBUG 1
+#define MAX_ENTITIES 10
 
 #ifdef _WIN32
 #define CLEAR_COMMAND "cls"
@@ -34,6 +35,7 @@ struct Player {
 	int exp;
 	int eva;
 	int level;
+//	
 };
 
 struct entity {
@@ -55,7 +57,7 @@ struct Room {
 
 struct Room collection[XBOUND][YBOUND];
 struct Player you;
-struct entity enemies[10];
+struct entity enemyGlossary[MAX_ENTITIES];
 int steps[3][2] = { { -1,-1 },{ -1,-1 },{ -1,-1 } };
 int stepCount = 0;
 
@@ -63,7 +65,7 @@ void roomGenerator();
 void savePlayer();
 int countLines(FILE* file);
 int loadPlayer();
-int loadEntities(int ovr);
+void loadEntities(int ovr);
 void roomRunner();
 void clearScreen();
 void changePosition();
@@ -335,19 +337,19 @@ int countLines(FILE* file) {
 	return lines;
 }
 
-int loadEntities(int ovr) {
+void loadEntities(int ovr) {
 	FILE* file = fopen("entities.dat", "r");
 	if (file == NULL) {
 		printf("Error: Could not open file for loading.\n");
 
-		return 1;
+		return;
 	}
 	int numLines = countLines(file);
 	struct entity* entities = malloc(numLines * sizeof(struct entity));
 	if (entities == NULL) {
 		printf("Error: Memory allocation failed.\n");
 		fclose(file);
-		return 1;
+		return;
 	}
 	for (int i = 0; i < numLines; i++) {
 		// Use [HP:  2,ATK:  1,TOH:  1,DEF:  0,EXP:  2,EVA:  0,LVL:  1]:NAME as the format
@@ -372,8 +374,19 @@ int loadEntities(int ovr) {
 		printf("\nEntities loaded successfully.\n");
 	}
 	fclose(file);
+	if (numLines > MAX_ENTITIES) {
+		printf("Warning: More entities than expected. Only the first %d will be used.\n", MAX_ENTITIES);
+		numLines = MAX_ENTITIES;
+	}
+	for (int i = 0; i < numLines; i++) {
+		enemyGlossary[i] = entities[i];
+	}
+	// In the future, these may be massive, so for the sake of memory efficiency we will free them up.
 	free(entities);
-	return 0;
+	free(file);
+	free(numLines);
+
+	
 }
 
 void inspectElement(int pos[]) {
