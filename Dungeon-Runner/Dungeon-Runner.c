@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
+
 #define XBOUND 9
 #define YBOUND 9
 #define DEBUG 1
@@ -19,6 +20,9 @@
 #else
 #define CLEAR_COMMAND "" // Define it to nothing if OS is not detected
 #endif
+
+// Yes, the player struct is currently identical to the entity struct. This is not going to stay this way, as the player will eventually get an inventory, which entities will not.
+// The player will also have a different set of stats, as the player will be able to level up and gain experience, while entities will not.
 
 struct Player {
 	int location[2];
@@ -167,7 +171,8 @@ int loadPlayer() {
 	}
 
 	fclose(file);
-	//printf("Player position loaded successfully.\n");
+	if(DEBUG)
+		printf("Player position loaded successfully.\n");
 	return 0;
 }
 
@@ -345,9 +350,7 @@ int loadEntities(int ovr) {
 		return 1;
 	}
 	for (int i = 0; i < numLines; i++) {
-		// Use NAME:[HP:  2,ATK:  1,TOH:  1,DEF:  0,EXP:  2,EVA:  0,LVL:  1] as the format
-		// "%31[^:]:[HP:%d,ATK:%d,TOH:%d,DEF:%d,EXP:%d,EVA:%d,LVL:%d]"
-		// %s:[HP:%d,ATK:%d,TOH:%d,DEF:%d,EXP:%d,EVA:%d,LVL:%d\n
+		// Use [HP:  2,ATK:  1,TOH:  1,DEF:  0,EXP:  2,EVA:  0,LVL:  1]:NAME as the format
 		fscanf(file, "[HP: %d,ATK: %d,TOH: %d,DEF: %d,EXP: %d,EVA: %d,LVL: %d]:%31s\n",
 			&entities[i].health, &entities[i].atk, &entities[i].hit, &entities[i].def, &entities[i].exp, &entities[i].eva, &entities[i].level, &entities[i].name
 		);
@@ -397,7 +400,7 @@ void inspectElement(int pos[]) {
 		}
 		case 2: {
 			printf("You are in room %d\n", collection[pos[0]][pos[1]].roomID);
-			printf("Contents: %s\n", collection[pos[0]][pos[1]].contents);
+			printf("This room has the following things in it: %s\n", collection[pos[0]][pos[1]].contents);
 			break;
 		}
 		case 3: printf("Previous steps: [%d,%d] [%d,%d], [%d,%d]\n", steps[0][0], steps[0][1], steps[1][0], steps[1][1], steps[2][0], steps[2][1]); break;
@@ -410,6 +413,7 @@ void actOnYourOwn() {
 }
 
 int goLeft() {
+	stepCount++;
 	if (you.location[1] <= 0) {
 		printf("You can't go any further that way...\n");
 		you.location[1] = 0;
@@ -418,12 +422,12 @@ int goLeft() {
 	else {
 		you.location[1] -= 1;
 		logStep(you.location);
-		stepCount++;
 		return 0;
 	}
 }
 
 int goDown() {
+	stepCount++;
 	if (you.location[0] >= (XBOUND - 1)) {
 		printf("You can't go any further that way...\n");
 		you.location[0] = (XBOUND - 1);
@@ -432,12 +436,12 @@ int goDown() {
 	else {
 		you.location[0] += 1;
 		logStep(you.location);
-		stepCount++;
 		return 0;
 	}
 }
 
 int goRight() {
+	stepCount++;
 	if (you.location[1] >= (YBOUND - 1)) {
 		printf("You can't go any further that way...\n");
 		you.location[1] = (YBOUND - 1);
@@ -446,12 +450,12 @@ int goRight() {
 	else {
 		you.location[1] += 1;
 		logStep(you.location);
-		stepCount++;
 		return 0;
 	}
 }
 
 int goUp() {
+	stepCount++;
 	if (you.location[0] <= 0) {
 		printf("You can't go any further that way...\n");
 		you.location[0] = 0;
@@ -460,7 +464,6 @@ int goUp() {
 	else {
 		you.location[0] -= 1;
 		logStep(you.location);
-		stepCount++;
 		return 0;
 	}
 }
