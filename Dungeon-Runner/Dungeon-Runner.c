@@ -26,7 +26,7 @@
 // Yes, the player struct is currently identical to the Entity struct. This is not going to stay this way, as the player will eventually get an inventory, which entities will not.
 // The player will also have a different set of stats, as the player will be able to level up and gain experience, while entities will not.
 
-struct Player {
+typedef struct {
 	int location[2];
 	char name[32];
 	int health;
@@ -37,17 +37,17 @@ struct Player {
 	int eva;
 	int level;
 //	
-};
+} Player;
 
-struct Item {
+typedef struct{
 	char name[32];
 	char stat[3];
 	int bonus;
 	int type; // 0 = weapon, 1 = armor, 2 = consumable
 	int equipped; // 0 = not equipped, 1 = equipped
-};
+} Item;
 
-struct Entity {
+typedef struct{
 	int location[2];
 	char name[32];
 	int health;
@@ -57,17 +57,17 @@ struct Entity {
 	int exp;
 	int eva;
 	int level;
-};
+} Entity;
 
-struct Room {
+typedef struct{
 	int roomID;
 	char contents[32];
-};
+} Room;
 
 struct Room collection[XBOUND][YBOUND];
-struct Player you;
-struct Entity enemyGlossary[MAX_ENTITIES];
-struct Item itemGlossary[MAX_ITEMS];
+Player you;
+Entity enemyGlossary[MAX_ENTITIES];
+Item itemGlossary[MAX_ITEMS];
 int steps[3][2] = { { -1,-1 },{ -1,-1 },{ -1,-1 } };
 int stepCount = 0;
 
@@ -355,7 +355,7 @@ void loadItems(int ovr) {
 		return;
 	}
 	int numLines = countLines(file);
-	struct Item* items = malloc(numLines * sizeof(struct Item));
+	Item* items = malloc(numLines * sizeof(Item));
 	if (items == NULL) {
 		printf("Error: Memory allocation failed.\n");
 		fclose(file);
@@ -398,7 +398,7 @@ void loadEntities(int ovr) {
 		return;
 	}
 	int numLines = countLines(file);
-	struct Entity* entities = malloc(numLines * sizeof(struct Entity));
+	Entity* entities = malloc(numLines * sizeof(Entity));
 	if (entities == NULL) {
 		printf("Error: Memory allocation failed.\n");
 		fclose(file);
