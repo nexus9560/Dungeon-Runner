@@ -13,6 +13,7 @@
 #define YBOUND 9
 #define DEBUG 1
 #define MAX_ENTITIES 10
+#define MAX_ITEMS 10
 
 #ifdef _WIN32
 #define CLEAR_COMMAND "cls"
@@ -22,7 +23,7 @@
 #define CLEAR_COMMAND "" // Define it to nothing if OS is not detected
 #endif
 
-// Yes, the player struct is currently identical to the entity struct. This is not going to stay this way, as the player will eventually get an inventory, which entities will not.
+// Yes, the player struct is currently identical to the Entity struct. This is not going to stay this way, as the player will eventually get an inventory, which entities will not.
 // The player will also have a different set of stats, as the player will be able to level up and gain experience, while entities will not.
 
 struct Player {
@@ -38,7 +39,15 @@ struct Player {
 //	
 };
 
-struct entity {
+struct Item {
+	char name[32];
+	char stat[3];
+	int bonus;
+	int type; // 0 = weapon, 1 = armor, 2 = consumable
+	int equipped; // 0 = not equipped, 1 = equipped
+};
+
+struct Entity {
 	int location[2];
 	char name[32];
 	int health;
@@ -57,7 +66,8 @@ struct Room {
 
 struct Room collection[XBOUND][YBOUND];
 struct Player you;
-struct entity enemyGlossary[MAX_ENTITIES];
+struct Entity enemyGlossary[MAX_ENTITIES];
+struct Item itemGlossary[MAX_ITEMS];
 int steps[3][2] = { { -1,-1 },{ -1,-1 },{ -1,-1 } };
 int stepCount = 0;
 
@@ -73,6 +83,7 @@ void inspectElement(int pos[]);
 void actOnYourOwn();
 void exitAction(int ec);
 void logStep(int step[2]);
+void loadItems(int ovr);
 void drawMap();
 int goUp();
 int goRight();
@@ -337,6 +348,48 @@ int countLines(FILE* file) {
 	return lines;
 }
 
+void loadItems(int ovr) {
+	FILE* file = fopen("items.dat", "r");
+	if (file == NULL) {
+		printf("Error: Could not open file for loading.\n");
+		return;
+	}
+	int numLines = countLines(file);
+	struct Item* items = malloc(numLines * sizeof(struct Item));
+	if (items == NULL) {
+		printf("Error: Memory allocation failed.\n");
+		fclose(file);
+		return;
+	}
+	for (int i = 0; i < numLines; i++) {
+//		[ATK:001,TYPE:0]:PLAIN-SWORD
+		fscanf(file, "[%3s:%3d,TYPE:%d]:%31s\n",
+			&items[i].stat, &items[i].bonus, &items[i].type, &items[i].name
+		);
+	}
+	fclose(file);
+
+	if (DEBUG || ovr) {
+		for (int i = 0; i < numLines; i++) {
+			printf("Item %3d: %31s:[%3s:%3d,TYPE:%d]\n",
+				i + 1,
+				items[i].name,
+				items[i].stat,
+				items[i].bonus,
+				items[i].type
+			);
+		}
+		printf("\nItems loaded successfully.\n");
+	}
+
+	for(int x = 0;x < numLines; x++)
+        itemGlossary[x] = items[x];
+
+	free(items);
+	free(file);
+	free(numLines);
+}
+
 void loadEntities(int ovr) {
 	FILE* file = fopen("entities.dat", "r");
 	if (file == NULL) {
@@ -345,7 +398,7 @@ void loadEntities(int ovr) {
 		return;
 	}
 	int numLines = countLines(file);
-	struct entity* entities = malloc(numLines * sizeof(struct entity));
+	struct Entity* entities = malloc(numLines * sizeof(struct Entity));
 	if (entities == NULL) {
 		printf("Error: Memory allocation failed.\n");
 		fclose(file);
