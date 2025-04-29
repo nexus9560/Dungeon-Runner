@@ -28,7 +28,7 @@
 typedef struct {
 	int dx;
 	int dy;
-} dun_vec;
+} Dun_Vec;
 
 typedef struct{
 	char name[32];
@@ -68,10 +68,10 @@ Cell collection[XBOUND][YBOUND];
 Player you;
 Entity enemyGlossary[MAX_ENTITIES];
 Item itemGlossary[MAX_ITEMS];
-const dun_vec up = { -1, 0 };
-const dun_vec right = { 0, 1 };
-const dun_vec down = { 1, 0 };
-const dun_vec left = { 0, -1 };
+const Dun_Vec up = { -1, 0 };
+const Dun_Vec right = { 0, 1 };
+const Dun_Vec down = { 1, 0 };
+const Dun_Vec left = { 0, -1 };
 
 void roomGenerator();
 void savePlayer();
@@ -87,8 +87,8 @@ void exitAction(int ec);
 void logStep(int step[2]);
 void loadItems(int ovr);
 void drawMap();
-Entity shiftEntity(Entity e, dun_vec delta);
-int checkBounds( int newPos[], dun_vec delta);
+Entity shiftEntity(Entity e, Dun_Vec delta);
+int checkBounds( int newPos[], Dun_Vec delta);
 //int goUp();
 //int goRight();
 //int goDown();
@@ -522,7 +522,7 @@ void actOnYourOwn() {
 	printf("You act out your fantasies.\n\n");
 }
 
-int checkBounds(int newPos[], dun_vec delta) {  
+int checkBounds(int newPos[], Dun_Vec delta) {  
 	int temp[2] = { newPos[0], newPos[1] }; 
 	// Ensure both arrays have exactly 2 elements  
    if (sizeof(newPos) / sizeof(newPos[0]) != 2 ) {  
@@ -536,7 +536,7 @@ int checkBounds(int newPos[], dun_vec delta) {
    return (temp[0] >= 0 && temp[0] < XBOUND) && (temp[1] >= 0 && temp[1] < YBOUND) && collection[temp[0]][temp[1]].passable;  
 }
 
-Entity shiftEntity(Entity e, dun_vec delta) {
+Entity shiftEntity(Entity e, Dun_Vec delta) {
 	if(DEBUG)
 		printf("Entity %s is moving from [%d,%d] to [%d,%d]\n", e.name, e.location[0], e.location[1], e.location[0] + delta.dx, e.location[1] + delta.dy);
 	if (checkBounds(e.location, delta)) {
