@@ -9,8 +9,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#define XBOUND 21
-#define YBOUND 21
+#define XBOUND 32
+#define YBOUND 64
 #define DEBUG 1
 #define MAX_ENTITIES 10
 #define MAX_ITEMS 10
@@ -64,14 +64,25 @@ typedef struct {
 	Item inventory[]; // Inventory of items
 } Player;
 
+typedef struct {
+	Dun_Coord startLocation; // Corner location in the world map, as well as the initial offset
+	unsigned int xdim;
+	unsigned int ydim;
+	Entity* entities; // Array of pointers to entities
+
+} Room;
+
 typedef struct{
 	int locationID;
 	char contents[32];
 	int passable; // 0 = not passable, 1 = passable
 	int occupied; // 0 = not occupied, 1 = occupied
+	Room* subRooms; // Array of pointers to sub-rooms
 } Cell;
 
-Cell collection[XBOUND][YBOUND];
+
+
+Cell world[XBOUND][YBOUND];
 Player you;
 Entity enemyGlossary[MAX_ENTITIES];
 Item itemGlossary[MAX_ITEMS];
@@ -79,6 +90,7 @@ const Dun_Vec up = { -1, 0 };
 const Dun_Vec right = { 0, 1 };
 const Dun_Vec down = { 1, 0 };
 const Dun_Vec left = { 0, -1 };
+Room test = { { 0, 0 }, XBOUND, YBOUND, NULL };
 
 void roomGenerator();
 void savePlayer();
@@ -96,6 +108,8 @@ void loadItems(int ovr);
 void drawMap();
 Entity shiftEntity(Entity e, Dun_Vec delta);
 int checkBounds( Dun_Coord newPos, Dun_Vec delta);
+int checkOccupied(Dun_Coord newPos, Dun_Vec delta);
+int checkArea(Room room1, Room room2);
 //int goUp();
 //int goRight();
 //int goDown();
@@ -134,6 +148,18 @@ void main() {
 	}
 	else {
 		printf("%s loaded successfully.\n", you.base.name);
+		if (checkBounds(you.base.location, (Dun_Vec) { 0, 0 })) {
+			if(DEBUG)
+				printf("Player position is within bounds.\n");
+		}
+		else {
+			if(DEBUG)
+				printf("Player position is out of bounds, teleporting you to the middle of the nearest room.\n");
+			you.base.location.x = XBOUND / 2;
+			you.base.location.y = YBOUND / 2;
+
+
+		}
 	}
 	roomGenerator();
 	roomRunner();
@@ -206,16 +232,17 @@ int loadPlayer() {
 void roomGenerator() {
 	for (int x = 0;x < XBOUND;x++) {
 		for (int y = 0;y < YBOUND;y++) {
-			collection[x][y].locationID = (x * 10) + y;
-			strcpy(collection[x][y].contents, "Help me joeby juan kenobi");
+			world[x][y].locationID = (x * 10) + y;
+			strcpy(world[x][y].contents, "Help me joeby juan kenobi");
 			if (x > 0 && x < XBOUND - 1 && y > 0 && y < YBOUND - 1) {
-				collection[x][y].passable = 1;
+				world[x][y].passable = 1;
 			}
 			else {
-				collection[x][y].passable = 0;
+				world[x][y].passable = 0;
 			}
 		}
 	}
+	
 }
 
 void drawMap() {
@@ -225,11 +252,11 @@ void drawMap() {
 		for (int y = 0;y < YBOUND;y++) {
 			printf("\t");
 			for (int x = 0;x < XBOUND;x++) {
-				if (((you.base.location.x * 10) + you.base.location.y) == collection[x][y].locationID) {
+				if (((you.base.location.x * 10) + you.base.location.y) == world[x][y].locationID) {
 					printf("  ><");
 				}
 				else {
-					printf("%4d", collection[x][y].locationID);
+					printf("%4d", world[x][y].locationID);
 				}
 
 			}
@@ -251,6 +278,12 @@ void drawMap() {
 				}
 				else if (you.base.location.x == x && you.base.location.y == y) {
 					printf("@");
+				}
+				else if (world[x][y].passable == 0) {
+					printf("#");
+				}
+				else if (world[x][y].occupied == 1) {
+					printf("X");
 				}
 				else {
 					printf(" ");
@@ -436,6 +469,7 @@ void loadItems(int ovr) {
 
 	for(int x = 0;x < numLines; x++)
         itemGlossary[x] = items[x];
+	free(items);
 
 }
 
@@ -483,7 +517,7 @@ void loadEntities(int ovr) {
 	for (int i = 0; i < numLines; i++) {
 		enemyGlossary[i] = entities[i];
 	}
-	
+	free(entities);
 
 	
 }
@@ -511,8 +545,8 @@ void inspectElement(Dun_Coord pos) {
 			break;
 		}
 		case 2: {
-			printf("You are in room %d\n", collection[pos.x][pos.y].locationID);
-			printf("This room has the following things in it: %s\n", collection[pos.x][pos.y].contents);
+			printf("You are in room %d\n", world[pos.x][pos.y].locationID);
+			printf("This room has the following things in it: %s\n", world[pos.x][pos.y].contents);
 			break;
 		}
 		case 3:
@@ -529,6 +563,17 @@ void actOnYourOwn() {
 	printf("You act out your fantasies.\n\n");
 }
 
+int checkOccupied(Dun_Coord newPos, Dun_Vec delta) {
+	if (world[newPos.x+delta.dx][newPos.y+delta.dy].occupied == 1) {
+		if(DEBUG)
+			printf("Error: This space is already occupied.\n");
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
 int checkBounds(Dun_Coord newPos, Dun_Vec delta) {  
 	int temp[2] = { newPos.x, newPos.y }; 
 	
@@ -536,23 +581,31 @@ int checkBounds(Dun_Coord newPos, Dun_Vec delta) {
    temp[0] += delta.dx;  
    temp[1] += delta.dy;  
 
-   return (temp[0] >= 0 && temp[0] < XBOUND) && (temp[1] >= 0 && temp[1] < YBOUND) && collection[temp[0]][temp[1]].passable;  
+   return (temp[0] >= 0 && temp[0] < XBOUND) && (temp[1] >= 0 && temp[1] < YBOUND) && world[temp[0]][temp[1]].passable;  
+}
+
+int checkArea(Room room1, Room room2) {
+	return 0;
+	//Not implemented yet
 }
 
 Entity shiftEntity(Entity e, Dun_Vec delta) {
 	if(DEBUG)
 		printf("Entity %s is moving from [%d,%d] to [%d,%d]\n", e.name, e.location.x, e.location.y, e.location.x + delta.dx, e.location.y + delta.dy);
 	if (checkBounds(e.location, delta)) {
+		world[e.location.x][e.location.y].occupied = 0;
 		e.location.x += delta.dx;
 		e.location.y += delta.dy;
+		world[e.location.x][e.location.y].occupied = 1;
 	}
 	else {
-		printf("Error: %s cannot move out of bounds.\n",e.name);
+		if(DEBUG)
+			printf("Error: %s cannot move out of bounds.\n",e.name);
 	}
-	e = logStep(e);
 	
 	
-	return e;
+	
+	return logStep(e);
 }
 
 /*
