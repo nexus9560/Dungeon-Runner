@@ -406,7 +406,6 @@ void loadItems(int ovr) {
         itemGlossary[x] = items[x];
 
 	free(items);
-	free(numLines);
 }
 
 void loadEntities(int ovr) {
@@ -455,7 +454,6 @@ void loadEntities(int ovr) {
 	}
 	// In the future, these may be massive, so for the sake of memory efficiency we will free them up.
 	free(entities);
-	//free(file);
 }
 
 void inspectElement(int pos[]) {
