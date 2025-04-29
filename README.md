@@ -3,7 +3,7 @@ This is a project that I started because I want to learn C, and I thought to mys
 Todo:
 - Monster population in room
 - Implement basic combat system
-- Multiple player characters
+- Multiple saves
 - Update Map style
 
 Thoughts:
