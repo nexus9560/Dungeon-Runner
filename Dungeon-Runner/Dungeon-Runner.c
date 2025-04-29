@@ -9,11 +9,13 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#define XBOUND 9
-#define YBOUND 9
+#define XBOUND 21
+#define YBOUND 21
 #define DEBUG 1
 #define MAX_ENTITIES 10
 #define MAX_ITEMS 10
+#define PLAYER_INVENTORY_BASE 16
+#define OLD_MAP 0
 
 #ifdef _WIN32
 #define CLEAR_COMMAND "cls"
@@ -23,21 +25,10 @@
 #define CLEAR_COMMAND "" // Define it to nothing if OS is not detected
 #endif
 
-// Yes, the player struct is currently identical to the Entity struct. This is not going to stay this way, as the player will eventually get an inventory, which entities will not.
-// The player will also have a different set of stats, as the player will be able to level up and gain experience, while entities will not.
-
 typedef struct {
-	int location[2];
-	char name[32];
-	int health;
-	int atk;
-	int hit;
-	int def;
-	int exp;
-	int eva;
-	int level;
-//	
-} Player;
+	int dx;
+	int dy;
+} dun_vec;
 
 typedef struct{
 	char name[32];
@@ -59,17 +50,28 @@ typedef struct{
 	int level;
 } Entity;
 
-typedef struct{
-	int roomID;
-	char contents[32];
-} Room;
+typedef struct {
+	Entity base;
+	int stepCount;
+	int steps[3][2];
+	Item inventory[]; // Inventory of items
+} Player;
 
-struct Room collection[XBOUND][YBOUND];
+typedef struct{
+	int locationID;
+	char contents[32];
+	int passable; // 0 = not passable, 1 = passable
+	int occupied; // 0 = not occupied, 1 = occupied
+} Cell;
+
+Cell collection[XBOUND][YBOUND];
 Player you;
 Entity enemyGlossary[MAX_ENTITIES];
 Item itemGlossary[MAX_ITEMS];
-int steps[3][2] = { { -1,-1 },{ -1,-1 },{ -1,-1 } };
-int stepCount = 0;
+const dun_vec up = { -1, 0 };
+const dun_vec right = { 0, 1 };
+const dun_vec down = { 1, 0 };
+const dun_vec left = { 0, -1 };
 
 void roomGenerator();
 void savePlayer();
@@ -85,42 +87,45 @@ void exitAction(int ec);
 void logStep(int step[2]);
 void loadItems(int ovr);
 void drawMap();
-int goUp();
-int goRight();
-int goDown();
-int goLeft();
+Entity shiftEntity(Entity e, dun_vec delta);
+int checkBounds( int newPos[], dun_vec delta);
+//int goUp();
+//int goRight();
+//int goDown();
+//int goLeft();
 
 void main() {
 
 	loadEntities(0);
+	loadItems(0);
 	if (loadPlayer() != 0) {
 		printf("Error loading player position. Starting at default position.\n");
 		// Y Position
-		you.location[0] = YBOUND / 2;
+		you.base.location[0] = YBOUND / 2;
 		// X Position
-		you.location[1] = XBOUND / 2;
+		you.base.location[1] = XBOUND / 2;
 		// Name
 		printf("Please enter your name:\n");
-		if (scanf("%31s", you.name) != 1) { // Limit input to 31 characters to prevent buffer overflow
-			strcoll(you.name, "Illiterate");
+		if (scanf("%31s", you.base.name) != 1) { // Limit input to 31 characters to prevent buffer overflow
+			strcoll(you.base.name, "Illiterate");
 		}
 		// Health
-		you.health = 10;
+		you.base.health = 10;
 		// Attack
-		you.atk = 1;
+		you.base.atk = 1;
 		// To-Hit
-		you.hit = 1;
+		you.base.hit = 1;
 		// Defense
-		you.def = 0;
+		you.base.def = 0;
 		// Experience
-		you.exp = 0;
+		you.base.exp = 0;
 		// Evasion
-		you.eva = 0;
+		you.base.eva = 0;
 		// Level
-		you.level = 1;
+		you.base.level = 1;
 	}
 	else {
-		printf("%s loaded successfully.\n", you.name);
+		printf("%s loaded successfully.\n", you.base.name);
 	}
 	roomGenerator();
 	roomRunner();
@@ -129,7 +134,9 @@ void main() {
 }
 
 int loadPlayer() {
-
+	for(int x=0;x<(sizeof(you.steps)/3);x++)
+		for (int y = 0;y < (sizeof(you.steps) / 2);y++)
+			you.steps[x][y] = -1;
 	FILE* file = fopen("player.dat", "r");
 	if (file == NULL) {
 		printf("Error: Could not open file for loading.\n");
@@ -137,82 +144,117 @@ int loadPlayer() {
 	} else 
 
 	// Check return value of fscanf and handle errors
-	if (fscanf(file, "Location:[%4d,%4d]\n", &you.location[0], &you.location[1]) != 2) {
+	if (fscanf(file, "Location:[%4d,%4d]\n", &you.base.location[0], &you.base.location[1]) != 2) {
 		printf("Error: Failed to read player location.\n");
 		fclose(file);
 		return 1;
 	}
-	if (fscanf(file, "Name:%s\n", you.name) != 1) {
+	if (fscanf(file, "Name:%s\n", you.base.name) != 1) {
 		printf("Error: Failed to read player name.\n");
 		fclose(file);
 		return 1;
 	}
-	if (fscanf(file, "Health:%d\n", &you.health) != 1) {
+	if (fscanf(file, "Health:%d\n", &you.base.health) != 1) {
 		printf("Error: Failed to read player health.\n");
 		fclose(file);
 		return 1;
 	}
-	if (fscanf(file, "Attack:%d\n", &you.atk) != 1) {
+	if (fscanf(file, "Attack:%d\n", &you.base.atk) != 1) {
 		printf("Error: Failed to read player attack.\n");
 		fclose(file);
 		return 1;
 	}
-	if (fscanf(file, "To-Hit:%d\n", &you.hit) != 1) {
+	if (fscanf(file, "To-Hit:%d\n", &you.base.hit) != 1) {
 		printf("Error: Failed to read player to-hit.\n");
 		fclose(file);
 		return 1;
 	}
-	if (fscanf(file, "Defense:%d\n", &you.def) != 1) {
+	if (fscanf(file, "Defense:%d\n", &you.base.def) != 1) {
 		printf("Error: Failed to read player defense.\n");
 		fclose(file);
 		return 1;
 	}
-	if (fscanf(file, "Experience:%d\n", &you.exp) != 1) {
+	if (fscanf(file, "Experience:%d\n", &you.base.exp) != 1) {
 		printf("Error: Failed to read player experience.\n");
 		fclose(file);
 		return 1;
 	}
-	if (fscanf(file, "Evasion:%d\n", &you.eva) != 1) {
+	if (fscanf(file, "Evasion:%d\n", &you.base.eva) != 1) {
 		printf("Error: Failed to read player evasion.\n");
 		fclose(file);
 		return 1;
 	}
-	if (fscanf(file, "Level:%d\n", &you.level) != 1) {
+	if (fscanf(file, "Level:%d\n", &you.base.level) != 1) {
 		printf("Error: Failed to read player level.\n");
 		fclose(file);
 		return 1;
 	}
 
+
+
 	fclose(file);
 	if(DEBUG)
-		printf("Player position loaded successfully.\n");
+		printf("Player data loaded successfully.\n");
 	return 0;
 }
 
 void roomGenerator() {
 	for (int x = 0;x < XBOUND;x++) {
 		for (int y = 0;y < YBOUND;y++) {
-			collection[x][y].roomID = (x * 10) + y;
+			collection[x][y].locationID = (x * 10) + y;
 			strcpy(collection[x][y].contents, "Help me joeby juan kenobi");
+			if (x > 0 && x < XBOUND - 1 && y > 0 && y < YBOUND - 1) {
+				collection[x][y].passable = 1;
+			}
+			else {
+				collection[x][y].passable = 0;
+			}
 		}
 	}
 }
 
 void drawMap() {
 	printf("\n+----------------------------------------------------------------+\n");
-	for (int x = 0;x < XBOUND;x++) {
-		printf("\t");
-		for (int y = 0;y < YBOUND;y++) {
-			if (((you.location[0] * 10) + you.location[1]) == collection[x][y].roomID) {
-				printf("  ><");
-			}
-			else {
-				printf("%4d", collection[x][y].roomID);
-			}
+	if (OLD_MAP) {
 
+		for (int y = 0;y < YBOUND;y++) {
+			printf("\t");
+			for (int x = 0;x < XBOUND;x++) {
+				if (((you.base.location[0] * 10) + you.base.location[1]) == collection[x][y].locationID) {
+					printf("  ><");
+				}
+				else {
+					printf("%4d", collection[x][y].locationID);
+				}
+
+			}
+			printf("\n");
 		}
-		printf("\n");
 	}
+	else {
+		for (int x = 0;x < XBOUND;x++) {
+			printf("\t");
+			for (int y = 0;y < YBOUND;y++) {
+				if ((x == 0 && y == 0)||(x==0&&y==(YBOUND-1))||(x==(XBOUND-1)&&y==0)||(x==(XBOUND-1)&&y==(YBOUND-1))) {
+					printf("+");
+				}
+				else if (x == 0 || x == XBOUND-1) {
+					printf("-");
+				}
+				else if (y == 0 || y == YBOUND-1) {
+					printf("|");
+				}
+				else if (you.base.location[0] == x && you.base.location[1] == y) {
+					printf("@");
+				}
+				else {
+					printf(" ");
+				}
+			}
+			printf("\n");
+		}
+	}
+	
 	printf("\n\n\n+----------------------------------------------------------------+\n\n");
 }
 
@@ -233,11 +275,11 @@ void roomRunner() {
 
 		
 		drawMap();
-		if (DEBUG || stepCount!=0) {
-			printf("Previous steps: [%d,%d] [%d,%d], [%d,%d]\n", steps[0][0], steps[0][1], steps[1][0], steps[1][1], steps[2][0], steps[2][1]);
+		if (DEBUG || you.stepCount!=0) {
+			printf("Previous steps: [%d,%d] [%d,%d], [%d,%d]\n", you.steps[0][0], you.steps[0][1], you.steps[1][0], you.steps[1][1], you.steps[2][0], you.steps[2][1]);
 		}
 		int choice = 0;
-		printf("\nYour current position is:%4d,%4d\n\n", you.location[1], you.location[0]);
+		printf("\nYour current position is:%4d,%4d\n\n", you.base.location[0], you.base.location[1]);
 		printf("What will you do?\n");
 		printf("0 - Exit\n");
 		printf("1 - Move\n");
@@ -260,7 +302,7 @@ void roomRunner() {
 			exitAction(0);
 		case 1: changePosition();
 			break;
-		case 2: inspectElement(you.location);
+		case 2: inspectElement(you.base.location);
 			break;
 		case 3: actOnYourOwn();
 			break;
@@ -287,15 +329,17 @@ void changePosition() {
 	printf("4 - Move Up\n\n");
 	int dir = 0;
 	scanf("%d", &dir);
+	if(dir!=0)
+		you.stepCount++;
 	switch (dir) {
-	case 1: goLeft();break;
-	case 2: goDown();break;
-	case 3: goRight();break;
-	case 4: goUp();break;
-	default:break;
+		case 1: you.base = shiftEntity(you.base,left);break;
+		case 2: you.base = shiftEntity(you.base,down);break;
+		case 3: you.base = shiftEntity(you.base,right);break;
+		case 4: you.base = shiftEntity(you.base,up);break;
+		default:break;
 	}
-
-
+	if(!DEBUG)
+		clearScreen();
 }
 
 void savePlayer() {
@@ -306,15 +350,15 @@ void savePlayer() {
 	}
 
 	// Write the player's position to the file  
-	fprintf(file, "Location:[%4d,%4d]\n", you.location[0], you.location[1]);
-	fprintf(file, "Name:%s\n", you.name);
-	fprintf(file, "Health:%d\n", you.health);
-	fprintf(file, "Attack:%d\n", you.atk);
-	fprintf(file, "To-Hit:%d\n", you.hit);
-	fprintf(file, "Defense:%d\n", you.def);
-	fprintf(file, "Experience:%d\n", you.exp);
-	fprintf(file, "Evasion:%d\n", you.eva);
-	fprintf(file, "Level:%d\n", you.level);
+	fprintf(file, "Location:[%4d,%4d]\n", you.base.location[0], you.base.location[1]);
+	fprintf(file, "Name:%s\n", you.base.name);
+	fprintf(file, "Health:%d\n", you.base.health);
+	fprintf(file, "Attack:%d\n", you.base.atk);
+	fprintf(file, "To-Hit:%d\n", you.base.hit);
+	fprintf(file, "Defense:%d\n", you.base.def);
+	fprintf(file, "Experience:%d\n", you.base.exp);
+	fprintf(file, "Evasion:%d\n", you.base.eva);
+	fprintf(file, "Level:%d\n", you.base.level);
 
 	fclose(file);
 	printf("Player position saved successfully.\n");
@@ -385,9 +429,9 @@ void loadItems(int ovr) {
 	for(int x = 0;x < numLines; x++)
         itemGlossary[x] = items[x];
 
-	free(items);
-	free(file);
-	free(numLines);
+//	free(items);
+//	free(file);
+//	free(numLines);
 }
 
 void loadEntities(int ovr) {
@@ -435,9 +479,9 @@ void loadEntities(int ovr) {
 		enemyGlossary[i] = entities[i];
 	}
 	// In the future, these may be massive, so for the sake of memory efficiency we will free them up.
-	free(entities);
-	free(file);
-	free(numLines);
+//	free(entities);
+//	free(file);
+//	free(numLines);
 
 	
 }
@@ -454,22 +498,22 @@ void inspectElement(int pos[]) {
 	switch (res) {
 		case 1: {
 			printf("You are:\n");
-			printf("Name: %s\n", you.name);
-			printf("Health: %d\n", you.health);
-			printf("Attack: %d\n", you.atk);
-			printf("To-Hit: %d\n", you.hit);
-			printf("Defense: %d\n", you.def);
-			printf("Experience: %d\n", you.exp);
-			printf("Evasion: %d\n", you.eva);
-			printf("Level: %d\n", you.level);
+			printf("Name: %s\n", you.base.name);
+			printf("Health: %d\n", you.base.health);
+			printf("Attack: %d\n", you.base.atk);
+			printf("To-Hit: %d\n", you.base.hit);
+			printf("Defense: %d\n", you.base.def);
+			printf("Experience: %d\n", you.base.exp);
+			printf("Evasion: %d\n", you.base.eva);
+			printf("Level: %d\n", you.base.level);
 			break;
 		}
 		case 2: {
-			printf("You are in room %d\n", collection[pos[0]][pos[1]].roomID);
+			printf("You are in room %d\n", collection[pos[0]][pos[1]].locationID);
 			printf("This room has the following things in it: %s\n", collection[pos[0]][pos[1]].contents);
 			break;
 		}
-		case 3: printf("Previous steps: [%d,%d] [%d,%d], [%d,%d]\n", steps[0][0], steps[0][1], steps[1][0], steps[1][1], steps[2][0], steps[2][1]); break;
+		case 3: printf("Previous steps: [%d,%d] [%d,%d], [%d,%d]\n", you.steps[0][0], you.steps[0][1], you.steps[1][0], you.steps[1][1], you.steps[2][0], you.steps[2][1]); break;
 		default: return;
 	}
 }
@@ -478,73 +522,106 @@ void actOnYourOwn() {
 	printf("You act out your fantasies.\n\n");
 }
 
+int checkBounds(int newPos[], dun_vec delta) {  
+	int temp[2] = { newPos[0], newPos[1] }; 
+	// Ensure both arrays have exactly 2 elements  
+   if (sizeof(newPos) / sizeof(newPos[0]) != 2 ) {  
+       printf("Error: Invalid array size. Both arrays must have exactly 2 elements.\n");  
+       return 0;  
+   }  
+
+   temp[0] += delta.dx;  
+   temp[1] += delta.dy;  
+
+   return (temp[0] >= 0 && temp[0] < XBOUND) && (temp[1] >= 0 && temp[1] < YBOUND) && collection[temp[0]][temp[1]].passable;  
+}
+
+Entity shiftEntity(Entity e, dun_vec delta) {
+	if(DEBUG)
+		printf("Entity %s is moving from [%d,%d] to [%d,%d]\n", e.name, e.location[0], e.location[1], e.location[0] + delta.dx, e.location[1] + delta.dy);
+	if (checkBounds(e.location, delta)) {
+		e.location[0] += delta.dx;
+		e.location[1] += delta.dy;
+	}
+	else {
+		printf("Error: %s cannot move out of bounds.\n",e.name);
+	}
+	logStep(e.location);
+	
+	
+	return e;
+}
+
+/*
 int goLeft() {
-	stepCount++;
-	if (you.location[1] <= 0) {
+	you.stepCount++;
+	if (checkBounds(you.base.location, {0,-1})) {
 		printf("You can't go any further that way...\n");
-		you.location[1] = 0;
+		you.base.location[1] = 0;
 		return 1;
 	}
 	else {
-		you.location[1] -= 1;
-		logStep(you.location);
+		you.base.location[1] -= 1;
+		logStep(you.base.location);
 		return 0;
 	}
 }
 
 int goDown() {
-	stepCount++;
-	if (you.location[0] >= (XBOUND - 1)) {
+	you.stepCount++;
+	if (you.base.location[0] >= (XBOUND - 1)) {
 		printf("You can't go any further that way...\n");
-		you.location[0] = (XBOUND - 1);
+		you.base.location[0] = (XBOUND - 1);
 		return 1;
 	}
 	else {
-		you.location[0] += 1;
-		logStep(you.location);
+		you.base.location[0] += 1;
+		logStep(you.base.location);
 		return 0;
 	}
 }
 
 int goRight() {
-	stepCount++;
-	if (you.location[1] >= (YBOUND - 1)) {
+	you.stepCount++;
+	if (you.base.location[1] >= (YBOUND - 1)) {
 		printf("You can't go any further that way...\n");
-		you.location[1] = (YBOUND - 1);
+		you.base.location[1] = (YBOUND - 1);
 		return 1;
 	}
 	else {
-		you.location[1] += 1;
-		logStep(you.location);
+		you.base.location[1] += 1;
+		logStep(you.base.location);
 		return 0;
 	}
 }
 
 int goUp() {
-	stepCount++;
-	if (you.location[0] <= 0) {
+	you.stepCount++;
+	if (you.base.location[0] <= 0) {
 		printf("You can't go any further that way...\n");
-		you.location[0] = 0;
+		you.base.location[0] = 0;
 		return 1;
 	}
 	else {
-		you.location[0] -= 1;
-		logStep(you.location);
+		you.base.location[0] -= 1;
+		logStep(you.base.location);
 		return 0;
 	}
 }
+*/
 
 void logStep(int step[2]) {
 	int temp[2][2] = { { -1,-1 },{ -1,-1 } };
-	temp[0][0] = steps[0][0];
-	temp[0][1] = steps[0][1];
-	temp[1][0] = steps[1][0];
-	temp[1][1] = steps[1][1];
-	steps[0][0] = step[0];
-	steps[0][1] = step[1];
-	steps[1][0] = temp[0][0];
-	steps[1][1] = temp[0][1];
-	steps[2][0] = temp[1][0];
-	steps[2][1] = temp[1][1];
+	temp[0][0] = you.steps[0][0];
+	temp[0][1] = you.steps[0][1];
+	temp[1][0] = you.steps[1][0];
+	temp[1][1] = you.steps[1][1];
+	you.steps[0][0] = step[0];
+	you.steps[0][1] = step[1];
+	you.steps[1][0] = temp[0][0];
+	you.steps[1][1] = temp[0][1];
+	you.steps[2][0] = temp[1][0];
+	you.steps[2][1] = temp[1][1];
+	free(temp);
 
 }
