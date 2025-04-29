@@ -11,6 +11,8 @@
 #define YBOUND 9
 #define LOGCOUNT 8
 #define DEBUG 1
+#define MAX_ENTITIES 10
+#define MAX_ITEMS 10
 
 #ifdef _WIN32
 #define CLEAR_COMMAND "cls"
@@ -26,6 +28,8 @@ typedef struct {
     int y;
 } dung_vec;
 
+// Yes, the player struct is currently identical to the Entity struct. This is not going to stay this way, as the player will eventually get an inventory, which entities will not.
+// The player will also have a different set of stats, as the player will be able to level up and gain experience, while entities will not.
 typedef struct {
 	dung_vec pos;
 	char name[32];
@@ -38,7 +42,15 @@ typedef struct {
 	int level;
 } Player;
 
-typedef struct {
+typedef struct{
+	char name[32];
+	char stat[3];
+	int bonus;
+	int type; // 0 = weapon, 1 = armor, 2 = consumable
+	int equipped; // 0 = not equipped, 1 = equipped
+} Item;
+
+typedef struct{
 	dung_vec pos;
 	char name[32];
 	int health;
@@ -48,27 +60,28 @@ typedef struct {
 	int exp;
 	int eva;
 	int level;
-} entity;
+} Entity;
 
-typedef struct {
+typedef struct{
 	int roomID;
 	char contents[32];
 } Room;
 
 Room collection[XBOUND][YBOUND];
 Player you;
-entity enemies[10];
 
 //Our current position in the stepLog ring buffer
 unsigned int currentPos = 0;
 dung_vec stepLog[LOGCOUNT] = {0};
+Entity enemyGlossary[MAX_ENTITIES];
+Item itemGlossary[MAX_ITEMS];
 int stepCount = 0;
 
 void roomGenerator();
 void savePlayer();
 int countLines(FILE* file);
 int loadPlayer();
-int loadEntities(int ovr);
+void loadEntities(int ovr);
 void roomRunner();
 void clearScreen();
 void changePosition();
@@ -76,6 +89,7 @@ void inspectElement(int pos[]);
 void actOnYourOwn();
 void exitAction(int ec);
 void logStep(dung_vec finalPos);
+void loadItems(int ovr);
 void drawMap();
 int goUp();
 int goRight();
@@ -127,9 +141,9 @@ int loadPlayer() {
 		printf("Error: Could not open file for loading.\n");
 		return 1;
 	} else 
-
+    {
 	// Check return value of fscanf and handle errors
-	if (fscanf(file, "Location:[%4d,%4d]\n", &you.pos.x, &you.pos.y) != 2) {
+	if (fscanf(file, "Location:[%4d,%4d]\n", &(you.pos.x), &(you.pos.y)) != 2) {
 		printf("Error: Failed to read player location.\n");
 		fclose(file);
 		return 1;
@@ -176,8 +190,10 @@ int loadPlayer() {
 	}
 
 	fclose(file);
-	//printf("Player position loaded successfully.\n");
+	if(DEBUG)
+		printf("Player position loaded successfully.\n");
 	return 0;
+    }
 }
 
 void roomGenerator() {
@@ -352,24 +368,63 @@ int countLines(FILE* file) {
 	return lines;
 }
 
-int loadEntities(int ovr) {
+void loadItems(int ovr) {
+	FILE* file = fopen("items.dat", "r");
+	if (file == NULL) {
+		printf("Error: Could not open file for loading.\n");
+		return;
+	}
+	int numLines = countLines(file);
+	Item* items = malloc(numLines * sizeof(Item));
+	if (items == NULL) {
+		printf("Error: Memory allocation failed.\n");
+		fclose(file);
+		return;
+	}
+	for (int i = 0; i < numLines; i++) {
+//		[ATK:001,TYPE:0]:PLAIN-SWORD
+		fscanf(file, "[%3s:%3d,TYPE:%d]:%31s\n",
+			&items[i].stat, &items[i].bonus, &items[i].type, &items[i].name
+		);
+	}
+	fclose(file);
+
+	if (DEBUG || ovr) {
+		for (int i = 0; i < numLines; i++) {
+			printf("Item %3d: %31s:[%3s:%3d,TYPE:%d]\n",
+				i + 1,
+				items[i].name,
+				items[i].stat,
+				items[i].bonus,
+				items[i].type
+			);
+		}
+		printf("\nItems loaded successfully.\n");
+	}
+
+	for(int x = 0;x < numLines; x++)
+        itemGlossary[x] = items[x];
+
+	free(items);
+	free(numLines);
+}
+
+void loadEntities(int ovr) {
 	FILE* file = fopen("entities.dat", "r");
 	if (file == NULL) {
 		printf("Error: Could not open file for loading.\n");
 
-		return 1;
+		return;
 	}
 	int numLines = countLines(file);
-	entity* entities = malloc(numLines * sizeof(entity));
+	Entity* entities = malloc(numLines * sizeof(Entity));
 	if (entities == NULL) {
 		printf("Error: Memory allocation failed.\n");
 		fclose(file);
-		return 1;
+		return;
 	}
 	for (int i = 0; i < numLines; i++) {
-		// Use NAME:[HP:  2,ATK:  1,TOH:  1,DEF:  0,EXP:  2,EVA:  0,LVL:  1] as the format
-		// "%31[^:]:[HP:%d,ATK:%d,TOH:%d,DEF:%d,EXP:%d,EVA:%d,LVL:%d]"
-		// %s:[HP:%d,ATK:%d,TOH:%d,DEF:%d,EXP:%d,EVA:%d,LVL:%d\n
+		// Use [HP:  2,ATK:  1,TOH:  1,DEF:  0,EXP:  2,EVA:  0,LVL:  1]:NAME as the format
 		fscanf(file, "[HP: %d,ATK: %d,TOH: %d,DEF: %d,EXP: %d,EVA: %d,LVL: %d]:%31s\n",
 			&entities[i].health, &entities[i].atk, &entities[i].hit, &entities[i].def, &entities[i].exp, &entities[i].eva, &entities[i].level, &entities[i].name
 		);
@@ -391,8 +446,16 @@ int loadEntities(int ovr) {
 		printf("\nEntities loaded successfully.\n");
 	}
 	fclose(file);
+	if (numLines > MAX_ENTITIES) {
+		printf("Warning: More entities than expected. Only the first %d will be used.\n", MAX_ENTITIES);
+		numLines = MAX_ENTITIES;
+	}
+	for (int i = 0; i < numLines; i++) {
+		enemyGlossary[i] = entities[i];
+	}
+	// In the future, these may be massive, so for the sake of memory efficiency we will free them up.
 	free(entities);
-	return 0;
+	//free(file);
 }
 
 void inspectElement(int pos[]) {
@@ -419,7 +482,7 @@ void inspectElement(int pos[]) {
 		}
 		case 2: {
 			printf("You are in room %d\n", collection[pos[0]][pos[1]].roomID);
-			printf("Contents: %s\n", collection[pos[0]][pos[1]].contents);
+			printf("This room has the following things in it: %s\n", collection[pos[0]][pos[1]].contents);
 			break;
 		}
 		case 3: printPreviousSteps();
