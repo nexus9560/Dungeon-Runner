@@ -1,4 +1,4 @@
-#ifdef _MSC_VER
+﻿#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
@@ -16,6 +16,7 @@
 #define MAX_ITEMS 10
 #define PLAYER_INVENTORY_BASE 16
 #define OLD_MAP 0
+#define OLD_ACTIONS 1
 #define LOG_BUFFER 4
 
 #ifdef _WIN32
@@ -61,7 +62,7 @@ typedef struct{
 typedef struct {
 	Entity base;
 	int stepCount;
-	Item inventory[]; // Inventory of items
+	Item* inventory; // Inventory of items
 } Player;
 
 typedef struct {
@@ -86,10 +87,10 @@ Cell world[XBOUND][YBOUND];
 Player you;
 Entity enemyGlossary[MAX_ENTITIES];
 Item itemGlossary[MAX_ITEMS];
-const Dun_Vec up = { -1, 0 };
-const Dun_Vec right = { 0, 1 };
-const Dun_Vec down = { 1, 0 };
-const Dun_Vec left = { 0, -1 };
+const Dun_Vec up	= { -1,  0 };
+const Dun_Vec right = {  0,  1 };
+const Dun_Vec down	= {  1,  0 };
+const Dun_Vec left	= {  0, -1 };
 Room test = { { 0, 0 }, XBOUND, YBOUND, NULL };
 
 void roomGenerator();
@@ -103,6 +104,7 @@ void changePosition();
 void inspectElement(Dun_Coord pos);
 void actOnYourOwn();
 void exitAction(int ec);
+void actionChecker();
 Entity logStep(Entity e);
 void loadItems(int ovr);
 void drawMap();
@@ -313,8 +315,15 @@ void roomRunner() {
 
 		
 		drawMap();
-		if (DEBUG || you.stepCount!=0) {
-			for (int i = 0; i < (sizeof(you.base.stepLog)/LOG_BUFFER); i++) {
+		actionChecker();
+		
+	} while (1);
+}
+
+void actionChecker() {
+	if (OLD_ACTIONS) {
+		if (DEBUG || you.stepCount != 0) {
+			for (int i = 0; i < (sizeof(you.base.stepLog) / LOG_BUFFER); i++) {
 				printf("Step %d: [%4d,%4d], ", i + 1, you.base.stepLog[i].x, you.base.stepLog[i].y);
 			}
 			printf("\n\n");
@@ -333,33 +342,33 @@ void roomRunner() {
 		}
 		printf("\n\n");
 		scanf("%d", &choice);
-		
+
 		clearScreen();
 
 		drawMap();
 
 		switch (choice) {
-		case 0:
-			exitAction(0);
-		case 1: changePosition();
-			break;
-		case 2: inspectElement(you.base.location);
-			break;
-		case 3: actOnYourOwn();
-			break;
-		case 4: savePlayer();
-			break;
-		case 5: loadPlayer();
-			break;
-		case 6: if (DEBUG) {
-			loadEntities(0);
-			break;
-		} else {continue;}
-		default:printf("Could you try that again?\n");
-			continue;
+			case 0:
+				exitAction(0);
+			case 1: changePosition();
+				break;
+			case 2: inspectElement(you.base.location);
+				break;
+			case 3: actOnYourOwn();
+				break;
+			case 4: savePlayer();
+				break;
+			case 5: loadPlayer();
+				break;
+			case 6: if (DEBUG) {
+				loadEntities(0);
+				break;
+			} else { return; }
+			default:
+				printf("Could you try that again?\n");
+				return;
 		}
-		
-	} while (1);
+	}
 }
 
 void changePosition() {
