@@ -403,11 +403,10 @@ void actionChecker() {
 	   
 		int ch;
 		if (_kbhit()) {
-			ch = _getch();
-			ch = tolower(ch);
 			ch = _getch(); // Get the actual key code
+			ch = tolower(ch);
 			if(DEBUG)
-				printf("Key pressed: %c\n", ch);
+				printf("Key pressed: %c : %d\n", ch,ch);
 			switch (ch) {
 				case 'w':
 				case 72: // Up arrow
