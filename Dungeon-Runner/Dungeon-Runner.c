@@ -319,6 +319,7 @@ void drawMap() {
 				}
 			}
 			printf("%.*s\n", YBOUND, &map[x * YBOUND]);
+
 		}
 	}
 	
@@ -399,6 +400,12 @@ void actionChecker() {
 	   }
    }
    else {
+	   printf("WASD to move\n");
+	   printf("Q to quit\n");
+	   printf("I to Open Inventory\n");
+	   printf("E to Interact\n");
+	   printf("F to Inspect\n");
+	   printf("Spacebar to Attack\n");
 #ifdef _WIN32
 	   
 		int ch;
