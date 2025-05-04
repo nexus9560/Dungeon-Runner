@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #define XBOUND 32
 #define YBOUND 64
@@ -16,13 +17,19 @@
 #define MAX_ITEMS 10
 #define PLAYER_INVENTORY_BASE 16
 #define OLD_MAP 0
-#define OLD_ACTIONS 1
+#define OLD_ACTIONS 0
 #define LOG_BUFFER 4
 
 #ifdef _WIN32
 #define CLEAR_COMMAND "cls"
+#include <conio.h>
+#include <windows.h>
 #elif __unix__ || __APPLE__
 #define CLEAR_COMMAND "clear"
+#include <termios.h>
+#include <unistd.h>
+#include <time.h>
+
 #else
 #define CLEAR_COMMAND "" // Define it to nothing if OS is not detected
 #endif
@@ -105,6 +112,7 @@ void inspectElement(Dun_Coord pos);
 void actOnYourOwn();
 void exitAction(int ec);
 void actionChecker();
+void delay(int seconds);
 Entity logStep(Entity e);
 void loadItems(int ovr);
 void drawMap();
@@ -150,7 +158,7 @@ void main() {
 	}
 	else {
 		printf("%s loaded successfully.\n", you.base.name);
-		if (checkBounds(you.base.location, (Dun_Vec) { 0, 0 })) {
+		if (!checkBounds(you.base.location, (Dun_Vec) { 0, 0 })) {
 			if(DEBUG)
 				printf("Player position is within bounds.\n");
 		}
@@ -248,34 +256,19 @@ void roomGenerator() {
 }
 
 void drawMap() {
-	printf("\n+----------------------------------------------------------------+\n");
+	
 	if (OLD_MAP) {
-
-		for (int y = 0;y < YBOUND;y++) {
-			printf("\t");
-			for (int x = 0;x < XBOUND;x++) {
-				if (((you.base.location.x * 10) + you.base.location.y) == world[x][y].locationID) {
-					printf("  ><");
-				}
-				else {
-					printf("%4d", world[x][y].locationID);
-				}
-
-			}
-			printf("\n");
-		}
-	}
-	else {
+		printf("\n+----------------------------------------------------------------+\n");
 		for (int x = 0;x < XBOUND;x++) {
 			printf("\t");
 			for (int y = 0;y < YBOUND;y++) {
-				if ((x == 0 && y == 0)||(x==0&&y==(YBOUND-1))||(x==(XBOUND-1)&&y==0)||(x==(XBOUND-1)&&y==(YBOUND-1))) {
+				if ((x == 0 && y == 0) || (x == 0 && y == (YBOUND - 1)) || (x == (XBOUND - 1) && y == 0) || (x == (XBOUND - 1) && y == (YBOUND - 1))) {
 					printf("+");
 				}
-				else if (x == 0 || x == XBOUND-1) {
+				else if (x == 0 || x == XBOUND - 1) {
 					printf("-");
 				}
-				else if (y == 0 || y == YBOUND-1) {
+				else if (y == 0 || y == YBOUND - 1) {
 					printf("|");
 				}
 				else if (you.base.location.x == x && you.base.location.y == y) {
@@ -293,9 +286,43 @@ void drawMap() {
 			}
 			printf("\n");
 		}
+		printf("\n\n\n+----------------------------------------------------------------+\n\n");
+	}
+	else {
+		char* map = (char*)malloc(XBOUND * YBOUND);
+		if (map == NULL) {
+			printf("Memory allocation failed\n");
+			return;
+		}
+		for (int x = 0;x < XBOUND;x++) {
+			for (int y = 0;y < YBOUND;y++) {
+				if ((x == 0 && y == 0) || (x == 0 && y == (YBOUND - 1)) || (x == (XBOUND - 1) && y == 0) || (x == (XBOUND - 1) && y == (YBOUND - 1))) {
+					map[x * YBOUND + y] = '+';
+				}
+				else if (x == 0 || x == XBOUND - 1) {
+					map[x * YBOUND + y] = '-';
+				}
+				else if (y == 0 || y == YBOUND - 1) {
+					map[x * YBOUND + y] = '|';
+				}
+				else if (you.base.location.x == x && you.base.location.y == y) {
+					map[x * YBOUND + y] = '@';
+				}
+				else if (world[x][y].passable == 0) {
+					map[x * YBOUND + y] = '#';
+				}
+				else if (world[x][y].occupied == 1) {
+					map[x * YBOUND + y] = 'X';
+				}
+				else {
+					map[x * YBOUND + y] = ' ';
+				}
+			}
+			printf("%.*s\n", YBOUND, &map[x * YBOUND]);
+		}
 	}
 	
-	printf("\n\n\n+----------------------------------------------------------------+\n\n");
+	
 }
 
 void clearScreen() {
@@ -312,63 +339,109 @@ void clearScreen() {
 
 void roomRunner() {
 	do {
-
 		
 		drawMap();
 		actionChecker();
+		//delay(1);
+		clearScreen();
 		
 	} while (1);
 }
 
+
 void actionChecker() {
-	if (OLD_ACTIONS) {
-		if (DEBUG || you.stepCount != 0) {
-			for (int i = 0; i < (sizeof(you.base.stepLog) / LOG_BUFFER); i++) {
-				printf("Step %d: [%4d,%4d], ", i + 1, you.base.stepLog[i].x, you.base.stepLog[i].y);
+   if (OLD_ACTIONS) {
+	   if (DEBUG || you.stepCount != 0) {
+		   for (int i = 0; i < (sizeof(you.base.stepLog) / LOG_BUFFER); i++) {
+			   printf("Step %d: [%4d,%4d], ", i + 1, you.base.stepLog[i].x, you.base.stepLog[i].y);
+		   }
+		   printf("\n\n");
+	   }
+	   int choice = 0;
+	   printf("\nYour current position is:%4d,%4d\n\n", you.base.location.x, you.base.location.y);
+	   printf("What will you do?\n");
+	   printf("0 - Exit\n");
+	   printf("1 - Move\n");
+	   printf("2 - Inspect\n");
+	   printf("3 - Act\n");
+	   printf("4 - Save\n");
+	   printf("5 - Load\n");
+	   if (DEBUG) {
+		   printf("6 - Debug\n");
+	   }
+	   printf("\n\n");
+	   scanf("%d", &choice);
+
+	   clearScreen();
+
+	   drawMap();
+
+	   switch (choice) {
+		   case 0:
+			   exitAction(0);
+		   case 1: changePosition();
+			   break;
+		   case 2: inspectElement(you.base.location);
+			   break;
+		   case 3: actOnYourOwn();
+			   break;
+		   case 4: savePlayer();
+			   break;
+		   case 5: loadPlayer();
+			   break;
+		   case 6: if (DEBUG) {
+			   loadEntities(0);
+			   break;
+		   } else { return; }
+		   default:
+			   printf("Could you try that again?\n");
+			   return;
+	   }
+   }
+   else {
+#ifdef _WIN32
+	   
+		int ch;
+		if (_kbhit()) {
+			ch = _getch();
+			ch = tolower(ch);
+			ch = _getch(); // Get the actual key code
+			if(DEBUG)
+				printf("Key pressed: %c\n", ch);
+			switch (ch) {
+				case 'w':
+				case 72: // Up arrow
+					you.base = shiftEntity(you.base, up);
+					break;
+				case 'a':
+				case 75: // Left arrow
+					you.base = shiftEntity(you.base, left);
+					break;
+				case 'd':
+				case 77: // Right arrow
+					you.base = shiftEntity(you.base, right);
+					break;
+				case 's':
+				case 80: // Down arrow
+					you.base = shiftEntity(you.base, down);
+					break;
+				case 'q':
+				case 81: // Q key
+					exitAction(0);
+				default:break;
 			}
-			printf("\n\n");
 		}
-		int choice = 0;
-		printf("\nYour current position is:%4d,%4d\n\n", you.base.location.x, you.base.location.y);
-		printf("What will you do?\n");
-		printf("0 - Exit\n");
-		printf("1 - Move\n");
-		printf("2 - Inspect\n");
-		printf("3 - Act\n");
-		printf("4 - Save\n");
-		printf("5 - Load\n");
-		if (DEBUG) {
-			printf("6 - Debug\n");
-		}
-		printf("\n\n");
-		scanf("%d", &choice);
+	   
+	   
+	   
 
-		clearScreen();
+#elif __unix__ || __APPLE__
+	   printf("Currently unsupported. Soon(tm).");
+#else
+	   printf("Operating system not detected for raw input.\n");
+#endif
 
-		drawMap();
-
-		switch (choice) {
-			case 0:
-				exitAction(0);
-			case 1: changePosition();
-				break;
-			case 2: inspectElement(you.base.location);
-				break;
-			case 3: actOnYourOwn();
-				break;
-			case 4: savePlayer();
-				break;
-			case 5: loadPlayer();
-				break;
-			case 6: if (DEBUG) {
-				loadEntities(0);
-				break;
-			} else { return; }
-			default:
-				printf("Could you try that again?\n");
-				return;
-		}
-	}
+   }
 }
 
 void changePosition() {
@@ -477,7 +550,7 @@ void loadItems(int ovr) {
 	}
 
 	for(int x = 0;x < numLines; x++)
-        itemGlossary[x] = items[x];
+		itemGlossary[x] = items[x];
 	free(items);
 
 }
@@ -583,6 +656,17 @@ int checkOccupied(Dun_Coord newPos, Dun_Vec delta) {
 	}
 }
 
+void delay(int seconds) {
+#ifdef WIN32
+		Sleep(seconds * 1000);
+#elif __unix__ || __APPLE__
+		struct timespec ts;
+		ts.tv_sec = 1;  // 1 second
+		ts.tv_nsec = 0; // 0 nanoseconds
+		nanosleep(&ts, NULL);
+#endif
+}
+
 int checkBounds(Dun_Coord newPos, Dun_Vec delta) {  
 	int temp[2] = { newPos.x, newPos.y }; 
 	
@@ -590,7 +674,7 @@ int checkBounds(Dun_Coord newPos, Dun_Vec delta) {
    temp[0] += delta.dx;  
    temp[1] += delta.dy;  
 
-   return (temp[0] >= 0 && temp[0] < XBOUND) && (temp[1] >= 0 && temp[1] < YBOUND) && world[temp[0]][temp[1]].passable;  
+   return (temp[0] >= 0 && temp[0] < XBOUND) && (temp[1] >= 0 && temp[1] < YBOUND) && world[temp[0]][temp[1]].passable;
 }
 
 int checkArea(Room room1, Room room2) {
