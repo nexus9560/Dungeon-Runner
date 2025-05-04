@@ -85,7 +85,6 @@ typedef struct{
 	char contents[32];
 	int passable; // 0 = not passable, 1 = passable
 	int occupied; // 0 = not occupied, 1 = occupied
-	Room* subRooms; // Array of pointers to sub-rooms
 } Cell;
 
 
