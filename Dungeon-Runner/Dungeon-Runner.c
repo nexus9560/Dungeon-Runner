@@ -125,6 +125,7 @@ Room makeRoom();
 Room getRoomByLocation(Dun_Coord d);
 int getRandomEnemyIndex();
 int isInRoom(Room r, Dun_Coord d);
+Dun_Coord getNearestSafeLocation(Dun_Coord d);
 //int goUp();
 //int goRight();
 //int goDown();
@@ -746,6 +747,26 @@ int isInRoom(Room r, Dun_Coord d) {
 		return 1; // In room
 	}
 	return 0; // Not in room
+}
+
+Dun_Coord getNearestSafeLocation(Dun_Coord d) {
+	Dun_Coord ret = { 0,0 };
+	//fill in later
+	//but what it should do is go through the array of rooms looking for the nearest place in a room
+	// and return that location when it finds it
+	/*
+	int* dval = malloc(sizeof(int) * numberOfRooms);
+	for (int i=0; i<numberOfRooms;i++){
+		dval[i] = abs(d.x - room[i].startLocation.x) + abs(d.y - room[i].startLocation.y);
+	}
+	int dret = dval[0];
+	for (int i=0; i<numberOfRooms;i++){
+		if (dval[i] < dret){
+			dret = dval[i];
+		}
+	}
+	*/
+	return ret;
 }
 
 Room getRoomByLocation(Dun_Coord d) {
