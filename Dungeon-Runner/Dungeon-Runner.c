@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <time.h>
 
 #define XBOUND 32
 #define YBOUND 64
@@ -28,7 +29,6 @@
 #define CLEAR_COMMAND "clear"
 #include <termios.h>
 #include <unistd.h>
-#include <time.h>
 
 #else
 #define CLEAR_COMMAND "" // Define it to nothing if OS is not detected
@@ -92,7 +92,8 @@ typedef struct{
 
 Cell world[XBOUND][YBOUND];
 Player you;
-Entity enemyGlossary[MAX_ENTITIES];
+Entity* enemyGlossary;
+int enemyGlossarySize;
 Item itemGlossary[MAX_ITEMS];
 const Dun_Vec up	= { -1,  0 };
 const Dun_Vec right = {  0,  1 };
@@ -120,6 +121,8 @@ Entity shiftEntity(Entity e, Dun_Vec delta);
 int checkBounds( Dun_Coord newPos, Dun_Vec delta);
 int checkOccupied(Dun_Coord newPos, Dun_Vec delta);
 int checkArea(Room room1, Room room2);
+Room makeRoom();
+int getRandomEnemyIndex();
 //int goUp();
 //int goRight();
 //int goDown();
@@ -129,6 +132,7 @@ void main() {
 
 	loadEntities(0);
 	loadItems(0);
+	test = makeRoom();
 	if (loadPlayer() != 0) {
 		you.base.currentPos = 0;
 		printf("Error loading player position. Starting at default position.\n");
@@ -167,8 +171,6 @@ void main() {
 				printf("Player position is out of bounds, teleporting you to the middle of the nearest room.\n");
 			you.base.location.x = XBOUND / 2;
 			you.base.location.y = YBOUND / 2;
-
-
 		}
 	}
 	roomGenerator();
@@ -202,6 +204,11 @@ int loadPlayer() {
 	}
 	if (fscanf(file, "Attack:%d\n", &you.base.atk) != 1) {
 		printf("Error: Failed to read player attack.\n");
+		fclose(file);
+		return 1;
+	}
+	if (fscanf(file, "Aggro:%d\n", &you.base.agr) != 1) {
+		printf("Error: Failed to read player Aggro.\n");
 		fclose(file);
 		return 1;
 	}
@@ -431,6 +438,19 @@ void actionChecker() {
 				case 80: // Down arrow
 					you.base = shiftEntity(you.base, down);
 					break;
+				case 'i':
+					printf("Inventory not implemented yet.\n");
+					break;
+				case 'e':
+					printf("Interact not implemented yet.\n");
+					break;
+				case 'f':
+					printf("Inspect not implemented yet.\n");
+					break;
+				case ' ':
+					printf("Attack not implemented yet.\n");
+					break;
+
 				case 'q':
 				case 81: // Q key
 					exitAction(0);
@@ -568,21 +588,21 @@ void loadEntities(int ovr) {
 
 		return;
 	}
-	int numLines = countLines(file);
-	Entity* entities = malloc(numLines * sizeof(Entity));
+	enemyGlossarySize = countLines(file);
+	Entity* entities = malloc(enemyGlossarySize * sizeof(Entity));
 	if (entities == NULL) {
 		printf("Error: Memory allocation failed.\n");
 		fclose(file);
 		return;
 	}
-	for (int i = 0; i < numLines; i++) {
+	for (int i = 0; i < enemyGlossarySize; i++) {
 		// Use [HP:  2,ATK:  1,TOH:  1,DEF:  0,EXP:  2,EVA:  0,LVL:  1]:NAME as the format
 		fscanf(file, "[HP: %d,ATK: %d,TOH: %d,DEF: %d,EXP: %d,EVA: %d,LVL: %d]:%31s\n",
 			&entities[i].health, &entities[i].atk, &entities[i].hit, &entities[i].def, &entities[i].exp, &entities[i].eva, &entities[i].level, &entities[i].name
 		);
 	}
 	if (DEBUG || ovr) {
-		for (int i = 0; i < numLines; i++) {
+		for (int i = 0; i < enemyGlossarySize; i++) {
 			printf("Entity %3d: %31s:[HP:%3d,ATK:%3d,ARG:%3d,TOH:%3d,DEF:%3d,EXP:%3d,EVA:%3d,LVL:%3d]\n",
 				i + 1,
 				entities[i].name,
@@ -599,11 +619,8 @@ void loadEntities(int ovr) {
 		printf("\nEntities loaded successfully.\n");
 	}
 	fclose(file);
-	if (numLines > MAX_ENTITIES) {
-		printf("Warning: More entities than expected. Only the first %d will be used.\n", MAX_ENTITIES);
-		numLines = MAX_ENTITIES;
-	}
-	for (int i = 0; i < numLines; i++) {
+	enemyGlossary = malloc(enemyGlossarySize * sizeof(Entity));
+	for (int i = 0; i < enemyGlossarySize; i++) {
 		enemyGlossary[i] = entities[i];
 	}
 	free(entities);
@@ -634,8 +651,15 @@ void inspectElement(Dun_Coord pos) {
            break;  
        }  
        case 2: {  
-           printf("You are in room %d\n", world[pos.x][pos.y].locationID);  
-           printf("This room has the following things in it: %s\n", world[pos.x][pos.y].contents);  
+           printf("You are in room %d\n", world[pos.x][pos.y].locationID);
+		   for (int x = 0;x < XBOUND;x++) {
+			   for (int y = 0;y < YBOUND;y++) {
+				   if (world[x][y].occupied == 1 && !(x == you.base.location.x && y == you.base.location.y)) {
+					   printf("There is an entity in this room.\n");
+					   break;
+				   }
+			   }
+		   }
            break;  
        }  
        case 3:  
@@ -645,7 +669,8 @@ void inspectElement(Dun_Coord pos) {
            printf("\n\n");  
            break;  
        default: return;  
-   }  
+   }
+   scanf("");
 }
 
 void actOnYourOwn() {
@@ -765,6 +790,35 @@ int goUp() {
 	}
 }
 */
+
+int getRandomEnemyIndex() {
+	srand((unsigned int)time(NULL)); // Seed the random number generator with the current time
+	return rand() % sizeof(enemyGlossary); // Generate a random number between 0 and MAX_ENTITIES - 1
+}
+
+Room makeRoom() {
+	Room temp;
+	temp.startLocation.x = 0;
+	temp.startLocation.y = 0;
+	temp.xdim = XBOUND;
+	temp.ydim = YBOUND;
+
+	// Calculate max entities per room
+	int halfSum = (temp.xdim + temp.ydim) / 2;
+	int cubicRoot = (int)pow(temp.xdim * temp.ydim, 1.0 / 3.0);
+	int maxEntities = abs(halfSum - 1) < abs(cubicRoot - 1) ? halfSum : cubicRoot;
+
+	// Allocate memory for entities
+	temp.entities = malloc(sizeof(Entity) * maxEntities);
+
+	for (int i = 0;i < maxEntities;i++) {
+
+        
+		temp.entities[i] = enemyGlossary[getRandomEnemyIndex()];
+	}
+
+	return temp;
+}
 
 Entity logStep(Entity e) {
 	e.stepLog[e.currentPos] = e.location;
