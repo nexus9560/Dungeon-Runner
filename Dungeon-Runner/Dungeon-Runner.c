@@ -57,6 +57,7 @@ typedef struct{
 	char name[32];
 	int health;
 	int atk;
+	int agr;
 	int hit;
 	int def;
 	int exp;
@@ -582,11 +583,12 @@ void loadEntities(int ovr) {
 	}
 	if (DEBUG || ovr) {
 		for (int i = 0; i < numLines; i++) {
-			printf("Entity %3d: %31s:[HP:%3d,ATK:%3d,TOH:%3d,DEF:%3d,EXP:%3d,EVA:%3d,LVL:%3d]\n",
+			printf("Entity %3d: %31s:[HP:%3d,ATK:%3d,ARG:%3d,TOH:%3d,DEF:%3d,EXP:%3d,EVA:%3d,LVL:%3d]\n",
 				i + 1,
 				entities[i].name,
 				entities[i].health,
 				entities[i].atk,
+				entities[i].agr,
 				entities[i].hit,
 				entities[i].def,
 				entities[i].exp,
@@ -609,41 +611,41 @@ void loadEntities(int ovr) {
 	
 }
 
-void inspectElement(Dun_Coord pos) {
-	int res = 0;
-	printf("Inspect what?\n");
-	printf("0 - Go back\n");
-	printf("1 - Inspect yourself\n");
-	printf("2 - Inspect the room\n");
-	printf("3 - Trace your steps\n\n");
-	scanf("%d", &res);
-	clearScreen();
-	switch (res) {
-		case 1: {
-			printf("You are:\n");
-			printf("Name: %s\n", you.base.name);
-			printf("Health: %d\n", you.base.health);
-			printf("Attack: %d\n", you.base.atk);
-			printf("To-Hit: %d\n", you.base.hit);
-			printf("Defense: %d\n", you.base.def);
-			printf("Experience: %d\n", you.base.exp);
-			printf("Evasion: %d\n", you.base.eva);
-			printf("Level: %d\n", you.base.level);
-			break;
-		}
-		case 2: {
-			printf("You are in room %d\n", world[pos.x][pos.y].locationID);
-			printf("This room has the following things in it: %s\n", world[pos.x][pos.y].contents);
-			break;
-		}
-		case 3:
-			for (int i = 0; i < (sizeof(you.base.stepLog) / LOG_BUFFER); i++) {	
-				printf("Step %d: [%4d,%4d], ", i + 1, you.base.stepLog[i].x, you.base.stepLog[i].y);
-			}
-			printf("\n\n");
-			break;
-		default: return;
-	}
+void inspectElement(Dun_Coord pos) {  
+   int res = 0;  
+   printf("Inspect what?\n");  
+   printf("0 - Go back\n");  
+   printf("1 - Inspect yourself\n");  
+   printf("2 - Inspect the room\n");  
+   printf("3 - Trace your steps\n\n");  
+   scanf("%d", &res);  
+   clearScreen();  
+   switch (res) {  
+       case 1: {  
+           printf("You are:\n");  
+           printf("Name: %s\n", you.base.name);  
+           printf("Health: %d\n", you.base.health);  
+           printf("Attack: %d\n", you.base.atk);  
+           printf("To-Hit: %d\n", you.base.hit);  
+           printf("Defense: %d\n", you.base.def);  
+           printf("Experience: %d\n", you.base.exp);  
+           printf("Evasion: %d\n", you.base.eva);  
+           printf("Level: %d\n", you.base.level);  
+           break;  
+       }  
+       case 2: {  
+           printf("You are in room %d\n", world[pos.x][pos.y].locationID);  
+           printf("This room has the following things in it: %s\n", world[pos.x][pos.y].contents);  
+           break;  
+       }  
+       case 3:  
+           for (int i = 0; i < LOG_BUFFER; i++) { // Ensure the loop respects the buffer size  
+               printf("Step %d: [%4d,%4d], ", (i + 1), you.base.stepLog[i].x, you.base.stepLog[i].y);  
+           }  
+           printf("\n\n");  
+           break;  
+       default: return;  
+   }  
 }
 
 void actOnYourOwn() {
