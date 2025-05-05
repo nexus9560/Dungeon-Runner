@@ -122,7 +122,9 @@ int checkBounds( Dun_Coord newPos, Dun_Vec delta);
 int checkOccupied(Dun_Coord newPos, Dun_Vec delta);
 int checkArea(Room room1, Room room2);
 Room makeRoom();
+Room getRoomByLocation(Dun_Coord d);
 int getRandomEnemyIndex();
+int isInRoom(Room r, Dun_Coord d);
 //int goUp();
 //int goRight();
 //int goDown();
@@ -620,6 +622,11 @@ void loadEntities(int ovr) {
 	}
 	fclose(file);
 	enemyGlossary = malloc(enemyGlossarySize * sizeof(Entity));
+	if (enemyGlossary == NULL) {
+		printf("Error: Memory allocation failed.\n");
+		free(entities);
+		return;
+	}
 	for (int i = 0; i < enemyGlossarySize; i++) {
 		enemyGlossary[i] = entities[i];
 	}
@@ -733,63 +740,29 @@ Entity shiftEntity(Entity e, Dun_Vec delta) {
 	return logStep(e);
 }
 
-/*
-int goLeft() {
-	you.stepCount++;
-	if (checkBounds(you.base.location, {0,-1})) {
-		printf("You can't go any further that way...\n");
-		you.base.location.y = 0;
-		return 1;
+int isInRoom(Room r, Dun_Coord d) {
+	if (d.x >= r.startLocation.x && d.x < r.startLocation.x + r.xdim &&
+		d.y >= r.startLocation.y && d.y < r.startLocation.y + r.ydim) {
+		return 1; // In room
 	}
-	else {
-		you.base.location.y -= 1;
-		logStep(you.base.location);
-		return 0;
-	}
+	return 0; // Not in room
 }
 
-int goDown() {
-	you.stepCount++;
-	if (you.base.location.x >= (XBOUND - 1)) {
-		printf("You can't go any further that way...\n");
-		you.base.location.x = (XBOUND - 1);
-		return 1;
+Room getRoomByLocation(Dun_Coord d) {
+	Room temp = { {0,0},XBOUND,YBOUND,NULL};
+	//fill in later
+	//but what it should do is go through the array of rooms looking for what coordinate is in the room
+	// and return that room when it finds it
+	/*
+	for (int i=0; i<numberOfRooms;i++){
+		if (isInRoom(room[i],d){
+			return rooms[i];
+		}
 	}
-	else {
-		you.base.location.x += 1;
-		logStep(you.base.location);
-		return 0;
-	}
+	
+	*/
+	return temp;
 }
-
-int goRight() {
-	you.stepCount++;
-	if (you.base.location.y >= (YBOUND - 1)) {
-		printf("You can't go any further that way...\n");
-		you.base.location.y = (YBOUND - 1);
-		return 1;
-	}
-	else {
-		you.base.location.y += 1;
-		logStep(you.base.location);
-		return 0;
-	}
-}
-
-int goUp() {
-	you.stepCount++;
-	if (you.base.location.x <= 0) {
-		printf("You can't go any further that way...\n");
-		you.base.location.x = 0;
-		return 1;
-	}
-	else {
-		you.base.location.x -= 1;
-		logStep(you.base.location);
-		return 0;
-	}
-}
-*/
 
 int getRandomEnemyIndex() {
 	srand((unsigned int)time(NULL)); // Seed the random number generator with the current time
