@@ -56,7 +56,7 @@ typedef struct{
 	Dun_Coord location;
 	char name[32];
 	int health;
-	int curHealth; // Current health
+	int curHealth;
 	int atk;
 	int agr;
 	int hit;
