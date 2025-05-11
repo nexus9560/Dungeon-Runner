@@ -151,6 +151,7 @@ void main() {
 		}
 		// Health
 		you.base.health = 10;
+		you.base.curHealth = 0+you.base.health;
 		// Attack
 		you.base.atk = 1;
 		// To-Hit
@@ -185,67 +186,50 @@ void main() {
 
 int loadPlayer() {
 	FILE* file = fopen("player.dat", "r");
-	if (file == NULL) {
-		printf("Error: Could not open file for loading.\n");
-		return 1;
-	} else 
-
-	// Check return value of fscanf and handle errors
-	if (fscanf(file, "Location:[%4d,%4d]\n", &you.base.location.x, &you.base.location.y) != 2) {
-		printf("Error: Failed to read player location.\n");
-		fclose(file);
-		return 1;
+	
+	int lineCount = countLines(file);
+	for (int x = 0;x < lineCount;x++) {
+		char line[256];
+		if (fgets(line, sizeof(line), file) != NULL) {
+			if (sscanf(line, "Location:[%4d,%4d]", &you.base.location.x, &you.base.location.y) == 2) {
+				continue;
+			}
+			else if (sscanf(line, "Name:%s", you.base.name) == 1) {
+				continue;
+			}
+			else if (sscanf(line, "Health:%d", &you.base.health) == 1) {
+				continue;
+			}
+			else if (sscanf(line, "CurrentHealth:%d", &you.base.curHealth) == 1) {
+				continue;
+			}
+			else if (sscanf(line, "Attack:%d", &you.base.atk) == 1) {
+				continue;
+			}
+			else if (sscanf(line, "Aggro:%d", &you.base.agr) == 1) {
+				continue;
+			}
+			else if (sscanf(line, "To-Hit:%d", &you.base.hit) == 1) {
+				continue;
+			}
+			else if (sscanf(line, "Defense:%d", &you.base.def) == 1) {
+				continue;
+			}
+			else if (sscanf(line, "Experience:%d", &you.base.exp) == 1) {
+				continue;
+			}
+			else if (sscanf(line, "Evasion:%d", &you.base.eva) == 1) {
+				continue;
+			}
+			else if (sscanf(line, "Level:%d", &you.base.level) == 1) {
+				continue;
+			}
+		}
+		else {
+			printf("Error: Failed to read player data.\n");
+		}
 	}
-	if (fscanf(file, "Name:%s\n", you.base.name) != 1) {
-		printf("Error: Failed to read player name.\n");
-		fclose(file);
-		return 1;
-	}
-	if (fscanf(file, "Health:%d\n", &you.base.health) != 1) {
-		printf("Error: Failed to read player health.\n");
-		fclose(file);
-		return 1;
-	}
-	if (fscanf(file, "CurrentHealth:%d\n", &you.base.curHealth) != 1) {
-		printf("Error: Failed to read player current health.\n");
-		fclose(file);
-		return 1;
-	}
-	if (fscanf(file, "Attack:%d\n", &you.base.atk) != 1) {
-		printf("Error: Failed to read player attack.\n");
-		fclose(file);
-		return 1;
-	}
-	if (fscanf(file, "Aggro:%d\n", &you.base.agr) != 1) {
-		printf("Error: Failed to read player Aggro.\n");
-		fclose(file);
-		return 1;
-	}
-	if (fscanf(file, "To-Hit:%d\n", &you.base.hit) != 1) {
-		printf("Error: Failed to read player to-hit.\n");
-		fclose(file);
-		return 1;
-	}
-	if (fscanf(file, "Defense:%d\n", &you.base.def) != 1) {
-		printf("Error: Failed to read player defense.\n");
-		fclose(file);
-		return 1;
-	}
-	if (fscanf(file, "Experience:%d\n", &you.base.exp) != 1) {
-		printf("Error: Failed to read player experience.\n");
-		fclose(file);
-		return 1;
-	}
-	if (fscanf(file, "Evasion:%d\n", &you.base.eva) != 1) {
-		printf("Error: Failed to read player evasion.\n");
-		fclose(file);
-		return 1;
-	}
-	if (fscanf(file, "Level:%d\n", &you.base.level) != 1) {
-		printf("Error: Failed to read player level.\n");
-		fclose(file);
-		return 1;
-	}
+	
 	// Refactor this to allow for dynamically sized saved files, if a value is missing, it defaults to a specific value
 
 
