@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <time.h>
+#include <math.h>
 
 #define XBOUND 32
 #define YBOUND 64
@@ -695,7 +696,7 @@ void delay(int seconds) {
 		Sleep(seconds * 1000);
 #elif __unix__ || __APPLE__
 		struct timespec ts;
-		ts.tv_sec = 1;  // 1 second
+		ts.tv_sec = seconds;  // 1 second
 		ts.tv_nsec = 0; // 0 nanoseconds
 		nanosleep(&ts, NULL);
 #endif
@@ -788,6 +789,7 @@ char* printPlayerStatus(int brief) {
 	char* ret;
 	if (brief) {
 		ret = malloc(256);
+		double experienceValue = (pow(2, abs(you.base.level)));
 		if (ret == NULL) {
 			printf("Memory allocation failed\n");
 			return NULL;
@@ -795,10 +797,11 @@ char* printPlayerStatus(int brief) {
 		snprintf(ret, 256,
 			"+--------------------------------------------------->\n"
 			"| %s\n"
-			"| HP: %d / %d\n"
+			"| HP : %4d / %4d\n"
+			"| EXP: %4d / %4.0f\n"
 			"|\n"
 			"V\n",
-			you.base.name, you.base.curHealth, you.base.health);
+            you.base.name, you.base.curHealth, you.base.health, you.base.exp, experienceValue);
 	}
 	else {
 		ret = malloc(512);
