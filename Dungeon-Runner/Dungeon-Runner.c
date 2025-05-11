@@ -56,6 +56,7 @@ typedef struct{
 	Dun_Coord location;
 	char name[32];
 	int health;
+	int curHealth; // Current health
 	int atk;
 	int agr;
 	int hit;
@@ -205,6 +206,11 @@ int loadPlayer() {
 		fclose(file);
 		return 1;
 	}
+	if (fscanf(file, "CurrentHealth:%d\n", &you.base.curHealth) != 1) {
+		printf("Error: Failed to read player current health.\n");
+		fclose(file);
+		return 1;
+	}
 	if (fscanf(file, "Attack:%d\n", &you.base.atk) != 1) {
 		printf("Error: Failed to read player attack.\n");
 		fclose(file);
@@ -240,7 +246,7 @@ int loadPlayer() {
 		fclose(file);
 		return 1;
 	}
-
+	// Refactor this to allow for dynamically sized saved files, if a value is missing, it defaults to a specific value
 
 
 	fclose(file);
@@ -505,6 +511,7 @@ void savePlayer() {
 	fprintf(file, "Location:[%4d,%4d]\n", you.base.location.x, you.base.location.y);
 	fprintf(file, "Name:%s\n", you.base.name);
 	fprintf(file, "Health:%d\n", you.base.health);
+	fprintf(file, "CurrentHealth:%d\n", you.base.curHealth);
 	fprintf(file, "Attack:%d\n", you.base.atk);
 	fprintf(file, "To-Hit:%d\n", you.base.hit);
 	fprintf(file, "Defense:%d\n", you.base.def);
