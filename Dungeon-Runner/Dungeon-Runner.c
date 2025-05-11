@@ -115,6 +115,7 @@ void actOnYourOwn();
 void exitAction(int ec);
 void actionChecker();
 void delay(int seconds);
+char* printPlayerStatus(int brief);
 Entity logStep(Entity e);
 void loadItems(int ovr);
 void drawMap();
@@ -339,9 +340,11 @@ void clearScreen() {
 }
 
 void roomRunner() {
+	int isBrief = 1;
 	do {
 		
 		drawMap();
+		printf(printPlayerStatus(isBrief));
 		actionChecker();
 		//delay(1);
 		clearScreen();
@@ -640,7 +643,7 @@ void inspectElement(Dun_Coord pos) {
        case 1: {  
            printf("You are:\n");  
            printf("Name: %s\n", you.base.name);  
-           printf("Health: %d\n", you.base.health);  
+           printf("Health: %d / %d\n", you.base.curHealth, you.base.health);  
            printf("Attack: %d\n", you.base.atk);  
            printf("To-Hit: %d\n", you.base.hit);  
            printf("Defense: %d\n", you.base.def);  
@@ -650,7 +653,7 @@ void inspectElement(Dun_Coord pos) {
            break;  
        }  
        case 2: {  
-           printf("You are in room %d\n", world[pos.x][pos.y].locationID);
+           printf("You are in cell %d\n", world[pos.x][pos.y].locationID);
 		   for (int x = 0;x < XBOUND;x++) {
 			   for (int y = 0;y < YBOUND;y++) {
 				   if (world[x][y].occupied == 1 && !(x == you.base.location.x && y == you.base.location.y)) {
@@ -710,7 +713,7 @@ int checkBounds(Dun_Coord newPos, Dun_Vec delta) {
 
 int checkArea(Room room1, Room room2) {
 	return 0;
-	//Not implemented yet
+	//Not implemented yet, once properly implemented it'll check and see if two rooms overlap.
 }
 
 Entity shiftEntity(Entity e, Dun_Vec delta) {
@@ -779,6 +782,46 @@ Room getRoomByLocation(Dun_Coord d) {
 int getRandomEnemyIndex() {
 	srand((unsigned int)time(NULL)); // Seed the random number generator with the current time
 	return rand() % sizeof(enemyGlossary); // Generate a random number between 0 and MAX_ENTITIES - 1
+}
+
+char* printPlayerStatus(int brief) {
+	char* ret;
+	if (brief) {
+		ret = malloc(256);
+		if (ret == NULL) {
+			printf("Memory allocation failed\n");
+			return NULL;
+		}
+		snprintf(ret, 256,
+			"+--------------------------------------------------->\n"
+			"| %s\n"
+			"| HP: %d / %d\n"
+			"|\n"
+			"V\n",
+			you.base.name, you.base.curHealth, you.base.health);
+	}
+	else {
+		ret = malloc(512);
+		if (ret == NULL) {
+			printf("Memory allocation failed\n");
+			return NULL;
+		}
+		snprintf(ret, 512,
+			"+--------------------------------------------------->\n"
+			"| %s\n"
+			"| HP: %d / %d\n"
+			"| Attack: %d\n"
+			"| To-Hit: %d\n"
+			"| Defense: %d\n"
+			"| Experience: %d\n"
+			"| Evasion: %d\n"
+			"| Level: %d\n"
+			"|\n"
+			"V\n",
+			you.base.name, you.base.curHealth, you.base.health, you.base.atk,
+			you.base.hit, you.base.def, you.base.exp, you.base.eva, you.base.level);
+	}
+	return ret;
 }
 
 Room makeRoom() {
