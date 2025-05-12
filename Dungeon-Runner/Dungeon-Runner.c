@@ -116,6 +116,7 @@ void actOnYourOwn();
 void exitAction(int ec);
 void actionChecker();
 void delay(int seconds);
+void showPlayerInventory();
 char* printPlayerStatus(int brief);
 Entity logStep(Entity e);
 void loadItems(int ovr);
@@ -459,9 +460,51 @@ void actionChecker() {
 	   
 
 #elif __unix__ || __APPLE__
-	   printf("Currently unsupported. Soon(tm).");
+	   struct termios oldt, newt;
+	   char ch;
+	   // Get the terminal settings for stdin
+	   tcgetattr(STDIN_FILENO, &oldt);
+	   newt = oldt; // Copy the old settings to new settings
+	   newt.c_lflag &= ~(ICANON | ECHO); // Disable canonical mode and echo
+	   tcsetattr(STDIN_FILENO, TCSANOW, &newt); // Apply the new settings
+	   ch = getchar(); // Read a single character
+	   // Restore the old terminal settings
+	   tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+	   ch = tolower(ch);
+	   if (DEBUG)
+		   printf("Key pressed: %c : %d\n", ch, ch);
+	   switch (ch) {
+	   case 'w':
+		   you.base = shiftEntity(you.base, up);
+		   break;
+	   case 'a':
+		   you.base = shiftEntity(you.base, left);
+		   break;
+	   case 'd':
+		   you.base = shiftEntity(you.base, right);
+		   break;
+	   case 's':
+		   you.base = shiftEntity(you.base, down);
+		   break;
+	   case 'i':
+		   printf("Inventory not implemented yet.\n");
+		   break;
+	   case 'e':
+		   printf("Interact not implemented yet.\n");
+		   break;
+	   case 'f':
+		   printf("Inspect not implemented yet.\n");
+		   break;
+	   case ' ':
+		   printf("Attack not implemented yet.\n");
+		   break;
+	   case 'q':
+		   exitAction(0);
+	   default:break;
+	   }
 #else
 	   printf("Operating system not detected for raw input.\n");
+	   exitAction(0);
 #endif
 
    }
@@ -745,7 +788,7 @@ int isInRoom(Room r, Dun_Coord d) {
 }
 
 Dun_Coord getNearestSafeLocation(Dun_Coord d) {
-	Dun_Coord ret = { 0,0 };
+	Dun_Coord ret = { XBOUND/2,YBOUND/2 };
 	//fill in later
 	//but what it should do is go through the array of rooms looking for the nearest place in a room
 	// and return that location when it finds it
@@ -778,6 +821,27 @@ Room getRoomByLocation(Dun_Coord d) {
 	
 	*/
 	return temp;
+}
+
+void showPlayerInventory() {
+	clearScreen();
+	if (you.inventory == NULL) {
+		printf("Inventory is empty.\n");
+		scanf("");
+		return;
+	}
+	else {
+		printf("Inventory:\n");
+		for (int i = 0; i < PLAYER_INVENTORY_BASE; i++) {
+			if (you.inventory[i].equipped == 1) {
+				printf("%s (Equipped)\n", you.inventory[i].name);
+			}
+			else {
+				printf("%s\n", you.inventory[i].name);
+			}
+		}
+		scanf("");
+	}
 }
 
 int getRandomEnemyIndex() {
