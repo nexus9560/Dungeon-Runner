@@ -12,13 +12,13 @@
 #include <time.h>
 #include <math.h>
 
-#define XBOUND 32
-#define YBOUND 64
+#define XBOUND 256
+#define YBOUND 512
 #define DEBUG 1
 #define MAX_ENTITIES 10
 #define MAX_ITEMS 10
 #define PLAYER_INVENTORY_BASE 16
-#define OLD_MAP 0
+#define OLD_MAP 1
 #define OLD_ACTIONS 0
 #define LOG_BUFFER 4
 
@@ -107,6 +107,7 @@ void roomGenerator();
 void savePlayer();
 int countLines(FILE* file);
 int loadPlayer();
+int* getConsoleWindow();
 void loadEntities(int ovr);
 void roomRunner();
 void clearScreen();
@@ -245,7 +246,7 @@ int loadPlayer() {
 void roomGenerator() {
 	for (int x = 0;x < XBOUND;x++) {
 		for (int y = 0;y < YBOUND;y++) {
-			world[x][y].locationID = (x * 10) + y;
+			world[x][y].locationID = (x * YBOUND) + y;
 			strcpy(world[x][y].contents, "Help me joeby juan kenobi");
 			if (x > 0 && x < XBOUND - 1 && y > 0 && y < YBOUND - 1) {
 				world[x][y].passable = 1;
@@ -258,40 +259,74 @@ void roomGenerator() {
 	
 }
 
+int* getConsoleWindow() {  
+   static int dimensions[2] = {0, 0}; // [rows, columns]
+
+#ifdef _WIN32
+   CONSOLE_SCREEN_BUFFER_INFO csbi;
+   if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi)) {
+       dimensions[0] = csbi.srWindow.Bottom - csbi.srWindow.Top + 1; // Rows
+       dimensions[1] = csbi.srWindow.Right - csbi.srWindow.Left + 1; // Columns
+   }
+#elif __unix__ || __APPLE__
+   struct winsize w;
+   if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == 0) {
+       dimensions[0] = w.ws_row;    // Rows
+       dimensions[1] = w.ws_col;    // Columns
+   }
+#else
+   dimensions[0] = 24; // Default rows
+   dimensions[1] = 80; // Default columns
+#endif
+
+   return dimensions;
+}
+
 void drawMap() {
 	
 	if (OLD_MAP) {
-		printf("\n+----------------------------------------------------------------+\n");
+		char* map = (char*)malloc(XBOUND * YBOUND);
+		if (map == NULL) {
+			printf("Memory allocation failed\n");
+			return;
+		}
 		for (int x = 0;x < XBOUND;x++) {
-			printf("\t");
 			for (int y = 0;y < YBOUND;y++) {
 				if ((x == 0 && y == 0) || (x == 0 && y == (YBOUND - 1)) || (x == (XBOUND - 1) && y == 0) || (x == (XBOUND - 1) && y == (YBOUND - 1))) {
-					printf("+");
+					map[x * YBOUND + y] = '+';
 				}
 				else if (x == 0 || x == XBOUND - 1) {
-					printf("-");
+					map[x * YBOUND + y] = '-';
 				}
 				else if (y == 0 || y == YBOUND - 1) {
-					printf("|");
+					map[x * YBOUND + y] = '|';
 				}
 				else if (you.base.location.x == x && you.base.location.y == y) {
-					printf("@");
+					map[x * YBOUND + y] = '@';
 				}
 				else if (world[x][y].passable == 0) {
-					printf("#");
+					map[x * YBOUND + y] = '#';
 				}
 				else if (world[x][y].occupied == 1) {
-					printf("X");
+					map[x * YBOUND + y] = 'X';
 				}
 				else {
-					printf(" ");
+					map[x * YBOUND + y] = ' ';
 				}
 			}
-			printf("\n");
+			printf("%.*s\n", YBOUND, &map[x * YBOUND]);
+
 		}
-		printf("\n\n\n+----------------------------------------------------------------+\n\n");
 	}
 	else {
+		int* conDims = getConsoleWindow();
+		int renderX = (conDims[0] > XBOUND ? XBOUND : conDims[0]);
+		int renderY = (conDims[1] > YBOUND ? YBOUND : conDims[1]);
+
+		if (DEBUG) {
+			printf("Console dimensions: %d x %d\n", conDims[0], conDims[1]);
+			printf("Render dimensions: %d x %d\n", renderX, renderY);
+		}
 		char* map = (char*)malloc(XBOUND * YBOUND);
 		if (map == NULL) {
 			printf("Memory allocation failed\n");
