@@ -18,7 +18,7 @@
 #define MAX_ENTITIES 10
 #define MAX_ITEMS 10
 #define PLAYER_INVENTORY_BASE 16
-#define OLD_MAP 1
+#define OLD_MAP 0
 #define OLD_ACTIONS 0
 #define LOG_BUFFER 4
 
@@ -182,6 +182,8 @@ void main() {
 			you.base.location.y = YBOUND / 2;
 		}
 	}
+	//int* consoleDimensions = getConsoleWindow();
+	//printf("Console dimensions: %d rows, %d columns\n", consoleDimensions[0], consoleDimensions[1]);
 	roomGenerator();
 	roomRunner();
 
@@ -320,45 +322,43 @@ void drawMap() {
 	}
 	else {
 		int* conDims = getConsoleWindow();
-		int renderX = (conDims[0] > XBOUND ? XBOUND : conDims[0]);
-		int renderY = (conDims[1] > YBOUND ? YBOUND : conDims[1]);
-
-		if (DEBUG) {
-			printf("Console dimensions: %d x %d\n", conDims[0], conDims[1]);
-			printf("Render dimensions: %d x %d\n", renderX, renderY);
-		}
-		char* map = (char*)malloc(XBOUND * YBOUND);
+		int renderX = (int)((conDims[0] * 0.75) > XBOUND ? XBOUND : (conDims[0] * 0.75));
+		int renderY = (int)((conDims[1] * 0.80) > YBOUND ? YBOUND : (conDims[1] * 0.80));
+		char* map = (char*)malloc(renderX * renderY);
 		if (map == NULL) {
 			printf("Memory allocation failed\n");
 			return;
 		}
-		for (int x = 0;x < XBOUND;x++) {
-			for (int y = 0;y < YBOUND;y++) {
-				if ((x == 0 && y == 0) || (x == 0 && y == (YBOUND - 1)) || (x == (XBOUND - 1) && y == 0) || (x == (XBOUND - 1) && y == (YBOUND - 1))) {
-					map[x * YBOUND + y] = '+';
+
+		
+		for (int x = 0; x < renderX;x++) {
+			for (int y = 0;y < renderY;y++) {
+				if ((x == 0 && y == 0) || (x == 0 && y == (renderY - 1)) || (x == (renderX - 1) && y == 0) || (x == (renderX - 1) && y == (renderY - 1))) {
+					map[x * renderY + y] = '+';
 				}
-				else if (x == 0 || x == XBOUND - 1) {
-					map[x * YBOUND + y] = '-';
+				else if (x == 0 || x == renderX - 1) {
+					map[x * renderY + y] = '-';
 				}
-				else if (y == 0 || y == YBOUND - 1) {
-					map[x * YBOUND + y] = '|';
+				else if (y == 0 || y == renderY - 1) {
+					map[x * renderY + y] = '|';
 				}
 				else if (you.base.location.x == x && you.base.location.y == y) {
-					map[x * YBOUND + y] = '@';
+					map[x * renderY + y] = '@';
 				}
 				else if (world[x][y].passable == 0) {
-					map[x * YBOUND + y] = '#';
+					map[x * renderY + y] = '#';
 				}
 				else if (world[x][y].occupied == 1) {
-					map[x * YBOUND + y] = 'X';
+					map[x * renderY + y] = 'X';
 				}
 				else {
-					map[x * YBOUND + y] = ' ';
+					map[x * renderY + y] = ' ';
 				}
 			}
-			printf("%.*s\n", YBOUND, &map[x * YBOUND]);
-
+			printf("%.*s\n", renderY, &map[x * renderY]);
 		}
+
+
 	}
 	
 	
