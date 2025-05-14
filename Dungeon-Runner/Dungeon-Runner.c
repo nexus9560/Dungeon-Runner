@@ -912,9 +912,9 @@ int getRandomEnemyIndex() {
 
 char* printPlayerStatus(int brief) {
 	char* ret;
+	double experienceValue = (pow(2, abs(you.base.level)));
 	if (brief) {
 		ret = malloc(256);
-		double experienceValue = (pow(2, abs(you.base.level)));
 		if (ret == NULL) {
 			printf("Memory allocation failed\n");
 			return NULL;
@@ -941,13 +941,13 @@ char* printPlayerStatus(int brief) {
 			"| Attack: %d\n"
 			"| To-Hit: %d\n"
 			"| Defense: %d\n"
-			"| Experience: %d\n"
+			"| Experience: %4d /%4.0f\n"
 			"| Evasion: %d\n"
 			"| Level: %d\n"
 			"|\n"
 			"V\n",
 			you.base.name, you.base.curHealth, you.base.health, you.base.atk,
-			you.base.hit, you.base.def, you.base.exp, you.base.eva, you.base.level);
+			you.base.hit, you.base.def, you.base.exp, experienceValue, you.base.eva, you.base.level);
 	}
 	return ret;
 }
