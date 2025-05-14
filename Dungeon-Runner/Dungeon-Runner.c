@@ -331,28 +331,42 @@ void drawMap() {
 		}
 
 		
+		
 		for (int x = 0; x < renderX;x++) {
+			int xoffset = you.base.location.x - (renderX / 2) + x;
 			for (int y = 0;y < renderY;y++) {
-				if ((x == 0 && y == 0) || (x == 0 && y == (renderY - 1)) || (x == (renderX - 1) && y == 0) || (x == (renderX - 1) && y == (renderY - 1))) {
+				int yoffset = you.base.location.y - (renderY / 2) + y;
+				if ((xoffset == 0 && yoffset == 0) || (xoffset == 0 && yoffset == (YBOUND - 1)) || (xoffset == (XBOUND - 1) && yoffset == 0) || (xoffset == (XBOUND - 1) && yoffset == (YBOUND - 1))) {
 					map[x * renderY + y] = '+';
+					continue;
 				}
-				else if (x == 0 || x == renderX - 1) {
+				else if ((xoffset == 0 || x == XBOUND - 1) && !(yoffset < 0 || yoffset >= YBOUND)) {
 					map[x * renderY + y] = '-';
+					continue;
 				}
-				else if (y == 0 || y == renderY - 1) {
+				else if ((yoffset == 0 || yoffset == YBOUND - 1) && !(xoffset < 0 || xoffset >= XBOUND) ) {
 					map[x * renderY + y] = '|';
+					continue;
 				}
-				else if (you.base.location.x == x && you.base.location.y == y) {
+				else if ((renderX/2)==x && (renderY/2)==y) {
 					map[x * renderY + y] = '@';
+					continue;
 				}
-				else if (world[x][y].passable == 0) {
+				else if (xoffset < 0 || xoffset >= XBOUND || yoffset < 0 || yoffset >= YBOUND) {
+					map[x * renderY + y] = ' ';
+					continue;
+				}
+				else if (world[xoffset][yoffset].passable == 0) {
 					map[x * renderY + y] = '#';
+					continue;
 				}
-				else if (world[x][y].occupied == 1) {
+				else if (world[xoffset][yoffset].occupied == 1) {
 					map[x * renderY + y] = 'X';
+					continue;
 				}
 				else {
 					map[x * renderY + y] = ' ';
+					continue;
 				}
 			}
 			printf("%.*s\n", renderY, &map[x * renderY]);
@@ -381,6 +395,7 @@ void roomRunner() {
 	do {
 		
 		drawMap();
+		printf("\n");
 		printf(printPlayerStatus(isBrief));
 		actionChecker();
 		//delay(1);
@@ -451,7 +466,6 @@ void actionChecker() {
 		int ch;
 		if (_kbhit()) {
 			ch = _getch(); // Get the actual key code
-			ch = tolower(ch);
 			if(DEBUG)
 				printf("Key pressed: %c : %d\n", ch,ch);
 			switch (ch) {
@@ -459,17 +473,29 @@ void actionChecker() {
 				case 72: // Up arrow
 					you.base = shiftEntity(you.base, up);
 					break;
+				case 'W':
+					you.base = shiftEntity(shiftEntity(you.base, up), up);
+					break;
 				case 'a':
 				case 75: // Left arrow
 					you.base = shiftEntity(you.base, left);
+					break;
+				case 'A':
+					you.base = shiftEntity(shiftEntity(you.base, left), left);
 					break;
 				case 'd':
 				case 77: // Right arrow
 					you.base = shiftEntity(you.base, right);
 					break;
+				case 'D':
+					you.base = shiftEntity(shiftEntity(you.base, right), right);
+					break;
 				case 's':
 				case 80: // Down arrow
 					you.base = shiftEntity(you.base, down);
+					break;
+				case 'S':
+					you.base = shiftEntity(shiftEntity(you.base, down), down);
 					break;
 				case 'i':
 					printf("Inventory not implemented yet.\n");
