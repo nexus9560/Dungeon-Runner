@@ -41,8 +41,8 @@ typedef struct {
 } Dun_Vec;
 
 typedef struct {
-	int x;
-	int y;
+	unsigned int x;
+	unsigned int y;
 } Dun_Coord;
 
 typedef struct{
