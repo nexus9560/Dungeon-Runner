@@ -5,6 +5,7 @@ Todo:
 - Implement basic combat system
 - Multiple saves
 - Update Map style
+- - Render each room in the map
 
 Thoughts:
 - Potentially make it where each location can only have 1 entity, and make it where you can only attack an entity you are facing
