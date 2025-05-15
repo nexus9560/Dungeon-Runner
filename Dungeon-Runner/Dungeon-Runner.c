@@ -340,7 +340,7 @@ void drawMap() {
 					map[x * renderY + y] = '+';
 					continue;
 				}
-				else if ((xoffset == 0 || x == XBOUND - 1) && !(yoffset < 0 || yoffset >= YBOUND)) {
+				else if ((xoffset == 0 || xoffset == XBOUND - 1) && !(yoffset < 0 || yoffset >= YBOUND)) {
 					map[x * renderY + y] = '-';
 					continue;
 				}
