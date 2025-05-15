@@ -535,33 +535,52 @@ void actionChecker() {
 	   if (DEBUG)
 		   printf("Key pressed: %c : %d\n", ch, ch);
 	   switch (ch) {
-	   case 'w':
-		   you.base = shiftEntity(you.base, up);
-		   break;
-	   case 'a':
-		   you.base = shiftEntity(you.base, left);
-		   break;
-	   case 'd':
-		   you.base = shiftEntity(you.base, right);
-		   break;
-	   case 's':
-		   you.base = shiftEntity(you.base, down);
-		   break;
-	   case 'i':
-		   printf("Inventory not implemented yet.\n");
-		   break;
-	   case 'e':
-		   printf("Interact not implemented yet.\n");
-		   break;
-	   case 'f':
-		   printf("Inspect not implemented yet.\n");
-		   break;
-	   case ' ':
-		   printf("Attack not implemented yet.\n");
-		   break;
-	   case 'q':
-		   exitAction(0);
-	   default:break;
+		   case 'w':
+		   case 72: // Up arrow
+			   you.base = shiftEntity(you.base, up);
+			   break;
+		   case 'W':
+			   you.base = shiftEntity(shiftEntity(you.base, up), up);
+			   break;
+		   case 'a':
+		   case 75: // Left arrow
+			   you.base = shiftEntity(you.base, left);
+			   break;
+		   case 'A':
+			   you.base = shiftEntity(shiftEntity(you.base, left), left);
+			   break;
+		   case 'd':
+		   case 77: // Right arrow
+			   you.base = shiftEntity(you.base, right);
+			   break;
+		   case 'D':
+			   you.base = shiftEntity(shiftEntity(you.base, right), right);
+			   break;
+		   case 's':
+		   case 80: // Down arrow
+			   you.base = shiftEntity(you.base, down);
+			   break;
+		   case 'S':
+			   you.base = shiftEntity(shiftEntity(you.base, down), down);
+			   break;
+		   case 'i':
+			   printf("Inventory not implemented yet.\n");
+			   break;
+		   case 'e':
+			   printf("Interact not implemented yet.\n");
+			   break;
+		   case 'f':
+			   printf("Inspect not implemented yet.\n");
+			   break;
+		   case ' ':
+			   printf("Attack not implemented yet.\n");
+			   break;
+
+		   case 'q':
+		   case 81: // Q key
+			   exitAction(0);
+		   default:
+			   break;
 	   }
 #else
 	   printf("Operating system not detected for raw input.\n");
