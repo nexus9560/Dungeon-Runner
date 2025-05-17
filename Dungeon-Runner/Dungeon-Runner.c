@@ -342,14 +342,9 @@ void drawMap() {
 			printf("Memory allocation failed\n");
 			return;
 		}
-
+		/*
 		
-		
-		for (int x = 0; x < renderX;x++) {
-			int xoffset = you.base.location.x - (renderX / 2) + x;
-			for (int y = 0;y < renderY;y++) {
-				int yoffset = you.base.location.y - (renderY / 2) + y;
-				if ((xoffset == 0 && yoffset == 0) || (xoffset == 0 && yoffset == (YBOUND - 1)) || (xoffset == (XBOUND - 1) && yoffset == 0) || (xoffset == (XBOUND - 1) && yoffset == (YBOUND - 1))) {
+		if ((xoffset == 0 && yoffset == 0) || (xoffset == 0 && yoffset == (YBOUND - 1)) || (xoffset == (XBOUND - 1) && yoffset == 0) || (xoffset == (XBOUND - 1) && yoffset == (YBOUND - 1))) {
 					map[x * renderY + y] = '+';
 					continue;
 				}
@@ -361,7 +356,14 @@ void drawMap() {
 					map[x * renderY + y] = '|';
 					continue;
 				}
-				else if ((renderX/2)==x && (renderY/2)==y) {
+		*/
+		
+		
+		for (int x = 0; x < renderX;x++) {
+			int xoffset = you.base.location.x - (renderX / 2) + x;
+			for (int y = 0;y < renderY;y++) {
+				int yoffset = you.base.location.y - (renderY / 2) + y;
+				if ((renderX/2)==x && (renderY/2)==y) {
 					map[x * renderY + y] = '@';
 					continue;
 				}
@@ -851,7 +853,11 @@ int checkBounds(Dun_Coord newPos, Dun_Vec delta) {
 }
 
 int checkArea(Room room1, Room room2) {
-	return 0;
+	if ((room1.startLocation.x + room1.xdim < room2.startLocation.x || room2.startLocation.x + room2.xdim < room1.startLocation.x) &&
+		(room1.startLocation.y + room1.ydim < room2.startLocation.y || room2.startLocation.y + room2.ydim < room1.startLocation.y)) {
+		return 0;
+	} else
+	return 1;
 	//Not implemented yet, once properly implemented it'll check and see if two rooms overlap.
 }
 
@@ -904,16 +910,16 @@ Dun_Coord getNearestSafeLocation(Dun_Coord d, int searchRadius) {
 	if (d.x + searchRadius < XBOUND && isInARoom((Dun_Coord) { d.x + searchRadius, d.y })) {
 		return (Dun_Coord) { d.x + searchRadius, d.y };
 	}
-	if (d.x >= searchRadius && isInARoom((Dun_Coord) { d.x - searchRadius, d.y })) {
+	if (d.x - searchRadius >= 0 && isInARoom((Dun_Coord) { d.x - searchRadius, d.y })) {
 		return (Dun_Coord) { d.x - searchRadius, d.y };
 	}
 	if (d.y + searchRadius < YBOUND && isInARoom((Dun_Coord) { d.x, d.y + searchRadius })) {
 		return (Dun_Coord) { d.x, d.y + searchRadius };
 	}
-	if (d.y >= searchRadius && isInARoom((Dun_Coord) { d.x, d.y - searchRadius })) {
+	if (d.y - searchRadius >= 0 && isInARoom((Dun_Coord) { d.x, d.y - searchRadius })) {
 		return (Dun_Coord) { d.x, d.y - searchRadius };
 	}
-
+	
 	// If not found, increase search radius and recurse
 	return getNearestSafeLocation(d, searchRadius + 1);
 }
@@ -1009,8 +1015,10 @@ Room* makeRooms() {
     srand((unsigned int)time(NULL));
 
 	for (unsigned int i = 0; i < roomCount; i++) {
-		temp[i].xdim = (unsigned int)(rand() % (unsigned int)(XBOUND * 0.10));
-		temp[i].ydim = (unsigned int)(rand() % (unsigned int)(YBOUND * 0.10));
+		unsigned int randX = (unsigned int)(rand() % (unsigned int)(XBOUND * 0.10));
+		unsigned int randY = (unsigned int)(rand() % (unsigned int)(YBOUND * 0.10));
+		temp[i].xdim = (randX < 3 ? 3 : randX);
+		temp[i].ydim = (randY < 3 ? 3 : randY);
 		temp[i].startLocation.x = (unsigned int)(rand() % (XBOUND - temp[i].xdim));
 		temp[i].startLocation.y = (unsigned int)(rand() % (YBOUND - temp[i].ydim));
 		makeRoomSpace(temp[i]);
@@ -1062,24 +1070,28 @@ Entity moveEntity(Entity e, Dun_Coord newLoc) {
 	return logStep(e);
 }
 
-
 void printMap() {
     FILE* file = fopen("map.dat", "w");
     if (file == NULL) {
         printf("Error: Could not open map.dat for writing.\n");
         return;
     }
-    for (int x = 0; x < XBOUND; x++) {
-        for (int y = 0; y < YBOUND; y++) {
-            char mapChar;
-            if ((x == 0 && y == 0) || (x == 0 && y == (YBOUND - 1)) ||
+
+	/*
+	if ((x == 0 && y == 0) || (x == 0 && y == (YBOUND - 1)) ||
                 (x == (XBOUND - 1) && y == 0) || (x == (XBOUND - 1) && y == (YBOUND - 1))) {
                 mapChar = '+';
             } else if (x == 0 || x == XBOUND - 1) {
                 mapChar = '-';
             } else if (y == 0 || y == YBOUND - 1) {
                 mapChar = '|';
-            } else if (you.base.location.x == x && you.base.location.y == y) {
+            } else 
+	*/
+
+    for (int x = 0; x < XBOUND; x++) {
+        for (int y = 0; y < YBOUND; y++) {
+            char mapChar;
+            if (you.base.location.x == x && you.base.location.y == y) {
                 mapChar = '@';
             } else if (world[x][y].passable == 0) {
                 mapChar = '#';
