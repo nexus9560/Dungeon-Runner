@@ -129,6 +129,9 @@
   <ItemGroup>
     <ClCompile Include="Dungeon-Runner.c" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="map.dat" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -105,7 +105,8 @@ const Dun_Vec left	= {  0, -1 };
 Room* rooms;
 unsigned int currRoomCount = 0;
 
-void roomGenerator();
+void mapClearing();
+void makeRoomSpace(Room r);
 void savePlayer();
 int countLines(FILE* file);
 int loadPlayer();
@@ -125,6 +126,7 @@ Entity logStep(Entity e);
 void loadItems(int ovr);
 void drawMap();
 Entity shiftEntity(Entity e, Dun_Vec delta);
+Entity moveEntity(Entity e, Dun_Coord newLoc);
 int checkBounds( Dun_Coord newPos, Dun_Vec delta);
 int checkOccupied(Dun_Coord newPos, Dun_Vec delta);
 int checkArea(Room room1, Room room2);
@@ -135,6 +137,8 @@ int isInRoom(Room r, Dun_Coord d);
 int isInARoom(Dun_Coord d);
 char getMapCharacter(Dun_Coord d);
 Dun_Coord getNearestSafeLocation(Dun_Coord d, int searchRadius);
+Dun_Vec getVector(Dun_Coord start, Dun_Coord end);
+void printMap();
 //int goUp();
 //int goRight();
 //int goDown();
@@ -144,15 +148,13 @@ void main() {
 
 	loadEntities(0);
 	loadItems(0);
+	mapClearing();
 	rooms = makeRooms();
 
 	if (loadPlayer() == 0) {
 		you.base.currentPos = 0;
 		printf("Error loading player position. Starting at default position.\n");
-		// Y Position
-		you.base.location.y = YBOUND / 2;
-		// X Position
-		you.base.location.x = XBOUND / 2;
+		you.base.location = getNearestSafeLocation(you.base.location, 1);
 		// Name
 		printf("Please enter your name:\n");
 		if (scanf("%31s", you.base.name) != 1) { // Limit input to 31 characters to prevent buffer overflow
@@ -176,20 +178,18 @@ void main() {
 	}
 	else {
 		printf("%s loaded successfully.\n", you.base.name);
-		if (!checkBounds(you.base.location, (Dun_Vec) { 0, 0 })) {
+		if (isInARoom(you.base.location)) {
 			if(DEBUG)
 				printf("Player position is within bounds.\n");
 		}
 		else {
 			if(DEBUG)
 				printf("Player position is out of bounds, teleporting you to the middle of the nearest room.\n");
-			you.base.location.x = XBOUND / 2;
-			you.base.location.y = YBOUND / 2;
+			you.base.location = getNearestSafeLocation(you.base.location, 1);
 		}
 	}
 	//int* consoleDimensions = getConsoleWindow();
 	//printf("Console dimensions: %d rows, %d columns\n", consoleDimensions[0], consoleDimensions[1]);
-	roomGenerator();
 	roomRunner();
 
 
@@ -244,6 +244,10 @@ int loadPlayer() {
 			printf("Error: Failed to read player data.\n");
 		}
 	}
+	if (checkBounds(you.base.location, (Dun_Vec) { 0, 0 })) {
+		printf("Error: Player location is out of bounds, fixing.\n");
+		you.base = moveEntity(you.base, getNearestSafeLocation(you.base.location, 1));
+	}
 	
 	// Refactor this to allow for dynamically sized saved files, if a value is missing, it defaults to a specific value
 
@@ -254,19 +258,11 @@ int loadPlayer() {
 	return 1;
 }
 
-void roomGenerator() {
+void mapClearing() {
 	for (int x = 0;x < XBOUND;x++) {
 		for (int y = 0;y < YBOUND;y++) {
 			world[x][y].locationID = (x * YBOUND) + y;
 			world[x][y].passable = 0;
-		}
-	}
-
-	for (int x = 0;x < XBOUND;x++) {
-		for (int y = 0;y < YBOUND;y++) {
-			if (isInARoom((Dun_Coord) { x, y })) {
-				world[x][y].passable = 1;
-			}
 		}
 	}
 	
@@ -652,6 +648,8 @@ void savePlayer() {
 }
 
 void exitAction(int ec) {
+	if(DEBUG)
+		printMap();
 	if (ec == 0) {
 		savePlayer();
 		printf("Exiting and saving...\n");
@@ -849,7 +847,7 @@ int checkBounds(Dun_Coord newPos, Dun_Vec delta) {
    temp[0] += delta.dx;  
    temp[1] += delta.dy;  
 
-   return (temp[0] >= 0 && temp[0] < XBOUND) && (temp[1] >= 0 && temp[1] < YBOUND) && world[temp[0]][temp[1]].passable;
+   return world[temp[0]][temp[1]].passable && (temp[0] > 0 && temp[0] < XBOUND) && (temp[1] > 0 && temp[1] < YBOUND) ;
 }
 
 int checkArea(Room room1, Room room2) {
@@ -885,38 +883,45 @@ int isInRoom(Room r, Dun_Coord d) {
 }
 
 int isInARoom(Dun_Coord d) {
-	for (unsigned int i = 0; i < roomCount && i < currRoomCount; i++) {
-		if (isInRoom(rooms[i], d)) {
-			return 1; // In a room
+	if (currRoomCount != 1) {
+		for (unsigned int i = 0; i < roomCount; i++) {
+			if (isInRoom(rooms[i], d)) {
+				return 1; // In a room
+			}
 		}
 	}
 	return 0; // Not in a room
 }
 
 Dun_Coord getNearestSafeLocation(Dun_Coord d, int searchRadius) {
-	Dun_Coord ret = { XBOUND/2,YBOUND/2 };
-	//fill in later
-	//but what it should do is go through the array of rooms looking for the nearest place in a room
-	// and return that location when it finds it
-	/*
-	int* dval = malloc(sizeof(int) * numberOfRooms);
-	for (int i=0; i<numberOfRooms;i++){
-		dval[i] = abs(d.x - room[i].startLocation.x) + abs(d.y - room[i].startLocation.y);
+	// Ensure searchRadius is within map bounds
+	if (searchRadius > XBOUND && searchRadius > YBOUND) {
+		// Fallback: center of map
+		return (Dun_Coord) { XBOUND / 2, YBOUND / 2 };
 	}
-	int dret = dval[0];
-	for (int i=0; i<numberOfRooms;i++){
-		if (dval[i] < dret){
-			dret = dval[i];
-		}
+
+	// Check 4 cardinal directions
+	if (d.x + searchRadius < XBOUND && isInARoom((Dun_Coord) { d.x + searchRadius, d.y })) {
+		return (Dun_Coord) { d.x + searchRadius, d.y };
 	}
-	*/
-	return ret;
+	if (d.x >= searchRadius && isInARoom((Dun_Coord) { d.x - searchRadius, d.y })) {
+		return (Dun_Coord) { d.x - searchRadius, d.y };
+	}
+	if (d.y + searchRadius < YBOUND && isInARoom((Dun_Coord) { d.x, d.y + searchRadius })) {
+		return (Dun_Coord) { d.x, d.y + searchRadius };
+	}
+	if (d.y >= searchRadius && isInARoom((Dun_Coord) { d.x, d.y - searchRadius })) {
+		return (Dun_Coord) { d.x, d.y - searchRadius };
+	}
+
+	// If not found, increase search radius and recurse
+	return getNearestSafeLocation(d, searchRadius + 1);
 }
 
 Room getRoomByLocation(Dun_Coord d) {
 	Room temp = { {0,0},XBOUND,YBOUND };
 	
-	for (unsigned int i = 0; i < roomCount && i < currRoomCount;i++) {
+	for (unsigned int i = 0; i < roomCount;i++) {
 		if (isInRoom(rooms[i], d)) {
 			return rooms[i];
 		}
@@ -994,25 +999,32 @@ char* printPlayerStatus(int brief) {
 }
 
 Room* makeRooms() {
-	Room* temp = malloc(sizeof(Room)*(int)(pow((double)(XBOUND*YBOUND),(1.0/3.0))));
-	roomCount = sizeof(temp) / sizeof(Room);
-	unsigned int i = 0;
-	do {
-		temp[i].xdim = (unsigned int)(XBOUND * 0.06);
-		temp[i].ydim = (unsigned int)(YBOUND * 0.02);
+	roomCount = (unsigned int)(pow((double)(XBOUND * YBOUND), (1.0 / 3.0)));
+	Room* temp = malloc(roomCount*sizeof(Room));
+	if (temp == NULL) {
+		printf("Memory allocation failed\n");
+		return NULL;
+	}
+    // srand returns void, so call it separately, then use rand() for random numbers
+    srand((unsigned int)time(NULL));
+
+	for (unsigned int i = 0; i < roomCount; i++) {
+		temp[i].xdim = (unsigned int)(rand() % (unsigned int)(XBOUND * 0.10));
+		temp[i].ydim = (unsigned int)(rand() % (unsigned int)(YBOUND * 0.10));
 		temp[i].startLocation.x = (unsigned int)(rand() % (XBOUND - temp[i].xdim));
 		temp[i].startLocation.y = (unsigned int)(rand() % (YBOUND - temp[i].ydim));
-		if (!isInARoom(temp[i].startLocation)) {
-			currRoomCount++;
-			i++;
-			continue;
-		}
-		else {
-			temp[i].startLocation.x = (unsigned int)(rand() % (XBOUND - temp[i].xdim));
-			temp[i].startLocation.y = (unsigned int)(rand() % (YBOUND - temp[i].ydim));
-		}
-	} while (currRoomCount < roomCount && i < roomCount);
+		makeRoomSpace(temp[i]);
+
+	} 
 	return temp;
+}
+
+void makeRoomSpace(Room r) {
+	for (unsigned int x = r.startLocation.x; x < r.startLocation.x + r.xdim; x++) {
+		for (unsigned int y = r.startLocation.y; y < r.startLocation.y + r.ydim; y++) {
+			world[x][y].passable = 1;
+		}
+	}
 }
 
 Entity logStep(Entity e) {
@@ -1021,4 +1033,65 @@ Entity logStep(Entity e) {
 	e.currentPos = e.currentPos >= LOG_BUFFER ? 0 : e.currentPos + 1;
 
 	return e;
+}
+
+Dun_Vec getVector(Dun_Coord start, Dun_Coord end) {
+	Dun_Vec delta;
+	delta.dx = end.x - start.x;
+	delta.dy = end.y - start.y;
+	return delta;
+}
+
+Entity moveEntity(Entity e, Dun_Coord newLoc) {
+	Dun_Vec delta = getVector(e.location, newLoc);
+	if (checkOccupied(e.location, delta)) {
+		if (DEBUG)
+			printf("Error: This space is already occupied.\n");
+		return logStep(e);
+	}
+	else if (checkBounds(e.location, delta)) {
+		world[e.location.x][e.location.y].occupied = 0;
+		e.location.x += delta.dx;
+		e.location.y += delta.dy;
+		world[e.location.x][e.location.y].occupied = 1;
+	}
+	else {
+		if (DEBUG)
+			printf("Error: %s cannot move out of bounds.\n", e.name);
+	}
+	return logStep(e);
+}
+
+
+void printMap() {
+    FILE* file = fopen("map.dat", "w");
+    if (file == NULL) {
+        printf("Error: Could not open map.dat for writing.\n");
+        return;
+    }
+    for (int x = 0; x < XBOUND; x++) {
+        for (int y = 0; y < YBOUND; y++) {
+            char mapChar;
+            if ((x == 0 && y == 0) || (x == 0 && y == (YBOUND - 1)) ||
+                (x == (XBOUND - 1) && y == 0) || (x == (XBOUND - 1) && y == (YBOUND - 1))) {
+                mapChar = '+';
+            } else if (x == 0 || x == XBOUND - 1) {
+                mapChar = '-';
+            } else if (y == 0 || y == YBOUND - 1) {
+                mapChar = '|';
+            } else if (you.base.location.x == x && you.base.location.y == y) {
+                mapChar = '@';
+            } else if (world[x][y].passable == 0) {
+                mapChar = '#';
+            } else if (world[x][y].occupied == 1) {
+                mapChar = 'X';
+            } else {
+                mapChar = ' ';
+            }
+            fputc(mapChar, file);
+        }
+        fputc('\n', file);
+    }
+    fclose(file);
+    printf("Full map written to map.dat\n");
 }
