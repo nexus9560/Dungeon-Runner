@@ -79,7 +79,6 @@ typedef struct {
 	Dun_Coord startLocation; // Corner location in the world map, as well as the initial offset
 	unsigned int xdim;
 	unsigned int ydim;
-	Entity* entities; // Array of pointers to entities
 
 } Room;
 
@@ -95,13 +94,16 @@ typedef struct{
 Cell world[XBOUND][YBOUND];
 Player you;
 Entity* enemyGlossary;
+Entity* enemiesOnFloor; // Took the Entities array out of Room, because Entities should be able to roam between rooms on the floor, plus it was making room-scaling difficult.
 int enemyGlossarySize;
+unsigned int roomCount;
 Item itemGlossary[MAX_ITEMS];
 const Dun_Vec up	= { -1,  0 };
 const Dun_Vec right = {  0,  1 };
 const Dun_Vec down	= {  1,  0 };
 const Dun_Vec left	= {  0, -1 };
-Room test = { { 0, 0 }, XBOUND, YBOUND, NULL };
+Room* rooms;
+unsigned int currRoomCount = 0;
 
 void roomGenerator();
 void savePlayer();
@@ -126,11 +128,13 @@ Entity shiftEntity(Entity e, Dun_Vec delta);
 int checkBounds( Dun_Coord newPos, Dun_Vec delta);
 int checkOccupied(Dun_Coord newPos, Dun_Vec delta);
 int checkArea(Room room1, Room room2);
-Room makeRoom();
+Room* makeRooms();
 Room getRoomByLocation(Dun_Coord d);
 int getRandomEnemyIndex();
 int isInRoom(Room r, Dun_Coord d);
-Dun_Coord getNearestSafeLocation(Dun_Coord d);
+int isInARoom(Dun_Coord d);
+char getMapCharacter(Dun_Coord d);
+Dun_Coord getNearestSafeLocation(Dun_Coord d, int searchRadius);
 //int goUp();
 //int goRight();
 //int goDown();
@@ -140,8 +144,9 @@ void main() {
 
 	loadEntities(0);
 	loadItems(0);
-	test = makeRoom();
-	if (loadPlayer() != 0) {
+	rooms = makeRooms();
+
+	if (loadPlayer() == 0) {
 		you.base.currentPos = 0;
 		printf("Error loading player position. Starting at default position.\n");
 		// Y Position
@@ -192,6 +197,10 @@ void main() {
 
 int loadPlayer() {
 	FILE* file = fopen("player.dat", "r");
+	if (file == NULL) {
+		printf("Error: Could not open player data file.\n");
+		return 0;
+	}
 	
 	int lineCount = countLines(file);
 	for (int x = 0;x < lineCount;x++) {
@@ -242,19 +251,21 @@ int loadPlayer() {
 	fclose(file);
 	if(DEBUG)
 		printf("Player data loaded successfully.\n");
-	return 0;
+	return 1;
 }
 
 void roomGenerator() {
 	for (int x = 0;x < XBOUND;x++) {
 		for (int y = 0;y < YBOUND;y++) {
 			world[x][y].locationID = (x * YBOUND) + y;
-			strcpy(world[x][y].contents, "Help me joeby juan kenobi");
-			if (x > 0 && x < XBOUND - 1 && y > 0 && y < YBOUND - 1) {
+			world[x][y].passable = 0;
+		}
+	}
+
+	for (int x = 0;x < XBOUND;x++) {
+		for (int y = 0;y < YBOUND;y++) {
+			if (isInARoom((Dun_Coord) { x, y })) {
 				world[x][y].passable = 1;
-			}
-			else {
-				world[x][y].passable = 0;
 			}
 		}
 	}
@@ -284,6 +295,21 @@ int* getConsoleWindow() {
    return dimensions;
 }
 
+char getMapCharacter(Dun_Coord d) {
+	char mapChar = ' ';
+	if (world[d.x][d.y].passable == 0) {
+		mapChar = '#';
+	}
+	else if (world[d.x][d.y].occupied == 1) {
+		mapChar = 'X';
+	}
+	else if (you.base.location.x == d.x && you.base.location.y == d.y) {
+		mapChar = '@';
+	}
+
+	return mapChar;
+}
+
 void drawMap() {
 	
 	if (OLD_MAP) {
@@ -303,17 +329,8 @@ void drawMap() {
 				else if (y == 0 || y == YBOUND - 1) {
 					map[x * YBOUND + y] = '|';
 				}
-				else if (you.base.location.x == x && you.base.location.y == y) {
-					map[x * YBOUND + y] = '@';
-				}
-				else if (world[x][y].passable == 0) {
-					map[x * YBOUND + y] = '#';
-				}
-				else if (world[x][y].occupied == 1) {
-					map[x * YBOUND + y] = 'X';
-				}
 				else {
-					map[x * YBOUND + y] = ' ';
+					map[x * YBOUND + y] = getMapCharacter((Dun_Coord) {x,y});
 				}
 			}
 			printf("%.*s\n", YBOUND, &map[x * YBOUND]);
@@ -867,7 +884,16 @@ int isInRoom(Room r, Dun_Coord d) {
 	return 0; // Not in room
 }
 
-Dun_Coord getNearestSafeLocation(Dun_Coord d) {
+int isInARoom(Dun_Coord d) {
+	for (unsigned int i = 0; i < roomCount && i < currRoomCount; i++) {
+		if (isInRoom(rooms[i], d)) {
+			return 1; // In a room
+		}
+	}
+	return 0; // Not in a room
+}
+
+Dun_Coord getNearestSafeLocation(Dun_Coord d, int searchRadius) {
 	Dun_Coord ret = { XBOUND/2,YBOUND/2 };
 	//fill in later
 	//but what it should do is go through the array of rooms looking for the nearest place in a room
@@ -888,18 +914,14 @@ Dun_Coord getNearestSafeLocation(Dun_Coord d) {
 }
 
 Room getRoomByLocation(Dun_Coord d) {
-	Room temp = { {0,0},XBOUND,YBOUND,NULL};
-	//fill in later
-	//but what it should do is go through the array of rooms looking for what coordinate is in the room
-	// and return that room when it finds it
-	/*
-	for (int i=0; i<numberOfRooms;i++){
-		if (isInRoom(room[i],d){
+	Room temp = { {0,0},XBOUND,YBOUND };
+	
+	for (unsigned int i = 0; i < roomCount && i < currRoomCount;i++) {
+		if (isInRoom(rooms[i], d)) {
 			return rooms[i];
 		}
 	}
-	
-	*/
+
 	return temp;
 }
 
@@ -971,27 +993,25 @@ char* printPlayerStatus(int brief) {
 	return ret;
 }
 
-Room makeRoom() {
-	Room temp;
-	temp.startLocation.x = 0;
-	temp.startLocation.y = 0;
-	temp.xdim = XBOUND;
-	temp.ydim = YBOUND;
-
-	// Calculate max entities per room
-	int halfSum = (temp.xdim + temp.ydim) / 2;
-	int cubicRoot = (int)pow(temp.xdim * temp.ydim, 1.0 / 3.0);
-	int maxEntities = abs(halfSum - 1) < abs(cubicRoot - 1) ? halfSum : cubicRoot;
-
-	// Allocate memory for entities
-	temp.entities = malloc(sizeof(Entity) * maxEntities);
-
-	for (int i = 0;i < maxEntities;i++) {
-
-        
-		temp.entities[i] = enemyGlossary[getRandomEnemyIndex()];
-	}
-
+Room* makeRooms() {
+	Room* temp = malloc(sizeof(Room)*(int)(pow((double)(XBOUND*YBOUND),(1.0/3.0))));
+	roomCount = sizeof(temp) / sizeof(Room);
+	unsigned int i = 0;
+	do {
+		temp[i].xdim = (unsigned int)(XBOUND * 0.06);
+		temp[i].ydim = (unsigned int)(YBOUND * 0.02);
+		temp[i].startLocation.x = (unsigned int)(rand() % (XBOUND - temp[i].xdim));
+		temp[i].startLocation.y = (unsigned int)(rand() % (YBOUND - temp[i].ydim));
+		if (!isInARoom(temp[i].startLocation)) {
+			currRoomCount++;
+			i++;
+			continue;
+		}
+		else {
+			temp[i].startLocation.x = (unsigned int)(rand() % (XBOUND - temp[i].xdim));
+			temp[i].startLocation.y = (unsigned int)(rand() % (YBOUND - temp[i].ydim));
+		}
+	} while (currRoomCount < roomCount && i < roomCount);
 	return temp;
 }
 
