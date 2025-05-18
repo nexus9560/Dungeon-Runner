@@ -17,7 +17,6 @@
 #define DEBUG 1
 #define MAX_ITEMS 10
 #define PLAYER_INVENTORY_BASE 16
-#define OLD_MAP 0
 #define OLD_ACTIONS 0
 #define LOG_BUFFER 4
 
@@ -117,7 +116,7 @@ void savePlayer();
 int countLines(FILE* file);
 int loadPlayer();
 void loadEntities(int ovr);
-int loadRooms(int ovr);
+Room* loadRooms(int ovr);
 int* getConsoleWindow();
 void roomRunner();
 void clearScreen();
@@ -156,9 +155,11 @@ void main() {
 
 	loadEntities(0);
 	loadItems(0);
-	loadRooms(0);
 	mapClearing();
-	rooms = makeRooms();
+	rooms = loadRooms(0);
+	if (sizeof(rooms) == 0) {
+		rooms = makeRooms();
+	}
 
 	if (loadPlayer() == 0) {
 		you.base.currentPos = 0;
@@ -319,85 +320,55 @@ char getMapCharacter(Dun_Coord d) {
 
 void drawMap() {
 	
-	if (OLD_MAP) {
-		char* map = (char*)malloc(XBOUND * YBOUND);
-		if (map == NULL) {
-			printf("Memory allocation failed\n");
-			return;
-		}
-		for (int x = 0;x < XBOUND;x++) {
-			for (int y = 0;y < YBOUND;y++) {
-				if ((x == 0 && y == 0) || (x == 0 && y == (YBOUND - 1)) || (x == (XBOUND - 1) && y == 0) || (x == (XBOUND - 1) && y == (YBOUND - 1))) {
-					map[x * YBOUND + y] = '+';
-				}
-				else if (x == 0 || x == XBOUND - 1) {
-					map[x * YBOUND + y] = '-';
-				}
-				else if (y == 0 || y == YBOUND - 1) {
-					map[x * YBOUND + y] = '|';
-				}
-				else {
-					map[x * YBOUND + y] = getMapCharacter((Dun_Coord) {x,y});
-				}
-			}
-			printf("%.*s\n", YBOUND, &map[x * YBOUND]);
-
-		}
+	int* conDims = getConsoleWindow();
+	int renderX = (int)((conDims[0] * 0.75) > XBOUND ? XBOUND : (conDims[0] * 0.55));
+	int renderY = (int)((conDims[1] * 0.80) > YBOUND ? YBOUND : (conDims[1] * 0.80));
+	char* map = (char*)malloc(renderX * renderY);
+	if (map == NULL) {
+		printf("Memory allocation failed\n");
+		return;
 	}
-	else {
-		int* conDims = getConsoleWindow();
-		int renderX = (int)((conDims[0] * 0.75) > XBOUND ? XBOUND : (conDims[0] * 0.55));
-		int renderY = (int)((conDims[1] * 0.80) > YBOUND ? YBOUND : (conDims[1] * 0.80));
-		char* map = (char*)malloc(renderX * renderY);
-		if (map == NULL) {
-			printf("Memory allocation failed\n");
-			return;
-		}
-		/*
+	/*
 		
-		if ((xoffset == 0 && yoffset == 0) || (xoffset == 0 && yoffset == (YBOUND - 1)) || (xoffset == (XBOUND - 1) && yoffset == 0) || (xoffset == (XBOUND - 1) && yoffset == (YBOUND - 1))) {
-					map[x * renderY + y] = '+';
-					continue;
-				}
-				else if ((xoffset == 0 || xoffset == XBOUND - 1) && !(yoffset < 0 || yoffset >= YBOUND)) {
-					map[x * renderY + y] = '-';
-					continue;
-				}
-				else if ((yoffset == 0 || yoffset == YBOUND - 1) && !(xoffset < 0 || xoffset >= XBOUND) ) {
-					map[x * renderY + y] = '|';
-					continue;
-				}
-		*/
-		
-		
-		for (int x = 0; x < renderX;x++) {
-			int xoffset = you.base.location.x - (renderX / 2) + x;
-			for (int y = 0;y < renderY;y++) {
-				int yoffset = you.base.location.y - (renderY / 2) + y;
-				if ((renderX/2)==x && (renderY/2)==y) {
-					map[x * renderY + y] = '@';
-					continue;
-				}
-				else if (xoffset < 0 || xoffset >= XBOUND || yoffset < 0 || yoffset >= YBOUND) {
-					map[x * renderY + y] = ' ';
-					continue;
-				}
-				else if (world[xoffset][yoffset].occupied == 1) {
-					map[x * renderY + y] = 'X';
-					continue;
-				}
-				else {
-					map[x * renderY + y] = world[xoffset][yoffset].ref;
-					continue;
-				}
+	if ((xoffset == 0 && yoffset == 0) || (xoffset == 0 && yoffset == (YBOUND - 1)) || (xoffset == (XBOUND - 1) && yoffset == 0) || (xoffset == (XBOUND - 1) && yoffset == (YBOUND - 1))) {
+				map[x * renderY + y] = '+';
+				continue;
 			}
-			printf("%.*s\n", renderY, &map[x * renderY]);
+			else if ((xoffset == 0 || xoffset == XBOUND - 1) && !(yoffset < 0 || yoffset >= YBOUND)) {
+				map[x * renderY + y] = '-';
+				continue;
+			}
+			else if ((yoffset == 0 || yoffset == YBOUND - 1) && !(xoffset < 0 || xoffset >= XBOUND) ) {
+				map[x * renderY + y] = '|';
+				continue;
+			}
+	*/
+		
+		
+	for (int x = 0; x < renderX;x++) {
+		int xoffset = you.base.location.x - (renderX / 2) + x;
+		for (int y = 0;y < renderY;y++) {
+			int yoffset = you.base.location.y - (renderY / 2) + y;
+			if ((renderX/2)==x && (renderY/2)==y) {
+				map[x * renderY + y] = '@';
+				continue;
+			}
+			else if (xoffset < 0 || xoffset >= XBOUND || yoffset < 0 || yoffset >= YBOUND) {
+				map[x * renderY + y] = ' ';
+				continue;
+			}
+			else if (world[xoffset][yoffset].occupied == 1) {
+				map[x * renderY + y] = 'X';
+				continue;
+			}
+			else {
+				map[x * renderY + y] = world[xoffset][yoffset].ref;
+				continue;
+			}
+		}
+		printf("%.*s\n", renderY, &map[x * renderY]);
 		}
 
-
-	}
-	
-	
 }
 
 void clearScreen() {
@@ -1136,8 +1107,9 @@ void saveRooms() {
 	fclose(file);
 }
 
-int loadRooms(int ovr) {
+Room* loadRooms(int ovr) {
 	FILE* file = fopen("rooms.dat", "r");
+	Room* temp = NULL;
 	if (file == NULL) {
 		printf("Error: Could not open rooms.dat for reading.\n");
 		return 0;
@@ -1146,28 +1118,25 @@ int loadRooms(int ovr) {
 	if (roomCount == 0) {
 		printf("Error: No rooms found in rooms.dat.\n");
 		fclose(file);
-		return 0;
+		return NULL;
 	}
-	if (ovr) {
-		free(rooms);
-	}
-	rooms = malloc(roomCount * sizeof(Room));
-	if (rooms == NULL) {
+	temp = malloc(roomCount * sizeof(Room));
+	if (temp == NULL) {
 		printf("Error: Memory allocation failed.\n");
 		fclose(file);
-		return 0;
+		return NULL;
 	}
 	for (unsigned int i = 0; i < roomCount; i++) {
-		fscanf(file, "Room %*d: Start Location: [%d,%d], Dimensions: [%d,%d]\n",
-			&rooms[i].startLocation.x,
-			&rooms[i].startLocation.y,
-			&rooms[i].xdim,
-			&rooms[i].ydim
+		fscanf(file, "Room %*d: Start Location: [%6d,%6d], Dimensions: [%6d,%6d]\n",
+			&temp[i].startLocation.x,
+			&temp[i].startLocation.y,
+			&temp[i].xdim,
+			&temp[i].ydim
 		);
-		makeRoomSpace(rooms[i]);
+		makeRoomSpace(temp[i]);
 
 	}
 	fclose(file);
 	
-	return 1;
+	return temp;
 }
