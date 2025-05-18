@@ -940,9 +940,10 @@ char* printPlayerStatus(int brief) {
 			"| %s\n"
 			"| HP : %4d / %4d\n"
 			"| EXP: %4d / %4.0f\n"
+			"| Location: [%4d,%4d]\n"
 			"|\n"
 			"V\n",
-            you.base.name, you.base.curHealth, you.base.health, you.base.exp, experienceValue);
+			you.base.name, you.base.curHealth, you.base.health, you.base.exp, experienceValue, you.base.location.x, you.base.location.y);
 	}
 	else {
 		ret = malloc(512);
@@ -958,12 +959,13 @@ char* printPlayerStatus(int brief) {
 			"| To-Hit: %d\n"
 			"| Defense: %d\n"
 			"| Experience: %4d /%4.0f\n"
+			"| Location: [%4d,%4d]\n"
 			"| Evasion: %d\n"
 			"| Level: %d\n"
 			"|\n"
 			"V\n",
 			you.base.name, you.base.curHealth, you.base.health, you.base.atk,
-			you.base.hit, you.base.def, you.base.exp, experienceValue, you.base.eva, you.base.level);
+			you.base.hit, you.base.def, you.base.exp, experienceValue, you.base.location.x, you.base.location.y, you.base.eva, you.base.level);
 	}
 	return ret;
 }
