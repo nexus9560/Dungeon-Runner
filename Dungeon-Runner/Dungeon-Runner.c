@@ -141,7 +141,6 @@ Room getRoomByLocation(Dun_Coord d);
 int getRandomEnemyIndex();
 int isInRoom(Room r, Dun_Coord d);
 int isInARoom(Dun_Coord d);
-char getMapCharacter(Dun_Coord d);
 Dun_Coord getNearestSafeLocation(Dun_Coord d, int searchRadius);
 Dun_Vec getVector(Dun_Coord start, Dun_Coord end);
 void printMap();
@@ -301,21 +300,6 @@ int* getConsoleWindow() {
 #endif
 
    return dimensions;
-}
-
-char getMapCharacter(Dun_Coord d) {
-	char mapChar = ' ';
-	if (world[d.x][d.y].passable == 0) {
-		mapChar = '#';
-	}
-	else if (world[d.x][d.y].occupied == 1) {
-		mapChar = 'X';
-	}
-	else if (you.base.location.x == d.x && you.base.location.y == d.y) {
-		mapChar = '@';
-	}
-
-	return mapChar;
 }
 
 void drawMap() {
