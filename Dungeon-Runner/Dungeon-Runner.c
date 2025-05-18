@@ -156,7 +156,7 @@ void main() {
 	loadItems(0);
 	mapClearing();
 	rooms = loadRooms(0);
-	if (sizeof(rooms) == 0) {
+	if (roomCount == 0) {
 		rooms = makeRooms();
 	}
 
