@@ -943,7 +943,7 @@ char* printPlayerStatus(int brief) {
 			"| Location: [%4d,%4d]\n"
 			"|\n"
 			"V\n",
-			you.base.name, you.base.curHealth, you.base.health, you.base.exp, experienceValue, you.base.location.x, you.base.location.y);
+			you.base.name, you.base.curHealth, you.base.health, you.base.exp, experienceValue, you.base.location.y, you.base.location.x);
 	}
 	else {
 		ret = malloc(512);
@@ -965,7 +965,7 @@ char* printPlayerStatus(int brief) {
 			"|\n"
 			"V\n",
 			you.base.name, you.base.curHealth, you.base.health, you.base.atk,
-			you.base.hit, you.base.def, you.base.exp, experienceValue, you.base.location.x, you.base.location.y, you.base.eva, you.base.level);
+			you.base.hit, you.base.def, you.base.exp, experienceValue, you.base.location.y, you.base.location.x, you.base.eva, you.base.level);
 	}
 	return ret;
 }
