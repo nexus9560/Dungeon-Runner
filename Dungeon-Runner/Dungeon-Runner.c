@@ -53,6 +53,12 @@ typedef struct{
 	int equipped; // 0 = not equipped, 1 = equipped
 } Item;
 
+typedef enum {
+	WEAPON = 0,
+	ARMOR = 1,
+	CONSUMABLE = 2,
+} ItemType;
+
 typedef struct{
 	Dun_Coord location;
 	char name[32];
@@ -84,7 +90,7 @@ typedef struct {
 
 typedef struct{
 	int locationID;
-	char contents[32];
+	char ref;
 	int passable; // 0 = not passable, 1 = passable
 	int occupied; // 0 = not occupied, 1 = occupied
 } Cell;
@@ -110,8 +116,9 @@ void makeRoomSpace(Room r);
 void savePlayer();
 int countLines(FILE* file);
 int loadPlayer();
-int* getConsoleWindow();
 void loadEntities(int ovr);
+int loadRooms(int ovr);
+int* getConsoleWindow();
 void roomRunner();
 void clearScreen();
 void changePosition();
@@ -139,6 +146,7 @@ char getMapCharacter(Dun_Coord d);
 Dun_Coord getNearestSafeLocation(Dun_Coord d, int searchRadius);
 Dun_Vec getVector(Dun_Coord start, Dun_Coord end);
 void printMap();
+void saveRooms();
 //int goUp();
 //int goRight();
 //int goDown();
@@ -148,6 +156,7 @@ void main() {
 
 	loadEntities(0);
 	loadItems(0);
+	loadRooms(0);
 	mapClearing();
 	rooms = makeRooms();
 
@@ -263,6 +272,8 @@ void mapClearing() {
 		for (int y = 0;y < YBOUND;y++) {
 			world[x][y].locationID = (x * YBOUND) + y;
 			world[x][y].passable = 0;
+			world[x][y].occupied = 0;
+			world[x][y].ref = '#';
 		}
 	}
 	
@@ -371,16 +382,12 @@ void drawMap() {
 					map[x * renderY + y] = ' ';
 					continue;
 				}
-				else if (world[xoffset][yoffset].passable == 0) {
-					map[x * renderY + y] = '#';
-					continue;
-				}
 				else if (world[xoffset][yoffset].occupied == 1) {
 					map[x * renderY + y] = 'X';
 					continue;
 				}
 				else {
-					map[x * renderY + y] = ' ';
+					map[x * renderY + y] = world[xoffset][yoffset].ref;
 					continue;
 				}
 			}
@@ -650,8 +657,10 @@ void savePlayer() {
 }
 
 void exitAction(int ec) {
-	if(DEBUG)
+	if (DEBUG) {
 		printMap();
+		saveRooms();
+	}
 	if (ec == 0) {
 		savePlayer();
 		printf("Exiting and saving...\n");
@@ -1031,6 +1040,7 @@ void makeRoomSpace(Room r) {
 	for (unsigned int x = r.startLocation.x; x < r.startLocation.x + r.xdim; x++) {
 		for (unsigned int y = r.startLocation.y; y < r.startLocation.y + r.ydim; y++) {
 			world[x][y].passable = 1;
+			world[x][y].ref = ' ';
 		}
 	}
 }
@@ -1106,4 +1116,58 @@ void printMap() {
     }
     fclose(file);
     printf("Full map written to map.dat\n");
+}
+
+void saveRooms() {
+	FILE* file = fopen("rooms.dat", "w");
+	if (file == NULL) {
+		printf("Error: Could not open rooms.dat for writing.\n");
+		return;
+	}
+	for (unsigned int i = 0; i < roomCount; i++) {
+		fprintf(file, "Room %4d: Start Location: [%6d,%6d], Dimensions: [%6d,%6d]\n",
+			i + 1,
+			rooms[i].startLocation.x,
+			rooms[i].startLocation.y,
+			rooms[i].xdim,
+			rooms[i].ydim
+		);
+	}
+	fclose(file);
+}
+
+int loadRooms(int ovr) {
+	FILE* file = fopen("rooms.dat", "r");
+	if (file == NULL) {
+		printf("Error: Could not open rooms.dat for reading.\n");
+		return 0;
+	}
+	roomCount = countLines(file);
+	if (roomCount == 0) {
+		printf("Error: No rooms found in rooms.dat.\n");
+		fclose(file);
+		return 0;
+	}
+	if (ovr) {
+		free(rooms);
+	}
+	rooms = malloc(roomCount * sizeof(Room));
+	if (rooms == NULL) {
+		printf("Error: Memory allocation failed.\n");
+		fclose(file);
+		return 0;
+	}
+	for (unsigned int i = 0; i < roomCount; i++) {
+		fscanf(file, "Room %*d: Start Location: [%d,%d], Dimensions: [%d,%d]\n",
+			&rooms[i].startLocation.x,
+			&rooms[i].startLocation.y,
+			&rooms[i].xdim,
+			&rooms[i].ydim
+		);
+		makeRoomSpace(rooms[i]);
+
+	}
+	fclose(file);
+	
+	return 1;
 }
