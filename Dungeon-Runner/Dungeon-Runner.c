@@ -335,7 +335,7 @@ void drawMap() {
 	}
 	else {
 		int* conDims = getConsoleWindow();
-		int renderX = (int)((conDims[0] * 0.75) > XBOUND ? XBOUND : (conDims[0] * 0.75));
+		int renderX = (int)((conDims[0] * 0.75) > XBOUND ? XBOUND : (conDims[0] * 0.55));
 		int renderY = (int)((conDims[1] * 0.80) > YBOUND ? YBOUND : (conDims[1] * 0.80));
 		char* map = (char*)malloc(renderX * renderY);
 		if (map == NULL) {
