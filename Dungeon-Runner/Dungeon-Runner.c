@@ -15,7 +15,6 @@
 #define XBOUND 256
 #define YBOUND 512
 #define DEBUG 1
-#define MAX_ENTITIES 10
 #define MAX_ITEMS 10
 #define PLAYER_INVENTORY_BASE 16
 #define OLD_MAP 0
