@@ -29,6 +29,7 @@
 #elif __unix__ || __APPLE__
 #define CLEAR_COMMAND "clear"
 #include <termios.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 
 #else
@@ -335,7 +336,7 @@ void drawMap() {
 	}
 	else {
 		int* conDims = getConsoleWindow();
-		int renderX = (int)((conDims[0] * 0.75) > XBOUND ? XBOUND : (conDims[0] * 0.75));
+		int renderX = (int)((conDims[0] * 0.60) > XBOUND ? XBOUND : (conDims[0] * 0.60));
 		int renderY = (int)((conDims[1] * 0.80) > YBOUND ? YBOUND : (conDims[1] * 0.80));
 		char* map = (char*)malloc(renderX * renderY);
 		if (map == NULL) {
@@ -411,7 +412,7 @@ void roomRunner() {
 		
 		drawMap();
 		printf("\n");
-		printf(printPlayerStatus(isBrief));
+		printf("%s\n",printPlayerStatus(isBrief));
 		actionChecker();
 		//delay(1);
 		clearScreen();
@@ -964,7 +965,7 @@ int getRandomEnemyIndex() {
 
 char* printPlayerStatus(int brief) {
 	char* ret;
-	double experienceValue = (pow(2, abs(you.base.level)));
+	double experienceValue = (pow(2, you.base.level));
 	if (brief) {
 		ret = malloc(256);
 		if (ret == NULL) {
@@ -1005,7 +1006,7 @@ char* printPlayerStatus(int brief) {
 }
 
 Room* makeRooms() {
-	roomCount = (unsigned int)(pow((double)(XBOUND * YBOUND), (1.0 / 3.0)));
+	roomCount = (unsigned int)(pow((XBOUND * YBOUND), (1.0 / 3.0)));
 	Room* temp = malloc(roomCount*sizeof(Room));
 	if (temp == NULL) {
 		printf("Memory allocation failed\n");
