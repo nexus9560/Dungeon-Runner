@@ -152,6 +152,7 @@ void saveRooms();
 
 void main() {
 
+	clearScreen();
 	loadEntities(0);
 	loadItems(0);
 	mapClearing();
