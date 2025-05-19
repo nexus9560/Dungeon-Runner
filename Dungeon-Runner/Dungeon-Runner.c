@@ -508,7 +508,6 @@ void actionChecker() {
 	   ch = getchar(); // Read a single character
 	   // Restore the old terminal settings
 	   tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-	   ch = tolower(ch);
 	   if (DEBUG)
 		   printf("Key pressed: %c : %d\n", ch, ch);
 	   switch (ch) {
@@ -616,6 +615,7 @@ void exitAction(int ec) {
 		printMap();
 		saveRooms();
 	}
+	clearScreen();
 	if (ec == 0) {
 		savePlayer();
 		printf("Exiting and saving...\n");
