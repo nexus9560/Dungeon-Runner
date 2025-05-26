@@ -128,6 +128,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Dungeon-Runner.c" />
+    <ClCompile Include="LoadingDock.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="map.dat" />

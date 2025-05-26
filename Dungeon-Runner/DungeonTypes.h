@@ -1,6 +1,20 @@
 #ifndef DUNGEONTYPES_H
 #define DUNGEONTYPES_H
 
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
+
+
+#include <stdio.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <time.h>
+#include <math.h>
+
 #define XBOUND 256
 #define YBOUND 512
 #define DEBUG 1
@@ -83,6 +97,8 @@ extern unsigned int roomCount;
 extern Item itemGlossary[MAX_ITEMS];
 extern Room* rooms;
 extern unsigned int currRoomCount;
+
+int countLines(FILE* file);
 
 #endif
 
