@@ -13,14 +13,6 @@
 #include <math.h>
 #include "DungeonTypes.h"
 
-#define XBOUND 256
-#define YBOUND 512
-#define DEBUG 1
-#define MAX_ITEMS 10
-#define PLAYER_INVENTORY_BASE 16
-#define OLD_ACTIONS 0
-#define LOG_BUFFER 4
-
 #ifdef _WIN32
 #define CLEAR_COMMAND "cls"
 #include <conio.h>

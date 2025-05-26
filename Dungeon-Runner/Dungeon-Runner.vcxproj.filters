@@ -26,5 +26,8 @@
     <ClInclude Include="DungeonTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="LoadingDock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
