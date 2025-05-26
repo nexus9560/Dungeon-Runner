@@ -82,6 +82,7 @@ typedef struct {
 	int passable; // 0 = not passable, 1 = passable
 	int occupied; // 0 = not occupied, 1 = occupied
 	short admat[4]; // Adjacency matrix for the four directions: up, right, down, left
+					// Positions: 0 = up, 1 = right, 2 = down, 3 = left
 } Cell;
 
 extern const Dun_Vec up;	// { -1,  0 };
