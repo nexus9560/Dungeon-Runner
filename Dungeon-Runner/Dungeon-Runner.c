@@ -206,11 +206,20 @@ void main() {
 }
 
 int loadPlayer() {
+
+#ifdef _WIN32
 	FILE* file = fopen("player.dat", "r");
 	if (file == NULL) {
 		printf("Error: Could not open player data file.\n");
 		return 0;
 	}
+#else
+	FILE* file = fopen("player.dat", "r");
+	if (file == NULL) {
+		printf("Error: Could not open player data file.\n");
+		return 0;
+	}
+#endif
 	
 	int lineCount = countLines(file);
 	for (int x = 0;x < lineCount;x++) {
