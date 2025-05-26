@@ -198,3 +198,44 @@ void saveRooms() {
 	}
 	fclose(file);
 }
+
+
+void loadItems(int ovr) {
+	FILE* file = fopen("items.dat", "r");
+	if (file == NULL) {
+		printf("Error: Could not open file for loading.\n");
+		return;
+	}
+	int numLines = countLines(file);
+	Item* items = malloc(numLines * sizeof(Item));
+	if (items == NULL) {
+		printf("Error: Memory allocation failed.\n");
+		fclose(file);
+		return;
+	}
+	for (int i = 0; i < numLines; i++) {
+		//		[ATK:001,TYPE:0]:PLAIN-SWORD
+		fscanf(file, "[%3s:%3d,TYPE:%d]:%31s\n",
+			&items[i].stat, &items[i].bonus, &items[i].type, &items[i].name
+		);
+	}
+	fclose(file);
+
+	if (DEBUG || ovr) {
+		for (int i = 0; i < numLines; i++) {
+			printf("Item %3d: %31s:[%3s:%3d,TYPE:%d]\n",
+				i + 1,
+				items[i].name,
+				items[i].stat,
+				items[i].bonus,
+				items[i].type
+			);
+		}
+		printf("\nItems loaded successfully.\n");
+	}
+
+	for (int x = 0;x < numLines; x++)
+		itemGlossary[x] = items[x];
+	free(items);
+
+}
