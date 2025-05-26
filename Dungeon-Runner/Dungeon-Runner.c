@@ -32,7 +32,6 @@ unsigned int currRoomCount = 0;
 
 void mapClearing();
 void makeRoomSpace(Room r);
-int countLines(FILE* file);
 int* getConsoleWindow();
 void roomRunner();
 void clearScreen();
