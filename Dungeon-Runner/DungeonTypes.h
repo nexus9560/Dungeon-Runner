@@ -103,19 +103,3 @@ extern unsigned int currRoomCount;
 int countLines(FILE* file);
 
 #endif
-
-/*
-Cell world[XBOUND][YBOUND];
-Player you;
-Entity* enemyGlossary;
-Entity* enemiesOnFloor; // Took the Entities array out of Room, because Entities should be able to roam between rooms on the floor, plus it was making room-scaling difficult.
-int enemyGlossarySize;
-unsigned int roomCount;
-Item itemGlossary[MAX_ITEMS];
-const Dun_Vec up	= { -1,  0 };
-const Dun_Vec right = {  0,  1 };
-const Dun_Vec down	= {  1,  0 };
-const Dun_Vec left	= {  0, -1 };
-Room* rooms;
-unsigned int currRoomCount = 0;
-*/
