@@ -736,8 +736,34 @@ Room* makeRooms() {
 void makeRoomSpace(Room r) {
 	for (unsigned int x = r.startLocation.x; x < r.startLocation.x + r.xdim; x++) {
 		for (unsigned int y = r.startLocation.y; y < r.startLocation.y + r.ydim; y++) {
-			world[x][y].passable = 1;
-			world[x][y].ref = ' ';
+			if(x == r.startLocation.x && y == r.startLocation.y) {
+				world[x][y].ref = '+';
+				world[x][y].passable = 0;
+			}
+			else if (x == r.startLocation.x + r.xdim - 1 && y == r.startLocation.y + r.ydim - 1) {
+				world[x][y].ref = '+';
+				world[x][y].passable = 0;
+			}
+			else if (x == r.startLocation.x && y == r.startLocation.y + r.ydim - 1) {
+				world[x][y].ref = '+';
+				world[x][y].passable = 0;
+			}
+			else if (x == r.startLocation.x + r.xdim - 1 && y == r.startLocation.y) {
+				world[x][y].ref = '+';
+				world[x][y].passable = 0;
+			}
+			else if (x == r.startLocation.x || x == r.startLocation.x + r.xdim - 1) {
+				world[x][y].ref = '-';
+				world[x][y].passable = 0;
+			}
+			else if (y == r.startLocation.y || y == r.startLocation.y + r.ydim - 1) {
+				world[x][y].ref = '|';
+				world[x][y].passable = 0;
+			}
+			else {
+				world[x][y].ref = ' ';
+				world[x][y].passable = 1;
+			}
 		}
 	}
 }
