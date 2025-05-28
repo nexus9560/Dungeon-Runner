@@ -779,10 +779,22 @@ void makeRoomSpace(Room r) {
 	for(unsigned int x = r.startLocation.x; x < r.startLocation.x + r.xdim; x++) {
 		for (unsigned int y = r.startLocation.y; y < r.startLocation.y + r.ydim; y++) {
 			if (world[x][y].passable) {
-				world[x][y].admat[0] = world[x + up.dx		][y + up.dy		].passable ? 1 : 0; // Up
-				world[x][y].admat[1] = world[x + right.dx	][y + right.dy	].passable ? 1 : 0; // Right
-				world[x][y].admat[2] = world[x + down.dx	][y + down.dy	].passable ? 1 : 0; // Down
-				world[x][y].admat[3] = world[x + left.dx	][y + left.dy	].passable ? 1 : 0; // Left
+				if(inRange(x + up.dx, 0, XBOUND))
+					world[x][y].admat[0] = world[x + up.dx		][y + up.dy		].passable ? 1 : 0; // Up
+				else
+					world[x][y].admat[0] = 0; // Up
+				if (inRange(y + right.dy, 0, YBOUND))
+					world[x][y].admat[1] = world[x + right.dx	][y + right.dy	].passable ? 1 : 0; // Right
+				else
+					world[x][y].admat[1] = 0; // Right
+				if (inRange(x + down.dx, 0, XBOUND))
+					world[x][y].admat[2] = world[x + down.dx	][y + down.dy	].passable ? 1 : 0; // Down
+				else
+					world[x][y].admat[2] = 0; // Down
+				if (inRange(y + left.dy, 0, YBOUND))
+					world[x][y].admat[3] = world[x + left.dx	][y + left.dy	].passable ? 1 : 0; // Left
+				else
+					world[x][y].admat[3] = 0; // Left
 				if (DEBUG && world[x][y].passable) {
 					//world[x][y].ref = (char)(world[x][y].admat[0] + world[x][y].admat[1] + world[x][y].admat[2] + world[x][y].admat[3] + 48);
 				}
@@ -809,7 +821,9 @@ void checkRoomCollisions() {
 	for(unsigned int x = 0; x < roomCount; x++) {
 		for (unsigned int y = 0; y < roomCount; y++) {
 			if ((x != y) && checkOverlappingArea(rooms[x], rooms[y])) {
-				printf("Room %d and Room %d overlap.\n", x, y);
+				if(DEBUG)
+					printf("Room %d and Room %d overlap. Moving room %d\n", x, y, y);
+
 				// Handle collision resolution here if needed
 			}
 		}
