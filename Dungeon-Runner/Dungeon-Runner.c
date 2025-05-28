@@ -32,7 +32,6 @@ unsigned int currRoomCount = 0;
 
 void mapClearing();
 void makeRoomSpace(Room r);
-int* getConsoleWindow();
 void roomRunner();
 void clearScreen();
 void changePosition();
@@ -42,22 +41,32 @@ void exitAction(int ec);
 void actionChecker();
 void delay(int seconds);
 void showPlayerInventory();
-char* printPlayerStatus(int brief);
-Entity logStep(Entity e);
+void checkRoomCollisions();
 void drawMap();
-Entity shiftEntity(Entity e, Dun_Vec delta);
-Entity moveEntity(Entity e, Dun_Coord newLoc);
+void printMap();
+
+char* printPlayerStatus(int brief);
+
 int checkBounds( Dun_Coord newPos, Dun_Vec delta);
 int checkOccupied(Dun_Coord newPos, Dun_Vec delta);
 int checkArea(Room room1, Room room2);
-Room* makeRooms();
-Room getRoomByLocation(Dun_Coord d);
+int* getConsoleWindow();
 int getRandomEnemyIndex();
 int isInRoom(Room r, Dun_Coord d);
 int isInARoom(Dun_Coord d);
+
+Room* makeRooms();
+Room getRoomByLocation(Dun_Coord d);
+
 Dun_Coord getNearestSafeLocation(Dun_Coord d, int searchRadius);
+
 Dun_Vec getVector(Dun_Coord start, Dun_Coord end);
-void printMap();
+
+Entity logStep(Entity e);
+Entity shiftEntity(Entity e, Dun_Vec delta);
+Entity moveEntity(Entity e, Dun_Coord newLoc);
+
+
 //int goUp();
 //int goRight();
 //int goDown();
@@ -562,7 +571,7 @@ int checkArea(Room room1, Room room2) {
 		return 0;
 	} else
 	return 1;
-	//Not implemented yet, once properly implemented it'll check and see if two rooms overlap.
+	//check and see if two rooms overlap.
 }
 
 Entity shiftEntity(Entity e, Dun_Vec delta) {
@@ -766,16 +775,15 @@ void makeRoomSpace(Room r) {
 			}
 		}
 	}
-	for(unsigned int x = r.startLocation.x; x < r.startLocation.x + r.xdim; x++) {
-		for (unsigned int y = r.startLocation.y; y < r.startLocation.y + r.ydim; y++) {
-			if (world[x][y].passable) {
-				world[x][y].admat[0] = world[x + up.dx		][y + up.dy		].passable ? 1 : 0; // Up
-				world[x][y].admat[1] = world[x + right.dx	][y + right.dy	].passable ? 1 : 0; // Right
-				world[x][y].admat[2] = world[x + down.dx	][y + down.dy	].passable ? 1 : 0; // Down
-				world[x][y].admat[3] = world[x + left.dx	][y + left.dy	].passable ? 1 : 0; // Left
-				if (DEBUG && world[x][y].passable) {
-					world[x][y].ref = (char)(world[x][y].admat[0] + world[x][y].admat[1] + world[x][y].admat[2] + world[x][y].admat[3] + 48);
-				}
+	
+}
+
+void checkRoomCollisions() {
+	for(unsigned int x = 0; x < roomCount; x++) {
+		for (unsigned int y = 0; y < roomCount; y++) {
+			if ((x != y) && checkArea(rooms[x], rooms[y])) {
+				printf("Room %d and Room %d overlap.\n", x, y);
+				// Handle collision resolution here if needed
 			}
 		}
 	}
@@ -854,3 +862,26 @@ void printMap() {
     printf("Full map written to map.dat\n");
 }
 
+/* For setting up the adjacency matrix for each cell in a room.
+ * This is not currently implemented, but will be useful for pathfinding later on.
+ * 
+ * It sets the adjacency matrix based on the passability of adjacent cells.
+ * The matrix is a 1D array of size 4, where:
+ * - Index 0: Up
+ * - Index 1: Right
+ * - Index 2: Down
+ * - Index 3: Left
+* for(unsigned int x = r.startLocation.x; x < r.startLocation.x + r.xdim; x++) {
+		for (unsigned int y = r.startLocation.y; y < r.startLocation.y + r.ydim; y++) {
+			if (world[x][y].passable) {
+				world[x][y].admat[0] = world[x + up.dx		][y + up.dy		].passable ? 1 : 0; // Up
+				world[x][y].admat[1] = world[x + right.dx	][y + right.dy	].passable ? 1 : 0; // Right
+				world[x][y].admat[2] = world[x + down.dx	][y + down.dy	].passable ? 1 : 0; // Down
+				world[x][y].admat[3] = world[x + left.dx	][y + left.dy	].passable ? 1 : 0; // Left
+				if (DEBUG && world[x][y].passable) {
+					world[x][y].ref = (char)(world[x][y].admat[0] + world[x][y].admat[1] + world[x][y].admat[2] + world[x][y].admat[3] + 48);
+				}
+			}
+		}
+	}
+*/
