@@ -29,10 +29,10 @@ unsigned int roomCount;
 
 Item itemGlossary[MAX_ITEMS];
 
-const Dun_Vec up = { -1,  0 };
-const Dun_Vec right = { 0,  1 };
-const Dun_Vec down = { 1,  0 };
-const Dun_Vec left = { 0, -1 };
+const Dun_Vec up	= { -1,  0 };
+const Dun_Vec right = {  0,  1 };
+const Dun_Vec down	= {  1,  0 };
+const Dun_Vec left	= {  0, -1 };
 
 Room* rooms;
 
