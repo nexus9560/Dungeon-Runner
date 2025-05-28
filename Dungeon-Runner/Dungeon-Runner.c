@@ -775,6 +775,21 @@ void makeRoomSpace(Room r) {
 			}
 		}
 	}
+
+	for(unsigned int x = r.startLocation.x; x < r.startLocation.x + r.xdim; x++) {
+		for (unsigned int y = r.startLocation.y; y < r.startLocation.y + r.ydim; y++) {
+			switch(world[x][y].ref) {
+				case '+':break;
+				case '-':	world[x][y].admat[0] = world[x + up.dx	][y + up.dy		].passable ? 1 : 0; // Up
+							world[x][y].admat[2] = world[x + down.dx][y + down.dy	].passable ? 1 : 0; // Down
+					break;
+				case '|':	world[x][y].admat[1] = world[x + right.dx	][y + right.dy	].passable ? 1 : 0; // Right
+							world[x][y].admat[3] = world[x + left.dx	][y + left.dy	].passable ? 1 : 0; // Left
+					break;
+				default:break;
+			}
+		}
+	}
 	
 }
 
