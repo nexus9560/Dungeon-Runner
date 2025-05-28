@@ -766,6 +766,19 @@ void makeRoomSpace(Room r) {
 			}
 		}
 	}
+	for(unsigned int x = r.startLocation.x; x < r.startLocation.x + r.xdim; x++) {
+		for (unsigned int y = r.startLocation.y; y < r.startLocation.y + r.ydim; y++) {
+			if (world[x][y].passable) {
+				world[x][y].admat[0] = world[x + up.dx		][y + up.dy		].passable ? 1 : 0; // Up
+				world[x][y].admat[1] = world[x + right.dx	][y + right.dy	].passable ? 1 : 0; // Right
+				world[x][y].admat[2] = world[x + down.dx	][y + down.dy	].passable ? 1 : 0; // Down
+				world[x][y].admat[3] = world[x + left.dx	][y + left.dy	].passable ? 1 : 0; // Left
+				if (DEBUG && world[x][y].passable) {
+					world[x][y].ref = (char)(world[x][y].admat[0] + world[x][y].admat[1] + world[x][y].admat[2] + world[x][y].admat[3] + 48);
+				}
+			}
+		}
+	}
 }
 
 Entity logStep(Entity e) {
