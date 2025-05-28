@@ -49,7 +49,7 @@ char* printPlayerStatus(int brief);
 
 int checkBounds( Dun_Coord newPos, Dun_Vec delta);
 int checkOccupied(Dun_Coord newPos, Dun_Vec delta);
-int checkArea(Room room1, Room room2);
+int checkOverlappingArea(Room room1, Room room2);
 int* getConsoleWindow();
 int getRandomEnemyIndex();
 int isInRoom(Room r, Dun_Coord d);
@@ -565,13 +565,13 @@ int checkBounds(Dun_Coord newPos, Dun_Vec delta) {
    return world[temp[0]][temp[1]].passable && (temp[0] > 0 && temp[0] < XBOUND) && (temp[1] > 0 && temp[1] < YBOUND) ;
 }
 
-int checkArea(Room room1, Room room2) {
-	if ((room1.startLocation.x + room1.xdim < room2.startLocation.x || room2.startLocation.x + room2.xdim < room1.startLocation.x) &&
-		(room1.startLocation.y + room1.ydim < room2.startLocation.y || room2.startLocation.y + room2.ydim < room1.startLocation.y)) {
-		return 0;
-	} else
-	return 1;
-	//check and see if two rooms overlap.
+int checkOverlappingArea(Room room1, Room room2) {
+	
+	//check and see if two rooms overlap, if they do, return 1 (true)
+	return ( inRangeInclusive(room2.startLocation.x, room1.startLocation.x, room1.startLocation.x + room1.xdim) && 
+			 inRangeInclusive(room2.startLocation.y, room1.startLocation.y, room1.startLocation.y + room1.ydim)) ||
+			(inRangeInclusive(room1.startLocation.x, room2.startLocation.x, room2.startLocation.x + room2.xdim) &&
+			 inRangeInclusive(room1.startLocation.y, room2.startLocation.y, room2.startLocation.y + room2.ydim));
 }
 
 Entity shiftEntity(Entity e, Dun_Vec delta) {
@@ -602,7 +602,7 @@ int isInRoom(Room r, Dun_Coord d) {
 }
 
 int isInARoom(Dun_Coord d) {
-	if (currRoomCount != 1) {
+	if (currRoomCount > 1) {
 		for (unsigned int i = 0; i < roomCount; i++) {
 			if (isInRoom(rooms[i], d)) {
 				return 1; // In a room
@@ -789,11 +789,13 @@ void makeRoomSpace(Room r) {
 			}else{
 				switch(world[x][y].ref) {
 					case '+':break;
-					case '-':	world[x][y].admat[0] = world[x + up.dx	][y + up.dy		].passable ? 1 : 0; // Up
-								world[x][y].admat[2] = world[x + down.dx][y + down.dy	].passable ? 1 : 0; // Down
+					case '-':
+						world[x][y].admat[0] = world[(x + up.dx >= 0 ? x + up.dx : 0)][y + up.dy].passable ? 1 : 0; // Up
+						world[x][y].admat[2] = world[(x + down.dx < XBOUND ? x + down.dx : XBOUND - 1)][y + down.dy].passable ? 1 : 0; // Down
 						break;
-					case '|':	world[x][y].admat[1] = world[x + right.dx	][y + right.dy	].passable ? 1 : 0; // Right
-								world[x][y].admat[3] = world[x + left.dx	][y + left.dy	].passable ? 1 : 0; // Left
+					case '|':
+						world[x][y].admat[1] = world[x + right.dx][(y + right.dy < YBOUND ? y + right.dy : YBOUND - 1)].passable ? 1 : 0; // Right
+						world[x][y].admat[3] = world[x + left.dx][(y + left.dy >= 0 ? y + left.dy : 0)].passable ? 1 : 0; // Left
 						break;
 					default:break;
 				}
@@ -806,7 +808,7 @@ void makeRoomSpace(Room r) {
 void checkRoomCollisions() {
 	for(unsigned int x = 0; x < roomCount; x++) {
 		for (unsigned int y = 0; y < roomCount; y++) {
-			if ((x != y) && checkArea(rooms[x], rooms[y])) {
+			if ((x != y) && checkOverlappingArea(rooms[x], rooms[y])) {
 				printf("Room %d and Room %d overlap.\n", x, y);
 				// Handle collision resolution here if needed
 			}

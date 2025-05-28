@@ -22,6 +22,10 @@
 #define PLAYER_INVENTORY_BASE 16
 #define OLD_ACTIONS 0
 #define LOG_BUFFER 4
+#define inRange(x, min, max) ((x) >= (min) && (x) < (max)) // Check if x is in the range [min, max)
+#define inRangeInclusive(x, min, max) ((x) >= (min) && (x) <= (max)) // Check if x is in the range [min, max)
+#define inRangeExclusive(x, min, max) ((x) > (min) && (x) < (max)) // Check if x is in the range (min, max)
+
 
 typedef struct {
 	int dx;
