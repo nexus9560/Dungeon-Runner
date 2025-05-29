@@ -49,7 +49,6 @@ void exitAction(int ec);
 void actionChecker();
 void delay(int seconds);
 void showPlayerInventory();
-void checkRoomCollisions();
 void drawMap();
 void printMap();
 
@@ -67,6 +66,7 @@ Room* makeRooms();
 Room getRoomByLocation(Dun_Coord d);
 
 Dun_Coord getNearestSafeLocation(Dun_Coord d, int searchRadius);
+Dun_Coord getRoomCenter(Room r);
 
 Dun_Vec getVector(Dun_Coord start, Dun_Coord end);
 
@@ -90,14 +90,14 @@ void main() {
 	if (roomCount == 0) {
 		rooms = makeRooms();
 	}
-	checkRoomCollisions(); // Check for collisions between rooms after making them
-	mapClearing(); // Clear the map again after making rooms
+
 	for(unsigned int i = 0; i < roomCount; i++) {
 		makeRoomSpace(rooms[i]);
 		if (DEBUG) {
 			printf("Room %4d: [%4d,%4d] - [%4d,%4d]\n", i, rooms[i].startLocation.x, rooms[i].startLocation.y, rooms[i].xdim, rooms[i].ydim);
 		}
 	}
+	saveRooms();
 
 	printMap();
 
@@ -585,16 +585,27 @@ int checkBounds(Dun_Coord newPos, Dun_Vec delta) {
 }
 
 int checkOverlappingArea(Room room1, Room room2) {
+	Dun_Coord r1[5] = { {room1.startLocation.x, room1.startLocation.y}, // Top Left
+									{room1.startLocation.x + room1.xdim - 1, room1.startLocation.y}, // Top Right
+									{room1.startLocation.x, room1.startLocation.y + room1.ydim - 1}, // Bottom Left
+									{room1.startLocation.x + room1.xdim - 1, room1.startLocation.y + room1.ydim - 1}, // Bottom Right
+									getRoomCenter(room1) }; // Center of Room 1
+	Dun_Coord r2[5] = { {room2.startLocation.x, room2.startLocation.y}, // Top Left
+									{room2.startLocation.x + room2.xdim - 1, room2.startLocation.y}, // Top Right
+									{room2.startLocation.x, room2.startLocation.y + room2.ydim - 1}, // Bottom Left
+									{room2.startLocation.x + room2.xdim - 1, room2.startLocation.y + room2.ydim - 1}, // Bottom Right
+									getRoomCenter(room2) }; // Center of Room 2
+	
+
 	
 	//check and see if two rooms overlap, if they do, return 1 (true)
-	return ( inRangeInclusive(room2.startLocation.x, room1.startLocation.x, room1.startLocation.x + room1.xdim) && 
-			 inRangeInclusive(room2.startLocation.y, room1.startLocation.y, room1.startLocation.y + room1.ydim)) ||
-			(inRangeInclusive(room1.startLocation.x, room2.startLocation.x, room2.startLocation.x + room2.xdim) &&
-			 inRangeInclusive(room1.startLocation.y, room2.startLocation.y, room2.startLocation.y + room2.ydim)) ||
-			(inRangeInclusive(room2.startLocation.x + room2.xdim, room1.startLocation.x, room1.startLocation.x + room1.xdim) &&
-			 inRangeInclusive(room2.startLocation.y + room2.ydim, room1.startLocation.y, room1.startLocation.y + room1.ydim)) ||
-			(inRangeInclusive(room1.startLocation.x + room1.xdim, room2.startLocation.x, room2.startLocation.x + room2.xdim) &&
-			 inRangeInclusive(room1.startLocation.y + room1.ydim, room2.startLocation.y, room2.startLocation.y + room2.ydim));
+	for (int x = 0; x < 5; x++) {
+		if (isInRoom(room1,r2[x]) || isInRoom(room2,r1[x])) {
+			return 1;
+		}
+	}
+
+	return 0;
 }
 
 Entity shiftEntity(Entity e, Dun_Vec delta) {
@@ -617,11 +628,7 @@ Entity shiftEntity(Entity e, Dun_Vec delta) {
 }
 
 int isInRoom(Room r, Dun_Coord d) {
-	if (d.x >= r.startLocation.x && d.x < r.startLocation.x + r.xdim &&
-		d.y >= r.startLocation.y && d.y < r.startLocation.y + r.ydim) {
-		return 1; // In room
-	}
-	return 0; // Not in room
+	return inRangeInclusive(d.x, r.startLocation.x, r.startLocation.x + r.xdim - 1) && inRangeInclusive(d.y, r.startLocation.y, r.startLocation.y + r.ydim - 1);
 }
 
 int isInARoom(Dun_Coord d) {
@@ -744,7 +751,7 @@ char* printPlayerStatus(int brief) {
 
 Room* makeRooms() {
 	roomCount = (unsigned int)(pow((XBOUND * YBOUND), (1.0 / 3.0)));
-	Room* temp = malloc(roomCount*sizeof(Room));
+	Room* temp = malloc(roomCount * sizeof(Room));
 	if (temp == NULL) {
 		printf("Memory allocation failed\n");
 		return NULL;
@@ -753,21 +760,37 @@ Room* makeRooms() {
     srand((unsigned int)time(NULL));
 
 	for (unsigned int i = 0; i < roomCount; i++) {
-		unsigned int randX = (unsigned int)(rand() % (unsigned int)(XBOUND * 0.10));
-		unsigned int randY = (unsigned int)(rand() % (unsigned int)(YBOUND * 0.10));
+		unsigned int randX = (unsigned int)(rand() % (unsigned int)((XBOUND * 0.80) * 0.10));
+		unsigned int randY = (unsigned int)(rand() % (unsigned int)((YBOUND * 0.60) * 0.10));
 		temp[i].xdim = (randX < 5 ? 5 : randX);
 		temp[i].ydim = (randY < 5 ? 5 : randY);
 		temp[i].startLocation.x = (unsigned int)(rand() % (XBOUND - temp[i].xdim));
 		temp[i].startLocation.y = (unsigned int)(rand() % (YBOUND - temp[i].ydim));
-		makeRoomSpace(temp[i]);
-
+		if(temp[i].startLocation.x == 0)
+			temp[i].startLocation.x = 2;
+		if (temp[i].startLocation.y == 0)
+			temp[i].startLocation.y = 2; 
+		if(temp[i].startLocation.x + temp[i].xdim >= XBOUND)
+			temp[i].xdim = XBOUND - temp[i].startLocation.x - 2; // Adjust xdim if it exceeds bounds
+		if (temp[i].startLocation.y + temp[i].ydim >= YBOUND)
+			temp[i].ydim = YBOUND - temp[i].startLocation.y - 2; // Adjust ydim if it exceeds bounds
+		for (int j = 0; j < i; j++) {
+			if (checkOverlappingArea(temp[i], temp[j])) {
+				if (DEBUG) {
+					printf("Room %d overlaps with Room %d, regenerating...\n", i, j);
+				}
+				i--; // Decrement i to regenerate this room
+				break; // Break out of the inner loop to regenerate
+			}
+		}
+		
 	} 
 	return temp;
 }
 
 void makeRoomSpace(Room r) {
-	for (unsigned int x = r.startLocation.x; x < r.startLocation.x + r.xdim; x++) {
-		for (unsigned int y = r.startLocation.y; y < r.startLocation.y + r.ydim; y++) {
+	for (unsigned int x = (r.startLocation.x<0?0:r.startLocation.x); x < r.startLocation.x + r.xdim; x++) {
+		for (unsigned int y = (r.startLocation.y<0?0:r.startLocation.y); y < r.startLocation.y + r.ydim; y++) {
 			if(x == r.startLocation.x && y == r.startLocation.y) {
 				world[x][y].ref = '+';
 				world[x][y].passable = 0;
@@ -840,55 +863,11 @@ void makeRoomSpace(Room r) {
 		
 }
 
-void checkRoomCollisions() {
-	for (unsigned int i = 0; i < 10; i++) {
-		for (unsigned int x = 0; x < roomCount; x++) {
-			for (unsigned int y = 0; y < roomCount; y++) {
-				if ((x != y) && checkOverlappingArea(rooms[x], rooms[y])) {
-					if (DEBUG)
-						printf("Room %d and Room %d overlap. Moving room %d\n", x, y, y);
-					int totaldiff[4] = { 0,0,0,0 }; // Up, Right, Down, Left
-					totaldiff[0] = abs(rooms[y].startLocation.x - rooms[x].startLocation.x); // Up
-					totaldiff[1] = abs(rooms[y].startLocation.y - rooms[x].startLocation.y); // Right
-					totaldiff[2] = abs((rooms[y].startLocation.x + rooms[y].xdim) - (rooms[x].startLocation.x + rooms[x].xdim)); // Down
-					totaldiff[3] = abs((rooms[y].startLocation.y + rooms[y].ydim) - (rooms[x].startLocation.y + rooms[x].ydim)); // Left
-					int minDiff = 0;
-					for (int i = 0; i < 4; i++) {
-						if (totaldiff[i] < totaldiff[minDiff]) {
-							minDiff = i;
-						}
-					}
-					switch (minDiff) {
-					case 0: // Up
-						if (DEBUG)
-							printf("Moving room %d up by %d\n", y, 2 * totaldiff[0] + 1);
-						rooms[y].startLocation.x -= 2 * totaldiff[0] + 1;
-						break;
-					case 1: // Right
-						if (DEBUG)
-							printf("Moving room %d right by %d\n", y, 2 * totaldiff[1] + 1);
-						rooms[y].startLocation.y += 2 * totaldiff[1] + 1;
-						break;
-					case 2: // Down
-						if (DEBUG)
-							printf("Moving room %d down by %d\n", y, 2 * totaldiff[2] + 1);
-						rooms[y].startLocation.x += 2 * totaldiff[2] + 1;
-						break;
-					case 3: // Left
-						if (DEBUG)
-							printf("Moving room %d left by %d\n", y, 2 * totaldiff[3] + 1);
-						rooms[y].startLocation.y -= 2 * totaldiff[3] + 1;
-						break;
-					default:
-						if (DEBUG)
-							printf("Error: Invalid direction for room collision resolution.\n");
-					}
-
-					// Handle collision resolution here if needed
-				}
-			}
-		}
-	}
+Dun_Coord getRoomCenter(Room r) {
+	Dun_Coord center;
+	center.x = r.startLocation.x + (r.xdim / 2);
+	center.y = r.startLocation.y + (r.ydim / 2);
+	return center;
 }
 
 Entity logStep(Entity e) {
@@ -947,9 +926,7 @@ void printMap() {
     for (int x = 0; x < XBOUND; x++) {
         for (int y = 0; y < YBOUND; y++) {
             char mapChar;
-            if (you.base.location.x == x && you.base.location.y == y) {
-                mapChar = '@';
-            } else if (world[x][y].passable == 0) {
+            if (world[x][y].passable == 0) {
                 mapChar = '#';
             } else if (world[x][y].occupied == 1) {
                 mapChar = 'X';

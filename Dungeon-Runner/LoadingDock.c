@@ -180,7 +180,6 @@ Room* loadRooms(int ovr) {
 			&temp[i].xdim,
 			&temp[i].ydim
 		);
-		makeRoomSpace(temp[i]);
 
 	}
 	fclose(file);
