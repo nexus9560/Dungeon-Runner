@@ -102,47 +102,54 @@ void loadEntities(int ovr) {
 		return;
 	}
 	enemyGlossarySize = countLines(file);
-	Entity* entities = malloc(enemyGlossarySize * sizeof(Entity));
-	if (entities == NULL) {
+	enemyGlossary = malloc(enemyGlossarySize * sizeof(Entity));
+	if (enemyGlossary == NULL) {
 		printf("Error: Memory allocation failed.\n");
 		fclose(file);
 		return;
 	}
-	for (int i = 0; i < enemyGlossarySize; i++) {
-		// Use [HP:  2,ATK:  1,TOH:  1,DEF:  0,EXP:  2,EVA:  0,LVL:  1]:NAME as the format
-		fscanf(file, "[HP:%4d,ATK:%4d,TOH:%4d,DEF:%4d,EXP:%4d,EVA:%4d,LVL:%4d]:%31s\n",
-			&entities[i].health, &entities[i].atk, &entities[i].hit, &entities[i].def, &entities[i].exp, &entities[i].eva, &entities[i].level, &entities[i].name
+    for (int i = 0; i < enemyGlossarySize; i++) {
+		// Use [HP:  2,ATK:  1,AGR:  0,TOH:  1,DEF:  0,EXP:  1,EVA:  0,LVL:  1]:SLUG as the format
+		int agr = 0;
+		char namebuf[32] = {0};
+		int ret = fscanf(file, "[HP:%d,ATK:%d,AGR:%d,TOH:%d,DEF:%d,EXP:%d,EVA:%d,LVL:%d]:%31s\n",
+		&enemyGlossary[i].health,
+		&enemyGlossary[i].atk,
+		&agr,
+		&enemyGlossary[i].hit,
+		&enemyGlossary[i].def,
+		&enemyGlossary[i].exp,
+		&enemyGlossary[i].eva,
+		&enemyGlossary[i].level,
+		namebuf
 		);
-	}
+		if (ret == 9) {
+			enemyGlossary[i].agr = agr;
+			strncpy(enemyGlossary[i].name, namebuf, sizeof(enemyGlossary[i].name) - 1);
+			enemyGlossary[i].name[sizeof(enemyGlossary[i].name) - 1] = '\0';
+		} else {
+			printf("Warning: Failed to parse entity line %d (fscanf returned %d)\n", i + 1, ret);
+			memset(&enemyGlossary[i], 0, sizeof(enemyGlossary[i]));
+		}
+    }
 	if (DEBUG || ovr) {
 		for (int i = 0; i < enemyGlossarySize; i++) {
 			printf("Entity %3d: %31s:[HP:%3d,ATK:%3d,ARG:%3d,TOH:%3d,DEF:%3d,EXP:%3d,EVA:%3d,LVL:%3d]\n",
 				i + 1,
-				entities[i].name,
-				entities[i].health,
-				entities[i].atk,
-				entities[i].agr,
-				entities[i].hit,
-				entities[i].def,
-				entities[i].exp,
-				entities[i].eva,
-				entities[i].level
+				enemyGlossary[i].name,
+				enemyGlossary[i].health,
+				enemyGlossary[i].atk,
+				enemyGlossary[i].agr,
+				enemyGlossary[i].hit,
+				enemyGlossary[i].def,
+				enemyGlossary[i].exp,
+				enemyGlossary[i].eva,
+				enemyGlossary[i].level
 			);
 		}
 		printf("\nEntities loaded successfully.\n");
 	}
 	fclose(file);
-	enemyGlossary = malloc(enemyGlossarySize * sizeof(Entity));
-	if (enemyGlossary == NULL) {
-		printf("Error: Memory allocation failed.\n");
-		free(entities);
-		return;
-	}
-	for (int i = 0; i < enemyGlossarySize; i++) {
-		enemyGlossary[i] = entities[i];
-	}
-	free(entities);
-
 
 }
 
