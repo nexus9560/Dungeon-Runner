@@ -1,5 +1,6 @@
 #include "DungeonTypes.h"
 
+Item* itemGlossary = NULL;
 
 
 void savePlayer() {
@@ -109,7 +110,7 @@ void loadEntities(int ovr) {
 	}
 	for (int i = 0; i < enemyGlossarySize; i++) {
 		// Use [HP:  2,ATK:  1,TOH:  1,DEF:  0,EXP:  2,EVA:  0,LVL:  1]:NAME as the format
-		fscanf(file, "[HP: %d,ATK: %d,TOH: %d,DEF: %d,EXP: %d,EVA: %d,LVL: %d]:%31s\n",
+		fscanf(file, "[HP:%4d,ATK:%4d,TOH:%4d,DEF:%4d,EXP:%4d,EVA:%4d,LVL:%4d]:%31s\n",
 			&entities[i].health, &entities[i].atk, &entities[i].hit, &entities[i].def, &entities[i].exp, &entities[i].eva, &entities[i].level, &entities[i].name
 		);
 	}
@@ -233,6 +234,8 @@ void loadItems(int ovr) {
 		}
 		printf("\nItems loaded successfully.\n");
 	}
+
+	itemGlossary = malloc(numLines * sizeof(Item));
 
 	for (int x = 0;x < numLines; x++)
 		itemGlossary[x] = items[x];

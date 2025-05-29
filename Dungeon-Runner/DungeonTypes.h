@@ -95,14 +95,20 @@ extern const Dun_Vec down;	// {  1,  0 };
 extern const Dun_Vec left;	// {  0, -1 };
 
 extern Cell world[XBOUND][YBOUND];
+
 extern Player you;
+
 extern Entity* enemyGlossary;
 extern Entity* enemiesOnFloor; // Took the Entities array out of Room, because Entities should be able to roam between rooms on the floor, plus it was making room-scaling difficult.
+
 extern int enemyGlossarySize;
+
 extern unsigned int roomCount;
-extern Item itemGlossary[MAX_ITEMS];
-extern Room* rooms;
 extern unsigned int currRoomCount;
+
+extern Item* itemGlossary;
+
+extern Room* rooms;
 
 int countLines(FILE* file);
 
