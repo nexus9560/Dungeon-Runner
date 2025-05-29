@@ -25,6 +25,7 @@
 #define inRange(x, min, max) ((x) >= (min) && (x) < (max)) // Check if x is in the range [min, max)
 #define inRangeInclusive(x, min, max) ((x) >= (min) && (x) <= (max)) // Check if x is in the range [min, max)
 #define inRangeExclusive(x, min, max) ((x) > (min) && (x) < (max)) // Check if x is in the range (min, max)
+#define matchSign(x, y) (((x) < 0 && (y) < 0) || ((x) >= 0 && (y) >= 0)) // Check if x and y have the same sign
 
 
 typedef struct {

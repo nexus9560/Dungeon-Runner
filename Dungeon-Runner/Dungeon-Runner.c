@@ -49,6 +49,7 @@ void exitAction(int ec);
 void actionChecker();
 void delay(int seconds);
 void showPlayerInventory();
+void cutPaths();
 void drawMap();
 void printMap();
 
@@ -61,6 +62,7 @@ int* getConsoleWindow();
 int getRandomEnemyIndex();
 int isInRoom(Room r, Dun_Coord d);
 int isInARoom(Dun_Coord d);
+int getVectorDirection(Dun_Vec d);
 
 Room* makeRooms();
 Room getRoomByLocation(Dun_Coord d);
@@ -68,8 +70,10 @@ Room* getNearest2Rooms(Room r);
 
 Dun_Coord getNearestSafeLocation(Dun_Coord d, int searchRadius);
 Dun_Coord getRoomCenter(Room r);
+Dun_Coord getRandomSpotOnWall(Room r, Dun_Vec d);
 
 Dun_Vec getVector(Dun_Coord start, Dun_Coord end);
+Dun_Vec getVectorToWallFromCenter(Room r, Dun_Vec v);
 
 Entity logStep(Entity e);
 Entity shiftEntity(Entity e, Dun_Vec delta);
@@ -99,6 +103,7 @@ void main() {
 		}
 	}
 	saveRooms();
+	cutPaths();
 
 	printMap();
 
@@ -991,4 +996,232 @@ Room* getNearest2Rooms(Room r) {
 	} while (grandChecks < 2);
 
 	return nearestRooms;
+}
+
+// Positions: 0 = up, 1 = right, 2 = down, 3 = left
+
+int getVectorDirection(Dun_Vec d) {
+	if (d.dx == 0 && d.dy == 0) {
+		return -1; // Invalid direction
+	}
+	else if (abs(d.dx) > abs(d.dy)) {
+		return (d.dx > 0) ? 2 : 0; // Up or Down
+	}
+	else {
+		return (d.dy > 0) ? 3 : 1; // Left or Right
+	}
+}
+
+// Presumes Vector d is a vector that points to another room's center from r's center, and passes from the center of room r to the center of the other room.
+// This finds the vector from the center of room r to the wall of room r in the direction of d.
+
+Dun_Vec getVectorToWallFromCenter(Room r, Dun_Vec d) {
+	Dun_Vec ret = { d.dx, d.dy };
+	
+	if(d.dx == 0 && d.dy == 0) {
+		printf("Error: Vector cannot be zero.\n");
+		return (Dun_Vec) { 0, 0 }; // Return a zero vector
+	}
+	else if (abs(d.dx) > abs(d.dy)) {
+		ret.dy = 0;
+		ret.dx = (d.dx > 0) ? (r.xdim - 1) / 2 : -(signed int)((r.xdim - 1) / 2);
+	}
+	else {
+		ret.dx = 0;
+		ret.dy = (d.dy > 0) ? (r.ydim - 1) / 2 : -(signed int)((r.ydim - 1) / 2);
+	}
+
+	if (!matchSign(ret.dx, d.dx)) {
+		ret.dx = -ret.dx; // Ensure the direction matches
+	}
+	if (!matchSign(ret.dy, d.dy)) {
+		ret.dy = -ret.dy; // Ensure the direction matches
+	}
+
+	return ret;
+}
+
+Dun_Coord getRandomSpotOnWall(Room r, Dun_Vec d) {
+	Dun_Coord wallloc = { 0, 0 };
+
+	if (d.dx == 0 && d.dy == 0) {
+		int wallSide = rand() % 4; // Randomly choose a wall side
+		switch (wallSide) {
+		case 0: // Top Wall
+			wallloc.x = r.startLocation.x;
+			wallloc.y = inRangeExclusive(r.startLocation.y + (rand() % r.ydim), r.startLocation.y, r.startLocation.y + r.ydim - 1) ? r.startLocation.y + (rand() % r.ydim) : r.startLocation.y + (r.ydim / 2);
+			break;
+		case 1: // Right Wall
+			wallloc.x = inRangeExclusive(r.startLocation.x + (rand() % r.xdim), r.startLocation.x, r.startLocation.x + r.xdim - 1) ? r.startLocation.x + (r.xdim - 1) : r.startLocation.x + (r.xdim / 2);
+			wallloc.y = r.startLocation.y + r.ydim;
+			break;
+		case 2: // Bottom Wall
+			wallloc.x = r.startLocation.x + r.xdim;
+			wallloc.y = inRangeExclusive(r.startLocation.y + (rand() % r.ydim), r.startLocation.y, r.startLocation.y + r.ydim - 1) ? r.startLocation.y + (rand() % r.ydim) : r.startLocation.y + (r.ydim / 2);
+			break;
+		case 3: // Left Wall
+			wallloc.x = inRangeExclusive(r.startLocation.x + (rand() % r.xdim), r.startLocation.x, r.startLocation.x + r.xdim - 1) ? r.startLocation.x : r.startLocation.x + (r.xdim / 2);
+			wallloc.y = r.startLocation.y;
+			break;
+		default:
+			printf("Error: Invalid wall side chosen.\n");
+			return (Dun_Coord) { -1, -1 }; // Return an invalid coordinate
+		}
+	}
+	else {
+		Dun_Vec wallVec = getVectorToWallFromCenter(r, d);
+		if(wallVec.dx == 0 && wallVec.dy == 0) {
+			printf("Error: Vector cannot be zero.\n");
+			return (Dun_Coord) { -1, -1 }; // Return an invalid coordinate
+		}
+		if(wallVec.dx != 0) {
+			int randSpot = rand() % r.ydim; // Randomly choose a spot on the wall
+			wallloc.x = (wallVec.dx > 0) ? r.startLocation.x + r.xdim - 1 : r.startLocation.x;
+			wallloc.y = inRangeExclusive(r.startLocation.y + randSpot, r.startLocation.y, r.startLocation.y + r.ydim - 1) ? r.startLocation.y + randSpot : r.startLocation.y + (r.ydim / 2);
+		}
+		else if(wallVec.dy != 0) {
+			int randSpot = rand() % r.xdim; // Randomly choose a spot on the wall
+			wallloc.y = (wallVec.dy > 0) ? r.startLocation.y + r.ydim - 1 : r.startLocation.y;
+			wallloc.x = inRangeExclusive(r.startLocation.x + randSpot, r.startLocation.x, r.startLocation.x + r.xdim - 1) ? r.startLocation.x + randSpot : r.startLocation.x + (r.xdim / 2);
+		}
+		else {
+			printf("Error: Invalid vector.\n");
+			return (Dun_Coord) { -1, -1 }; // Return an invalid coordinate
+		}
+	}
+
+	return wallloc;
+}
+
+void cutPaths() {
+	int* has2Paths = malloc(roomCount * sizeof(int));
+	int* visited = malloc(roomCount * sizeof(int));
+	if (has2Paths == NULL) {
+		printf("Memory allocation failed\n");
+		return;
+	}
+	if (visited == NULL) {
+		printf("Memory allocation failed\n");
+		free(has2Paths);
+		return;
+	}
+
+	for (unsigned int i = 0; i < roomCount; i++) {
+		has2Paths[i] = 0; // Initialize all rooms to have no paths
+		visited[i] = 0; // Initialize all rooms as unvisited
+	}
+
+	unsigned int runner = 0;
+
+	do {
+		Room* r = getNearest2Rooms(rooms[runner]);
+		if (r == NULL) {
+			printf("Error: Could not get nearest rooms.\n");
+			free(has2Paths);
+			free(visited);
+			return;
+		}
+		if(visited[runner] < 3) {
+			int room1ID = r[0].roomID;
+			int room2ID = r[1].roomID;
+			Dun_Coord wallLoc1 = getRandomSpotOnWall(rooms[runner], getVector(getRoomCenter(rooms[runner]), getRoomCenter(r[0]) ) );
+			Dun_Coord farWallLoc1 = getRandomSpotOnWall(rooms[room1ID], getVector(getRoomCenter(r[0]), getRoomCenter(rooms[runner])));
+			Dun_Coord wallLoc2 = getRandomSpotOnWall(rooms[runner], getVector(getRoomCenter(rooms[runner]), getRoomCenter(r[1])));
+			Dun_Coord farWallLoc2 = getRandomSpotOnWall(rooms[room2ID], getVector(getRoomCenter(r[1]), getRoomCenter(rooms[runner])));
+			Dun_Coord walker = { wallLoc1.x, wallLoc1.y }; // Start at the first wall location
+
+			Dun_Vec vec1 = getVector(wallLoc1, farWallLoc1);
+			Dun_Vec vec2 = getVector(wallLoc2, farWallLoc2);
+
+			unsigned int trav1 = abs(vec1.dx) + abs(vec1.dy);
+			unsigned int trav2 = abs(vec2.dx) + abs(vec2.dy);
+			
+
+			visited[runner]++; // Mark the current room as visited
+			visited[r[0].roomID]++; // Mark the first nearest room as visited
+			visited[r[1].roomID]++; // Mark the second nearest room as visited
+
+			// Direction: 0 = up, 1 = right, 2 = down, 3 = left
+
+			while (trav1 > 0 && walker.x != farWallLoc1.x && walker.y != farWallLoc1.y) {
+				world[walker.x][walker.y].ref = ' '; // Mark the path with a dot
+				world[walker.x][walker.y].passable = 1; // Make the path passable
+				switch (getVectorDirection(vec1)) {
+				case 0: walker.x += up.dx;
+						walker.y += up.dy;
+						vec1.dx -= up.dx;
+						vec1.dy -= up.dy;
+						vec1 = getVector(walker, farWallLoc1); // Update the vector
+						break;
+				case 1: walker.x += right.dx;
+						walker.y += right.dy;
+						vec1.dx -= right.dx;
+						vec1.dy -= right.dy;
+						vec1 = getVector(walker, farWallLoc1); // Update the vector
+						break;
+				case 2: walker.x += down.dx;
+						walker.y += down.dy;
+						vec1.dx -= down.dx;
+						vec1.dy -= down.dy;
+						vec1 = getVector(walker, farWallLoc1); // Update the vector
+						break;
+				case 3: walker.x += left.dx;
+						walker.y += left.dy;
+						vec1.dx -= left.dx;
+						vec1.dy -= left.dy;
+						vec1 = getVector(walker, farWallLoc1); // Update the vector
+						break;
+				default:
+					printf("Error: Invalid vector direction.\n");
+					free(has2Paths);
+					free(visited);
+					free(r);
+					return;
+
+				}
+				trav1--;
+			}
+			walker = (Dun_Coord){ wallLoc2.x, wallLoc2.y }; // Reset walker to the second wall location
+			while (trav2 > 0 && walker.x != farWallLoc2.x && walker.y != farWallLoc2.y) {
+				world[walker.x][walker.y].ref = ' '; // Mark the path with a dot
+				world[walker.x][walker.y].passable = 1; // Make the path passable
+				switch (getVectorDirection(vec2)) {
+				case 0: walker.x += up.dx;
+						walker.y += up.dy;
+						vec2.dx -= up.dx;
+						vec2.dy -= up.dy;
+						vec2 = getVector(walker, farWallLoc2); // Update the vector
+						break;
+				case 1: walker.x += right.dx;
+						walker.y += right.dy;
+						vec2.dx -= right.dx;
+						vec2.dy -= right.dy;
+						vec2 = getVector(walker, farWallLoc2); // Update the vector
+						break;
+				case 2: walker.x += down.dx;
+						walker.y += down.dy;
+						vec2.dx -= down.dx;
+						vec2.dy -= down.dy;
+						vec2 = getVector(walker, farWallLoc2); // Update the vector
+						break;
+				case 3: walker.x += left.dx;
+						walker.y += left.dy;
+						vec2.dx -= left.dx;
+						vec2.dy -= left.dy;
+						vec2 = getVector(walker, farWallLoc2); // Update the vector
+						break;
+				default:
+					printf("Error: Invalid vector direction.\n");
+					free(has2Paths);
+					free(visited);
+					free(r);
+					return;
+				}
+				trav2--;
+			}
+			
+		}
+		runner++;
+	} while (runner < roomCount);
+
 }
