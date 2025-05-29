@@ -64,6 +64,7 @@ int isInARoom(Dun_Coord d);
 
 Room* makeRooms();
 Room getRoomByLocation(Dun_Coord d);
+Room* getNearest2Rooms(Room r);
 
 Dun_Coord getNearestSafeLocation(Dun_Coord d, int searchRadius);
 Dun_Coord getRoomCenter(Room r);
@@ -760,8 +761,8 @@ Room* makeRooms() {
     srand((unsigned int)time(NULL));
 
 	for (unsigned int i = 0; i < roomCount; i++) {
-		unsigned int randX = (unsigned int)(rand() % (unsigned int)((XBOUND * 0.80) * 0.10));
-		unsigned int randY = (unsigned int)(rand() % (unsigned int)((YBOUND * 0.60) * 0.10));
+		unsigned int randX = (unsigned int)(rand() % (unsigned int)(XBOUND * 0.08));
+		unsigned int randY = (unsigned int)(rand() % (unsigned int)(YBOUND * 0.06));
 		temp[i].xdim = (randX < 5 ? 5 : randX);
 		temp[i].ydim = (randY < 5 ? 5 : randY);
 		temp[i].startLocation.x = (unsigned int)(rand() % (XBOUND - temp[i].xdim));
@@ -771,10 +772,10 @@ Room* makeRooms() {
 		if (temp[i].startLocation.y == 0)
 			temp[i].startLocation.y = 2; 
 		if(temp[i].startLocation.x + temp[i].xdim >= XBOUND)
-			temp[i].xdim = XBOUND - temp[i].startLocation.x - 2; // Adjust xdim if it exceeds bounds
+			temp[i].startLocation.x = XBOUND - temp[i].xdim - 2; // Adjust xdim if it exceeds bounds
 		if (temp[i].startLocation.y + temp[i].ydim >= YBOUND)
-			temp[i].ydim = YBOUND - temp[i].startLocation.y - 2; // Adjust ydim if it exceeds bounds
-		for (int j = 0; j < i; j++) {
+			temp[i].startLocation.y = YBOUND - temp[i].ydim - 2; // Adjust ydim if it exceeds bounds
+		for (unsigned int j = 0; j < i; j++) {
 			if (checkOverlappingArea(temp[i], temp[j])) {
 				if (DEBUG) {
 					printf("Room %d overlaps with Room %d, regenerating...\n", i, j);
@@ -784,7 +785,9 @@ Room* makeRooms() {
 			}
 		}
 		
-	} 
+	}
+	for(unsigned int x=0;x<roomCount;x++)
+		temp[x].roomID = x;
 	return temp;
 }
 
@@ -860,7 +863,7 @@ void makeRoomSpace(Room r) {
 			}
 		}
 	}
-		
+	
 }
 
 Dun_Coord getRoomCenter(Room r) {
@@ -941,26 +944,51 @@ void printMap() {
     printf("Full map written to map.dat\n");
 }
 
-/* For setting up the adjacency matrix for each cell in a room.
- * This is not currently implemented, but will be useful for pathfinding later on.
- * 
- * It sets the adjacency matrix based on the passability of adjacent cells.
- * The matrix is a 1D array of size 4, where:
- * - Index 0: Up
- * - Index 1: Right
- * - Index 2: Down
- * - Index 3: Left
-* for(unsigned int x = r.startLocation.x; x < r.startLocation.x + r.xdim; x++) {
-		for (unsigned int y = r.startLocation.y; y < r.startLocation.y + r.ydim; y++) {
-			if (world[x][y].passable) {
-				world[x][y].admat[0] = world[x + up.dx		][y + up.dy		].passable ? 1 : 0; // Up
-				world[x][y].admat[1] = world[x + right.dx	][y + right.dy	].passable ? 1 : 0; // Right
-				world[x][y].admat[2] = world[x + down.dx	][y + down.dy	].passable ? 1 : 0; // Down
-				world[x][y].admat[3] = world[x + left.dx	][y + left.dy	].passable ? 1 : 0; // Left
-				if (DEBUG && world[x][y].passable) {
-					world[x][y].ref = (char)(world[x][y].admat[0] + world[x][y].admat[1] + world[x][y].admat[2] + world[x][y].admat[3] + 48);
-				}
+
+Room* getNearest2Rooms(Room r) {
+	Room* nearestRooms = malloc(2 * sizeof(Room));
+	if (nearestRooms == NULL) {
+		printf("Memory allocation failed\n");
+		return NULL;
+	}
+
+	int* dismap = malloc(roomCount * sizeof(int));
+	if (dismap == NULL) {
+		printf("Memory allocation failed\n");
+		free(nearestRooms);
+		return NULL;
+	}
+
+	int nearestIndices[2] = { -1, -1 }; // Indices of the two nearest rooms
+
+	int grandChecks = 0;
+	for (unsigned int i = 0;i < roomCount; i++) {
+		if (r.roomID == rooms[i].roomID) {
+			dismap[i] = 0; // Distance to itself is zero
+			continue; // Skip the room that matches the passed room
+		}
+		else {
+			Dun_Vec vec = getVector(getRoomCenter(r), getRoomCenter(rooms[i]));
+			dismap[i] = abs(vec.dx) + abs(vec.dy);
+		}
+
+	}
+	do {
+		for (unsigned int i = 0; i < roomCount; i++) {
+			if(dismap[i] == 0) {
+				continue; // Skip the room that matches the passed room
+			}
+			if(nearestIndices[0] == -1 || dismap[i] < dismap[nearestIndices[0]]) {
+				nearestIndices[1] = nearestIndices[0]; // Shift the previous nearest to second
+				nearestIndices[0] = i; // Update the nearest index
+				if(DEBUG)
+					printf("Room %d is now the nearest room with distance %d\n", i, dismap[i]);
+			} else if (nearestIndices[1] == -1 || dismap[i] < dismap[nearestIndices[1]]) {
+				nearestIndices[1] = i; // Update the second nearest index
 			}
 		}
-	}
-*/
+		grandChecks++;
+	} while (grandChecks < 2);
+
+	return nearestRooms;
+}

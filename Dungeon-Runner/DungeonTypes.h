@@ -77,6 +77,7 @@ typedef struct {
 	Dun_Coord startLocation; // Corner location in the world map, as well as the initial offset
 	unsigned int xdim;
 	unsigned int ydim;
+	unsigned int roomID; // Number of the room in the world
 
 } Room;
 
