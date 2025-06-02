@@ -174,7 +174,8 @@ Room* loadRooms(int ovr) {
 		return NULL;
 	}
 	for (unsigned int i = 0; i < roomCount; i++) {
-		fscanf(file, "Room %*d: Start Location: [%6d,%6d], Dimensions: [%6d,%6d]\n",
+		fscanf(file, "Room %4d: Start Location: [%6d,%6d], Dimensions: [%6d,%6d]\n",
+			&temp[i].roomID,
 			&temp[i].startLocation.x,
 			&temp[i].startLocation.y,
 			&temp[i].xdim,
