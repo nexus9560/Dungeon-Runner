@@ -772,8 +772,8 @@ Room* makeRooms() {
 	for (unsigned int i = 0; i < roomCount; i++) {
 		unsigned int randX = (unsigned int)(rand() % (unsigned int)(XBOUND * 0.08));
 		unsigned int randY = (unsigned int)(rand() % (unsigned int)(YBOUND * 0.06));
-		temp[i].xdim = (randX < 5 ? 5 : randX);
-		temp[i].ydim = (randY < 5 ? 5 : randY);
+		temp[i].xdim = (randX < 9 ? 9 : randX);
+		temp[i].ydim = (randY < 9 ? 9 : randY);
 		temp[i].startLocation.x = (unsigned int)(rand() % (XBOUND - temp[i].xdim));
 		temp[i].startLocation.y = (unsigned int)(rand() % (YBOUND - temp[i].ydim));
 		if(temp[i].startLocation.x == 0)
@@ -937,14 +937,7 @@ void printMap() {
 
     for (int x = 0; x < XBOUND; x++) {
         for (int y = 0; y < YBOUND; y++) {
-            char mapChar;
-            if (world[x][y].passable == 0) {
-                mapChar = '#';
-            } else if (world[x][y].occupied == 1) {
-                mapChar = 'X';
-            } else {
-                mapChar = ' ';
-            }
+			char mapChar = world[x][y].ref;
             fputc(mapChar, file);
         }
         fputc('\n', file);
@@ -1024,7 +1017,7 @@ int getVectorDirection(Dun_Vec d) {
 		return (d.dx > 0) ? 2 : 0; // Up or Down
 	}
 	else {
-		return (d.dy > 0) ? 3 : 1; // Left or Right
+		return (d.dy > 0) ? 1 : 3; // Left or Right
 	}
 }
 
@@ -1140,18 +1133,18 @@ Dun_Coord getRandomSpotOnWall(Room r, Dun_Vec d) {
 		switch (wallSide) {
 		case 0: // Top Wall
 			wallloc.x = r.startLocation.x;
-			wallloc.y = (r.ydim > 5 ? inRangeExclusive(r.startLocation.y + (rand() % r.ydim), r.startLocation.y, r.startLocation.y + r.ydim - 1) ? r.startLocation.y + (rand() % r.ydim) : r.startLocation.y + (r.ydim / 2) : 2);
+			wallloc.y = (r.ydim > 7 ? r.startLocation.y + 2 + (rand() % (r.ydim - 4)) : 2);
 			break;
 		case 1: // Right Wall
-			wallloc.x = (r.xdim > 5 ? inRangeExclusive(r.startLocation.x + (rand() % r.xdim), r.startLocation.x, r.startLocation.x + r.xdim - 1) ? r.startLocation.x + (r.xdim - 1) : r.startLocation.x + (r.xdim / 2) : 2);
-			wallloc.y = r.startLocation.y + r.ydim;
+			wallloc.x = (r.xdim > 7 ? r.startLocation.x + 2 + (rand() % (r.xdim - 4)) : 2);
+			wallloc.y = r.startLocation.y + r.ydim - 1;
 			break;
 		case 2: // Bottom Wall
-			wallloc.x = r.startLocation.x + r.xdim;
-			wallloc.y = (r.ydim > 5 ? inRangeExclusive(r.startLocation.y + (rand() % r.ydim), r.startLocation.y, r.startLocation.y + r.ydim - 1) ? r.startLocation.y + (rand() % r.ydim) : r.startLocation.y + (r.ydim / 2) : 2);
+			wallloc.x = r.startLocation.x + r.xdim - 1;
+			wallloc.y = (r.ydim > 7 ? r.startLocation.y + 2 + (rand() % (r.ydim - 4)) : 2);
 			break;
 		case 3: // Left Wall
-			wallloc.x = (r.xdim > 5 ? inRangeExclusive(r.startLocation.x + (rand() % r.xdim), r.startLocation.x, r.startLocation.x + r.xdim - 1) ? r.startLocation.x : r.startLocation.x + (r.xdim / 2) : 2);
+			wallloc.x = (r.xdim > 7 ? r.startLocation.x + 2 + (rand() % (r.xdim - 4)) : 2);;
 			wallloc.y = r.startLocation.y;
 			break;
 		default:
@@ -1187,160 +1180,46 @@ void cutPaths() {
 	for (int i = 0; i < roomCount; i++) {
 		Room r = rooms[i];
 		Room* nearestRooms = malloc(2 * sizeof(Room));
-		for(int j = 0; j < 2; j++) {
-			nearestRooms[j] = (Room) { {0,0}, XBOUND, YBOUND }; // Initialize with default values
+		int* visited = malloc(roomCount * sizeof(int));
+		if (nearestRooms == NULL || visited == NULL) {
+			printf("Memory allocation failed\n");
+			return;
 		}
-		if (DEBUG) {
-			printf("Finding nearest rooms for room %d...\n", i);
-		}
+		for (int j = 0; j < roomCount; j++)
+			visited[j] = 0; // Initialize visited array
 		nearestRooms = getNearest2Rooms(r);
 		if (nearestRooms == NULL) {
-			printf("Error: Could not find nearest rooms for room %d.\n", i);
-			continue; // Skip to the next room if memory allocation failed
+			printf("Error: Could not get nearest rooms.\n");
+			free(visited);
+			return;
 		}
-		
-		if(DEBUG) {
-			printf("Room %d has nearest rooms: %d and %d\n", i, nearestRooms[0].roomID, nearestRooms[1].roomID);
-		}
-		Dun_Coord start = getRoomCenter(r);
-		Dun_Vec d1 = getVector(start, getRoomCenter(nearestRooms[0]));
-		Dun_Vec d2 = getVector(start, getRoomCenter(nearestRooms[1]));
-		Dun_Coord start1 = getRandomSpotOnWall(r, d1);
-		Dun_Coord start2 = getRandomSpotOnWall(r, d2);
-		Dun_Coord end1 = getRandomSpotOnWall(nearestRooms[0], d1);
-		Dun_Coord end2 = getRandomSpotOnWall(nearestRooms[1], d2);
-		Dun_Vec id1 = getVector(getRoomCenter(nearestRooms[0]), start);
-		Dun_Vec id2 = getVector(getRoomCenter(nearestRooms[1]), start);
-
-		
-
-		world[start1.x][start1.y].ref = '.'; // Start point for first path
-		world[start1.x][start1.y].passable = 1; // Mark as passable
-		world[start2.x][start2.y].ref = '.'; // Start point for second path
-		world[start2.x][start2.y].passable = 1; // Mark as passable
-		world[end1.x][end1.y].ref = '.'; // End point for first path
-		world[end1.x][end1.y].passable = 1; // Mark as passable
-		world[end2.x][end2.y].ref = '.'; // End point for second path
-		world[end2.x][end2.y].passable = 1; // Mark as passable
-
-
 		if (DEBUG) {
-			printf("Path 1: Start [%d,%d] to End [%d,%d]\n", start1.x, start1.y, end1.x, end1.y);
-			printf("Path 2: Start [%d,%d] to End [%d,%d]\n", start2.x, start2.y, end2.x, end2.y);
+			printf("Cutting paths for room %d at [%d,%d]\n", r.roomID, r.startLocation.x, r.startLocation.y);
+			printf("Nearest room 1: %d at [%d,%d]\n", nearestRooms[0].roomID, nearestRooms[0].startLocation.x, nearestRooms[0].startLocation.y);
+			printf("Nearest room 2: %d at [%d,%d]\n", nearestRooms[1].roomID, nearestRooms[1].startLocation.x, nearestRooms[1].startLocation.y);
 		}
 
-		for (int x = 0;x < 2;x++) {
-			int dir1 = getVectorDirection(x == 0 ? d1 : d2);
-			int dir2 = getVectorDirection(x == 0 ? id1 : id2);
-			if (DEBUG) {
-				printf("Direction for room %d: %d\n", x, (x == 0 ? dir1 : dir2));
-			}
-			if ((x == 0 ? dir1 : dir2) == -1) {
-				printf("Error: Invalid direction for room %d.\n", x);
-				continue; // Skip to the next room if direction is invalid
-			}
-			int move2 = 0; // Flag to indicate if we need to move the second start point
-			do {
-				switch (dir1) {
-				case 0:
-					if (x == 0) {
-						start1.x += up.dx; // Move to the wall in the direction of d1
-						start1.y += up.dy;
-					}
-					else {
-						start2.x += up.dx; // Move to the wall in the direction of d2
-						start2.y += up.dy;
-					}
-					break;
-				case 1:
-					if (x == 0) {
-						start1.x += right.dx; // Move to the wall in the direction of d1
-						start1.y += right.dy;
-					}
-					else {
-						start2.x += right.dx; // Move to the wall in the direction of d2
-						start2.y += right.dy;
-					}
-					break;
-				case 2:
-					if (x == 0) {
-						start1.x += down.dx; // Move to the wall in the direction of d1
-						start1.y += down.dy;
-					}
-					else {
-						start2.x += down.dx; // Move to the wall in the direction of d2
-						start2.y += down.dy;
-					}
-					break;
-				case 3:
-					if (x == 0) {
-						start1.x += left.dx; // Move to the wall in the direction of d1
-						start1.y += left.dy;
-					}
-					else {
-						start2.x += left.dx; // Move to the wall in the direction of d2
-						start2.y += left.dy;
-					}
-					break;
-				}
-				switch (dir2) {
-					case 0:
-						if (x == 0) {
-							end1.x += up.dx; // Move to the wall in the direction of id1
-							end1.y += up.dy;
-						}
-						else {
-							end2.x += up.dx; // Move to the wall in the direction of id2
-							end2.y += up.dy;
-						}
-						break;
-					case 1:
-						if (x == 0) {
-							end1.x += right.dx; // Move to the wall in the direction of id1
-							end1.y += right.dy;
-						}
-						else {
-							end2.x += right.dx; // Move to the wall in the direction of id2
-							end2.y += right.dy;
-						}
-						break;
-					case 2:
-						if(x==0) {
-							end1.x += down.dx; // Move to the wall in the direction of id1
-							end1.y += down.dy;
-						}
-						else {
-							end2.x += down.dx; // Move to the wall in the direction of id2
-							end2.y += down.dy;
-						}
-						break;
-					case 3:
-						if (x == 0) {
-							end1.x += left.dx; // Move to the wall in the direction of id1
-							end1.y += left.dy;
-						}
-						else {
-							end2.x += left.dx; // Move to the wall in the direction of id2
-							end2.y += left.dy;
-						}
-						break;
-				}
-				if (x == 0) {
-					world[start1.x][start1.y].ref = '.'; // Start point for first path
-					world[start1.x][start1.y].passable = 1; // Mark as passable
-					world[end1.x][end1.y].ref = '.'; // End point for first path
-					world[end1.x][end1.y].passable = 1; // Mark as passable
-				}
-				else {
-					world[start2.x][start2.y].ref = '.'; // Start point for second path
-					world[start2.x][start2.y].passable = 1; // Mark as passable
-					world[end2.x][end2.y].ref = '.'; // End point for second path
-					world[end2.x][end2.y].passable = 1; // Mark as passable
+		Dun_Coord start1 = getRandomSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[0]))));
+		Dun_Coord start2 = getRandomSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[1]))));
 
-				}
-				move2++;
-			} while (move2 < 2);
+		if (start1.x + 1 == start2.x)
+			start2.x += 1; // Ensure the two paths do not overlap
+		else if (start1.x - 1 == start2.x)
+			start2.x -= 1; // Ensure the two paths do not overlap
+		if (start1.y + 1 == start2.y)
+			start2.y += 1; // Ensure the two paths do not overlap
+		else if (start1.y - 1 == start2.y)
+			start2.y -= 1; // Ensure the two paths do not overlap
 
+		world[start1.x][start1.y].ref = '.'; // Mark the first path
+		world[start1.x][start1.y].passable = 1; // Make the path passable
+		world[start2.x][start2.y].ref = '.'; // Mark the second path
+		world[start2.x][start2.y].passable = 1; // Make the path passable
+		if (DEBUG) {
+			printf("Path 1 starts at [%d,%d]\n", start1.x, start1.y);
+			printf("Path 2 starts at [%d,%d]\n", start2.x, start2.y);
 		}
+
+
 	}
 }
