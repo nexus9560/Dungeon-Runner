@@ -1130,7 +1130,33 @@ Dun_Coord getRandomSpotOnWall(Room r, Dun_Vec d) {
 		wallSide = rand() % 4; // Randomly choose a wall side
 	else
 		wallSide = getVectorDirection(d); // Get the direction of the vector
-		switch (wallSide) {
+	switch (wallSide) {
+		case 0: 
+				for(int i = r.startLocation.y; i < r.startLocation.y + r.ydim; i++) {
+					if (world[r.startLocation.x][i].ref == '.') {
+						return (Dun_Coord) { r.startLocation.x, i }; // Return the first found spot
+					}
+				}
+		case 1: 
+				for(int i = r.startLocation.x; i < r.startLocation.x + r.xdim; i++) {
+					if (world[i][r.startLocation.y + r.ydim - 1].ref == '.') {
+						return (Dun_Coord) { i, r.startLocation.y + r.ydim - 1 }; // Return the first found spot
+					}
+				}
+		case 2: 
+				for(int i = r.startLocation.y; i < r.startLocation.y + r.ydim; i++) {
+					if (world[r.startLocation.x + r.xdim - 1][i].ref == '.') {
+						return (Dun_Coord) { r.startLocation.x + r.xdim - 1, i }; // Return the first found spot
+					}
+				}
+		case 3: 
+				for(int i = r.startLocation.x; i < r.startLocation.x + r.xdim; i++) {
+					if (world[i][r.startLocation.y].ref == '.') {
+						return (Dun_Coord) { i, r.startLocation.y }; // Return the first found spot
+					}
+				}
+	}
+	switch (wallSide) {
 		case 0: // Top Wall
 			wallloc.x = r.startLocation.x;
 			wallloc.y = (r.ydim > 7 ? r.startLocation.y + 2 + (rand() % (r.ydim - 4)) : 2);
@@ -1150,7 +1176,7 @@ Dun_Coord getRandomSpotOnWall(Room r, Dun_Vec d) {
 		default:
 			printf("Error: Invalid wall side chosen.\n");
 			return (Dun_Coord) { -1, -1 }; // Return an invalid coordinate
-		}
+	}
 	
 	if(DEBUG)
 		printf("Random spot on wall: [%d,%d]\n", wallloc.x, wallloc.y);
@@ -1202,6 +1228,9 @@ void cutPaths() {
 		Dun_Coord start1 = getRandomSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[0]))));
 		Dun_Coord start2 = getRandomSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[1]))));
 
+		Dun_Coord end1 = getRandomSpotOnWall(nearestRooms[0], getVectorToWallFromCenter(nearestRooms[0], getVector(getRoomCenter(nearestRooms[0]), getRoomCenter(r))));
+		Dun_Coord end2 = getRandomSpotOnWall(nearestRooms[1], getVectorToWallFromCenter(nearestRooms[1], getVector(getRoomCenter(nearestRooms[1]), getRoomCenter(r))));
+
 		if (start1.x + 1 == start2.x)
 			start2.x += 1; // Ensure the two paths do not overlap
 		else if (start1.x - 1 == start2.x)
@@ -1211,10 +1240,17 @@ void cutPaths() {
 		else if (start1.y - 1 == start2.y)
 			start2.y -= 1; // Ensure the two paths do not overlap
 
+
 		world[start1.x][start1.y].ref = '.'; // Mark the first path
 		world[start1.x][start1.y].passable = 1; // Make the path passable
 		world[start2.x][start2.y].ref = '.'; // Mark the second path
 		world[start2.x][start2.y].passable = 1; // Make the path passable
+
+		world[end1.x][end1.y].ref = '.'; // Mark the end of the first path
+		world[end1.x][end1.y].passable = 1; // Make the end of the first path passable
+		world[end2.x][end2.y].ref = '.'; // Mark the end of the second path
+		world[end2.x][end2.y].passable = 1; // Make the end of the second path passable
+
 		if (DEBUG) {
 			printf("Path 1 starts at [%d,%d]\n", start1.x, start1.y);
 			printf("Path 2 starts at [%d,%d]\n", start2.x, start2.y);
