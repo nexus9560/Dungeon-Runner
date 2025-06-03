@@ -52,6 +52,7 @@ void showPlayerInventory();
 void cutPaths();
 void drawMap();
 void printMap();
+void popAdMat(Dun_Coord d);
 
 char* printPlayerStatus(int brief);
 
@@ -1202,6 +1203,31 @@ int closerToZero(int value) {
 		return 0; // Already zero
 }
 
+void popAdMat(Dun_Coord d) {
+	Dun_Coord* adjacent = malloc(4 * sizeof(Dun_Coord));
+	if (adjacent == NULL) {
+		printf("Memory allocation failed\n");
+		return;
+	}
+	adjacent[0] = (Dun_Coord){ d.x + up.dx, d.y + up.dy }; // Up
+	adjacent[1] = (Dun_Coord){ d.x + right.dx, d.y + right.dy }; // Right
+	adjacent[2] = (Dun_Coord){ d.x + down.dx, d.y + down.dy }; // Down
+	adjacent[3] = (Dun_Coord){ d.x + left.dx, d.y + left.dy }; // Left
+	for (int i = 0; i < 4; i++) {
+		if(world[adjacent[i].x][adjacent[i].y].passable) {
+			if (DEBUG) {
+				printf("Adjacent cell [%d,%d] is passable.\n", adjacent[i].x, adjacent[i].y);
+			}
+			world[d.x][d.y].admat[i] = 1; // Mark as passable
+		} else {
+			if (DEBUG) {
+				printf("Adjacent cell [%d,%d] is not passable.\n", adjacent[i].x, adjacent[i].y);
+			}
+			world[d.x][d.y].admat[i] = 0; // Mark as not passable
+		}
+	}
+}
+
 void cutPaths() {
 	for (int i = 0; i < roomCount; i++) {
 		Room r = rooms[i];
@@ -1226,10 +1252,45 @@ void cutPaths() {
 		}
 
 		Dun_Coord start1 = getRandomSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[0]))));
+		popAdMat(start1); // Update adjacency matrix for start1
 		Dun_Coord start2 = getRandomSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[1]))));
+		popAdMat(start2); // Update adjacency matrix for start2
 
-		Dun_Coord end1 = getRandomSpotOnWall(nearestRooms[0], getVectorToWallFromCenter(nearestRooms[0], getVector(getRoomCenter(nearestRooms[0]), getRoomCenter(r))));
-		Dun_Coord end2 = getRandomSpotOnWall(nearestRooms[1], getVectorToWallFromCenter(nearestRooms[1], getVector(getRoomCenter(nearestRooms[1]), getRoomCenter(r))));
+		world[start1.x][start1.y].ref = '.'; // Mark the first path
+		world[start1.x][start1.y].passable = 1; // Make the path passable
+		world[start2.x][start2.y].ref = '.'; // Mark the second path
+		world[start2.x][start2.y].passable = 1; // Make the path passable
+
+		for (int i = 0;i < 4;i++) {
+			if (world[start1.x][start1.y].admat[i]) {
+				switch (i) {
+					case 0: start1.x += down.dx; start1.y += down.dy; break; // Down
+					case 1: start1.x += left.dx; start1.y += left.dy; break; // Left
+					case 2: start1.x += up.dx; start1.y += up.dy; break; // Up
+					case 3: start1.x += right.dx; start1.y += right.dy; break; // Right
+				}
+				break;
+			}
+		}
+		for (int i = 0;i < 4;i++) {
+			if (world[start2.x][start2.y].admat[i]) {
+				switch (i) {
+					case 0: start2.x += down.dx; start2.y += down.dy; break; // Down
+					case 1: start2.x += left.dx; start2.y += left.dy; break; // Left
+					case 2: start2.x += up.dx; start2.y += up.dy; break; // Up
+					case 3: start2.x += right.dx; start2.y += right.dy; break; // Right
+				}
+				break;
+			}
+		}
+
+		popAdMat(start1); // Update adjacency matrix for start1
+		popAdMat(start2); // Update adjacency matrix for start2
+
+		Dun_Coord end1 = getRandomSpotOnWall(nearestRooms[0], getVectorToWallFromCenter(nearestRooms[0], getVector(getRoomCenter(nearestRooms[0]), start1)));
+		popAdMat(end1); // Update adjacency matrix for end1
+		Dun_Coord end2 = getRandomSpotOnWall(nearestRooms[1], getVectorToWallFromCenter(nearestRooms[1], getVector(getRoomCenter(nearestRooms[1]), start2)));
+		popAdMat(end2); // Update adjacency matrix for end2
 
 		if (start1.x + 1 == start2.x)
 			start2.x += 1; // Ensure the two paths do not overlap
