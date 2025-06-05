@@ -54,6 +54,7 @@ void drawMap();
 void printMap();
 void printAdMap();
 void popAdMat(Dun_Coord d);
+void updateWorldAdMat();
 
 char* printPlayerStatus(int brief);
 
@@ -69,12 +70,13 @@ int closerToZero(int value); // Brings passed value closer to zero.
 int closeToZero(int a, int b); // Returns a if it is closer to zero than b, otherwise returns b.
 int isAdjacent(Dun_Coord a, Dun_Coord b); // Returns 1 if a and b are adjacent, otherwise returns 0.
 int compareVectors(Dun_Vec a, Dun_Vec b); // Returns 1 if vectors are equal, otherwise returns 0.
+int isSafeSpot(Dun_Coord d);
 
 Room* makeRooms();
 Room getRoomByLocation(Dun_Coord d);
 Room* getNearest2Rooms(Room r);
 
-Dun_Coord getNearestSafeLocation(Dun_Coord d, int searchRadius);
+Dun_Coord getNearestSafeLocation(Dun_Coord d);
 Dun_Coord getRoomCenter(Room r);
 Dun_Coord getSpotOnWall(Room r, Dun_Vec d);
 Dun_Coord copyCoord(Dun_Coord d);
@@ -113,6 +115,8 @@ void main() {
 	saveRooms();
 	cutPaths();
 
+	updateWorldAdMat();
+
 	printAdMap();
 	printMap();
 
@@ -120,7 +124,7 @@ void main() {
 	if (loadPlayer() == 0) {
 		you.base.currentPos = 0;
 		printf("Error loading player position. Starting at default position.\n");
-		you.base.location = getNearestSafeLocation(you.base.location, 1);
+		you.base.location = getNearestSafeLocation(you.base.location);
 		// Name
 		printf("Please enter your name:\n");
 		if (scanf("%31s", you.base.name) != 1) { // Limit input to 31 characters to prevent buffer overflow
@@ -144,19 +148,19 @@ void main() {
 	}
 	else {
 		printf("%s loaded successfully.\n", you.base.name);
-		if (isInARoom(you.base.location)) {
+		if (isInARoom(you.base.location) || isSafeSpot(you.base.location)) {
 			if(DEBUG)
 				printf("Player position is within bounds.\n");
 		}
 		else {
 			if(DEBUG)
 				printf("Player position is out of bounds, teleporting you to the middle of the nearest room.\n");
-			you.base.location = getNearestSafeLocation(you.base.location, 1);
+			you.base.location = getNearestSafeLocation(you.base.location);
 		}
 	}
-	//int* consoleDimensions = getConsoleWindow();
-	//printf("Console dimensions: %d rows, %d columns\n", consoleDimensions[0], consoleDimensions[1]);
-	//roomRunner();
+	int* consoleDimensions = getConsoleWindow();
+	printf("Console dimensions: %d rows, %d columns\n", consoleDimensions[0], consoleDimensions[1]);
+	roomRunner();
 
 
 }
@@ -484,6 +488,7 @@ void changePosition() {
 
 void exitAction(int ec) {
 	if (DEBUG) {
+		printAdMap();
 		printMap();
 		saveRooms();
 	}
@@ -648,8 +653,19 @@ Entity shiftEntity(Entity e, Dun_Vec delta) {
 	return logStep(e);
 }
 
+int isSafeSpot(Dun_Coord d) {
+	if (world[d.x][d.y].passable == 1 && world[d.x][d.y].occupied == 0) {
+		return 1; // Safe spot
+	}
+	return 0; // Not a safe spot
+}
+
 int isInRoom(Room r, Dun_Coord d) {
-	return inRangeInclusive(d.x, r.startLocation.x, r.startLocation.x + r.xdim - 1) && inRangeInclusive(d.y, r.startLocation.y, r.startLocation.y + r.ydim - 1);
+	if (d.x < r.startLocation.x || d.x >= r.startLocation.x + r.xdim || d.y < r.startLocation.y || d.y >= r.startLocation.y + r.ydim) {
+		return 0; // Not in the room
+	}
+	return 1; // In the room
+	//return inRangeExclusive(d.x, r.startLocation.x, r.startLocation.x + r.xdim - 1) && inRangeExclusive(d.y, r.startLocation.y, r.startLocation.y + r.ydim - 1);
 }
 
 int isInARoom(Dun_Coord d) {
@@ -663,29 +679,46 @@ int isInARoom(Dun_Coord d) {
 	return 0; // Not in a room
 }
 
-Dun_Coord getNearestSafeLocation(Dun_Coord d, int searchRadius) {
-	// Ensure searchRadius is within map bounds
-	if (searchRadius > XBOUND && searchRadius > YBOUND) {
-		// Fallback: center of map
-		return (Dun_Coord) { XBOUND / 2, YBOUND / 2 };
+Dun_Coord getNearestSafeLocation(Dun_Coord d) {
+	Dun_Coord safeLocation = { 0, 0 };
+
+	if (isInARoom(d))
+		return d;
+
+	if(roomCount == 0) {
+		printf("Nowhere is safe, good luck.\n");
+		return safeLocation; // Return default value if no rooms are available
 	}
 
-	// Check 4 cardinal directions
-	if (d.x + searchRadius < XBOUND && isInARoom((Dun_Coord) { d.x + searchRadius, d.y })) {
-		return (Dun_Coord) { d.x + searchRadius, d.y };
+	int* roomDistances = malloc(roomCount * sizeof(int));
+	if (roomDistances == NULL) {
+		printf("Memory allocation failed\n");
+		return safeLocation; // Return default value if memory allocation fails
 	}
-	if (d.x - searchRadius >= 0 && isInARoom((Dun_Coord) { d.x - searchRadius, d.y })) {
-		return (Dun_Coord) { d.x - searchRadius, d.y };
+
+	for (unsigned int i = 0; i < roomCount; i++) {
+		Dun_Vec vectorToCenter = getVector(d, getRoomCenter(rooms[i]));
+		roomDistances[i] = abs(vectorToCenter.dx) + abs(vectorToCenter.dy); // Manhattan distance to room center
 	}
-	if (d.y + searchRadius < YBOUND && isInARoom((Dun_Coord) { d.x, d.y + searchRadius })) {
-		return (Dun_Coord) { d.x, d.y + searchRadius };
+
+	Dun_Coord closest = { 0,0 };
+
+	int dCheck = 0, closePos = 0, close = INT_MAX;
+
+
+	while (dCheck < 2) {
+		for (unsigned int i = 0; i < roomCount; i++) {
+			if (roomDistances[i] < close) {
+				close = roomDistances[i];
+				closePos = i;
+			}
+		}
+		dCheck++;
 	}
-	if (d.y - searchRadius >= 0 && isInARoom((Dun_Coord) { d.x, d.y - searchRadius })) {
-		return (Dun_Coord) { d.x, d.y - searchRadius };
-	}
-	
-	// If not found, increase search radius and recurse
-	return getNearestSafeLocation(d, searchRadius + 1);
+
+	safeLocation = getRoomCenter(rooms[closePos]); // Get the center of the closest room
+
+	return safeLocation; // Default return value, should be replaced with actual logic
 }
 
 Room getRoomByLocation(Dun_Coord d) {
@@ -977,7 +1010,7 @@ void printAdMap() {
 		fputc('\n', file);
 	}
 	fclose(file);
-	printf("Full map written to map.dat\n");
+	printf("Full adjacency map written to admap.dat\n");
 }
 
 
@@ -1286,11 +1319,34 @@ void popAdMat(Dun_Coord d) {
 		printf("Memory allocation failed\n");
 		return;
 	}
-	adjacent[0] = (Dun_Coord){ d.x + up.dx, d.y + up.dy }; // Up
-	adjacent[1] = (Dun_Coord){ d.x + right.dx, d.y + right.dy }; // Right
-	adjacent[2] = (Dun_Coord){ d.x + down.dx, d.y + down.dy }; // Down
-	adjacent[3] = (Dun_Coord){ d.x + left.dx, d.y + left.dy }; // Left
+	if(inRange(d.x+up.dx, 0, XBOUND) && inRange(d.y+up.dy, 0, YBOUND))
+		adjacent[0] = (Dun_Coord){ d.x + up.dx, d.y + up.dy }; // Up
+	else
+		adjacent[0] = (Dun_Coord){ -1, -1 }; // Invalid coordinate
+
+	if (inRange(d.x + right.dx, 0, XBOUND) && inRange(d.y + right.dy, 0, YBOUND))
+		adjacent[1] = (Dun_Coord){ d.x + right.dx, d.y + right.dy }; // Right
+	else
+		adjacent[1] = (Dun_Coord){ -1, -1 }; // Invalid coordinate
+
+	if (inRange(d.x + down.dx, 0, XBOUND) && inRange(d.y + down.dy, 0, YBOUND))
+		adjacent[2] = (Dun_Coord){ d.x + down.dx, d.y + down.dy }; // Down
+	else
+		adjacent[2] = (Dun_Coord){ -1, -1 }; // Invalid coordinate
+
+	if (inRange(d.x + left.dx, 0, XBOUND) && inRange(d.y + left.dy, 0, YBOUND))
+		adjacent[3] = (Dun_Coord){ d.x + left.dx, d.y + left.dy }; // Left
+	else
+		adjacent[3] = (Dun_Coord){ -1, -1 }; // Invalid coordinate
+
 	for (int i = 0; i < 4; i++) {
+		if(adjacent[i].x == -1 || adjacent[i].y == -1) {
+			if (DEBUG) {
+				printf("Adjacent cell [%d,%d] is out of bounds.\n", adjacent[i].x, adjacent[i].y);
+			}
+			world[d.x][d.y].admat[i] = 0; // Mark as not passable
+			continue; // Skip to the next iteration
+		}
 		if(world[adjacent[i].x][adjacent[i].y].passable) {
 			if (DEBUG) {
 				printf("Adjacent cell [%d,%d] is passable.\n", adjacent[i].x, adjacent[i].y);
@@ -1301,6 +1357,21 @@ void popAdMat(Dun_Coord d) {
 				printf("Adjacent cell [%d,%d] is not passable.\n", adjacent[i].x, adjacent[i].y);
 			}
 			world[d.x][d.y].admat[i] = 0; // Mark as not passable
+		}
+	}
+	free(adjacent); // Free the allocated memory for adjacent cells
+	
+}
+
+void updateWorldAdMat() {
+	for(int x = 0; x < XBOUND; x++) {
+		for(int y = 0; y < YBOUND; y++) {
+			if(world[x][y].passable) {
+				if (DEBUG) {
+					printf("Updating adjacency matrix for cell [%d,%d]\n", x, y);
+				}
+				popAdMat((Dun_Coord){x, y}); // Update the adjacency matrix for the cell
+			}
 		}
 	}
 }
