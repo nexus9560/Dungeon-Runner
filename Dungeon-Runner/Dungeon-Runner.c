@@ -52,6 +52,7 @@ void showPlayerInventory();
 void cutPaths();
 void drawMap();
 void printMap();
+void printAdMap();
 void popAdMat(Dun_Coord d);
 
 char* printPlayerStatus(int brief);
@@ -66,6 +67,8 @@ int isInARoom(Dun_Coord d);
 int getVectorDirection(Dun_Vec d);
 int closerToZero(int value); // Brings passed value closer to zero.
 int closeToZero(int a, int b); // Returns a if it is closer to zero than b, otherwise returns b.
+int isAdjacent(Dun_Coord a, Dun_Coord b); // Returns 1 if a and b are adjacent, otherwise returns 0.
+int compareVectors(Dun_Vec a, Dun_Vec b); // Returns 1 if vectors are equal, otherwise returns 0.
 
 Room* makeRooms();
 Room getRoomByLocation(Dun_Coord d);
@@ -73,7 +76,7 @@ Room* getNearest2Rooms(Room r);
 
 Dun_Coord getNearestSafeLocation(Dun_Coord d, int searchRadius);
 Dun_Coord getRoomCenter(Room r);
-Dun_Coord getRandomSpotOnWall(Room r, Dun_Vec d);
+Dun_Coord getSpotOnWall(Room r, Dun_Vec d);
 Dun_Coord copyCoord(Dun_Coord d);
 Dun_Coord* getCellsOnVector(Dun_Coord start, Dun_Coord end);
 
@@ -110,6 +113,7 @@ void main() {
 	saveRooms();
 	cutPaths();
 
+	printAdMap();
 	printMap();
 
 
@@ -511,7 +515,13 @@ int countLines(FILE* file) {
 	return lines;
 }
 
+int isAdjacent(Dun_Coord a, Dun_Coord b) {
+	return (abs(a.x - b.x) == 1 && a.y == b.y) || (abs(a.y - b.y) == 1 && a.x == b.x);
+}
 
+int compareVectors(Dun_Vec a, Dun_Vec b) {
+	return (a.dx == b.dx && a.dy == b.dy);
+}
 
 
 void inspectElement(Dun_Coord pos) {  
@@ -947,6 +957,29 @@ void printMap() {
     printf("Full map written to map.dat\n");
 }
 
+void printAdMap() {
+	FILE* file = fopen("admap.dat", "w");
+	if (file == NULL) {
+		printf("Error: Could not open map.dat for writing.\n");
+		return;
+	}
+	for (int x = 0; x < XBOUND; x++) {
+		for (int y = 0; y < YBOUND; y++) {
+			int sum = 0;
+			for (int i = 0; i < 4; i++) {
+				sum += world[x][y].admat[i];
+			}
+
+			char mapChar = (sum == 0 ? ' ' : sum + 48);
+
+			fputc(mapChar, file);
+		}
+		fputc('\n', file);
+	}
+	fclose(file);
+	printf("Full map written to map.dat\n");
+}
+
 
 Room* getNearest2Rooms(Room r) {
 	Room* nearestRooms = malloc(2 * sizeof(Room));
@@ -1096,33 +1129,11 @@ Dun_Coord* getCellsOnVector(Dun_Coord start, Dun_Coord end) {
 		
 	} while (current.x != end.x || current.y != end.y);
 
-	int posInvalid = 0;
-	for (int i =0;i< index; i++) {
-		if (ret[i].x == -1 && ret[i].y == -1) {
-			posInvalid = i;
-			break;
-		}
-	}
-	if (posInvalid < (sizeof(ret) / distance + 2)) {
-		Dun_Coord* temp = malloc(posInvalid * sizeof(Dun_Coord));
-		if (temp == NULL) {
-			printf("Memory allocation failed\n");
-			free(ret);
-			return NULL;
-		}
-		for (int i = 0; i < posInvalid; i++) {
-			temp[i] = ret[i]; // Copy valid coordinates to the new array
-		}
-		free(ret); // Free the old array
-		ret = temp; // Point ret to the new array
-
-	}
-	
 	return ret;
 
 }
 
-Dun_Coord getRandomSpotOnWall(Room r, Dun_Vec d) {
+Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 	Dun_Coord wallloc = getRoomCenter(r);
 
 	
@@ -1157,6 +1168,72 @@ Dun_Coord getRandomSpotOnWall(Room r, Dun_Vec d) {
 					}
 				}
 	}
+
+	int minSearch = 0;
+	int maxSearch = 0;
+
+	switch (wallSide) {
+		case 0:
+			minSearch = r.startLocation.y;
+			maxSearch = r.startLocation.y + r.ydim - 1;
+			break;
+		case 1:
+			minSearch = r.startLocation.x;
+			maxSearch = r.startLocation.x + r.xdim - 1;
+			break;
+		case 2:
+			minSearch = r.startLocation.y;
+			maxSearch = r.startLocation.y + r.ydim - 1;
+			break;
+		case 3:
+			minSearch = r.startLocation.x;
+			maxSearch = r.startLocation.x + r.xdim - 1;
+			break;
+	}
+
+	int runner = minSearch + 0;
+
+	while(runner <= maxSearch) {
+		switch (wallSide) {
+			case 0: // Top Wall
+				if (world[r.startLocation.x][runner].ref == '.') {
+					if(DEBUG)
+						printf("Found a spot on the top wall at [%d,%d]\n", r.startLocation.x, runner);
+					return (Dun_Coord) { r.startLocation.x, runner }; // Return the first found spot
+				}
+				break;
+			case 1: // Right Wall
+				if (world[runner][r.startLocation.y + r.ydim - 1].ref == '.') {
+					if(DEBUG)
+						printf("Found a spot on the right wall at [%d,%d]\n", runner, r.startLocation.y + r.ydim - 1);
+					return (Dun_Coord) { runner, r.startLocation.y + r.ydim - 1 }; // Return the first found spot
+				}
+				break;
+			case 2: // Bottom Wall
+				if (world[r.startLocation.x + r.xdim - 1][runner].ref == '.') {
+					if(DEBUG)
+						printf("Found a spot on the bottom wall at [%d,%d]\n", r.startLocation.x + r.xdim - 1, runner);
+					return (Dun_Coord) { r.startLocation.x + r.xdim - 1, runner }; // Return the first found spot
+				}
+				break;
+			case 3: // Left Wall
+				if (world[runner][r.startLocation.y].ref == '.') {
+					if(DEBUG)
+						printf("Found a spot on the left wall at [%d,%d]\n", runner, r.startLocation.y);
+					return (Dun_Coord) { runner, r.startLocation.y }; // Return the first found spot
+				}
+				break;
+			default:
+				printf("Error: Invalid wall side chosen.\n");
+				return (Dun_Coord) { -1, -1 }; // Return an invalid coordinate
+		}
+		runner++;
+	}
+
+	if(DEBUG)
+		printf("No valid spot found on the wall for room %d at [%d,%d], returning random spot.\n", r.roomID, r.startLocation.x, r.startLocation.y);
+
+
 	switch (wallSide) {
 		case 0: // Top Wall
 			wallloc.x = r.startLocation.x;
@@ -1228,6 +1305,7 @@ void popAdMat(Dun_Coord d) {
 	}
 }
 
+
 void cutPaths() {
 	for (int i = 0; i < roomCount; i++) {
 		Room r = rooms[i];
@@ -1251,71 +1329,44 @@ void cutPaths() {
 			printf("Nearest room 2: %d at [%d,%d]\n", nearestRooms[1].roomID, nearestRooms[1].startLocation.x, nearestRooms[1].startLocation.y);
 		}
 
-		Dun_Coord start1 = getRandomSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[0]))));
-		popAdMat(start1); // Update adjacency matrix for start1
-		Dun_Coord start2 = getRandomSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[1]))));
-		popAdMat(start2); // Update adjacency matrix for start2
-
-		world[start1.x][start1.y].ref = '.'; // Mark the first path
-		world[start1.x][start1.y].passable = 1; // Make the path passable
-		world[start2.x][start2.y].ref = '.'; // Mark the second path
-		world[start2.x][start2.y].passable = 1; // Make the path passable
-
-		for (int i = 0;i < 4;i++) {
-			if (world[start1.x][start1.y].admat[i]) {
-				switch (i) {
-					case 0: start1.x += down.dx; start1.y += down.dy; break; // Down
-					case 1: start1.x += left.dx; start1.y += left.dy; break; // Left
-					case 2: start1.x += up.dx; start1.y += up.dy; break; // Up
-					case 3: start1.x += right.dx; start1.y += right.dy; break; // Right
-				}
-				break;
-			}
+		Dun_Coord* wallLoc = malloc(2 * sizeof(Dun_Coord));
+		Dun_Coord* endLoc = malloc(2 * sizeof(Dun_Coord));
+		if (wallLoc == NULL || endLoc == NULL) {
+			printf("Memory allocation failed\n");
+			free(nearestRooms);
+			free(visited);
+			return;
 		}
-		for (int i = 0;i < 4;i++) {
-			if (world[start2.x][start2.y].admat[i]) {
-				switch (i) {
-					case 0: start2.x += down.dx; start2.y += down.dy; break; // Down
-					case 1: start2.x += left.dx; start2.y += left.dy; break; // Left
-					case 2: start2.x += up.dx; start2.y += up.dy; break; // Up
-					case 3: start2.x += right.dx; start2.y += right.dy; break; // Right
-				}
-				break;
-			}
+		wallLoc[0] = getSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[0]))));
+		wallLoc[1] = getSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[1]))));
+		endLoc[0] = getSpotOnWall(nearestRooms[0], getVector(getRoomCenter(nearestRooms[0]), getRoomCenter(r)));
+		endLoc[1] = getSpotOnWall(nearestRooms[1], getVector(getRoomCenter(nearestRooms[1]), getRoomCenter(r)));
+
+
+
+		world[wallLoc[0].x][wallLoc[0].y].ref = '.';
+		world[wallLoc[1].x][wallLoc[1].y].ref = '.';
+		world[wallLoc[0].x][wallLoc[0].y].passable = 1; // Set the wall location as passable
+		world[wallLoc[1].x][wallLoc[1].y].passable = 1; // Set the wall location as passable
+
+		popAdMat(wallLoc[0]);
+		popAdMat(wallLoc[1]);
+
+
+
+
+		if (wallLoc[0].x == -1 || wallLoc[0].y == -1 || wallLoc[1].x == -1 || wallLoc[1].y == -1) {
+			printf("Error: Could not find valid wall locations.\n");
+			free(nearestRooms);
+			free(visited);
+			return;
 		}
-
-		popAdMat(start1); // Update adjacency matrix for start1
-		popAdMat(start2); // Update adjacency matrix for start2
-
-		Dun_Coord end1 = getRandomSpotOnWall(nearestRooms[0], getVectorToWallFromCenter(nearestRooms[0], getVector(getRoomCenter(nearestRooms[0]), start1)));
-		popAdMat(end1); // Update adjacency matrix for end1
-		Dun_Coord end2 = getRandomSpotOnWall(nearestRooms[1], getVectorToWallFromCenter(nearestRooms[1], getVector(getRoomCenter(nearestRooms[1]), start2)));
-		popAdMat(end2); // Update adjacency matrix for end2
-
-		if (start1.x + 1 == start2.x)
-			start2.x += 1; // Ensure the two paths do not overlap
-		else if (start1.x - 1 == start2.x)
-			start2.x -= 1; // Ensure the two paths do not overlap
-		if (start1.y + 1 == start2.y)
-			start2.y += 1; // Ensure the two paths do not overlap
-		else if (start1.y - 1 == start2.y)
-			start2.y -= 1; // Ensure the two paths do not overlap
-
-
-		world[start1.x][start1.y].ref = '.'; // Mark the first path
-		world[start1.x][start1.y].passable = 1; // Make the path passable
-		world[start2.x][start2.y].ref = '.'; // Mark the second path
-		world[start2.x][start2.y].passable = 1; // Make the path passable
-
-		world[end1.x][end1.y].ref = '.'; // Mark the end of the first path
-		world[end1.x][end1.y].passable = 1; // Make the end of the first path passable
-		world[end2.x][end2.y].ref = '.'; // Mark the end of the second path
-		world[end2.x][end2.y].passable = 1; // Make the end of the second path passable
-
 		if (DEBUG) {
-			printf("Path 1 starts at [%d,%d]\n", start1.x, start1.y);
-			printf("Path 2 starts at [%d,%d]\n", start2.x, start2.y);
+			printf("Wall location 1: [%d,%d]\n", wallLoc[0].x, wallLoc[0].y);
+			printf("Wall location 2: [%d,%d]\n", wallLoc[1].x, wallLoc[1].y);
 		}
+
+		
 
 
 	}
