@@ -669,7 +669,7 @@ int isInRoom(Room r, Dun_Coord d) {
 }
 
 int isInARoom(Dun_Coord d) {
-	if (currRoomCount > 1) {
+	if (roomCount > 1) {
 		for (unsigned int i = 0; i < roomCount; i++) {
 			if (isInRoom(rooms[i], d)) {
 				return 1; // In a room
