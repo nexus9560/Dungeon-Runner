@@ -24,6 +24,7 @@ Entity* enemyGlossary;
 Entity* enemiesOnFloor; // Took the Entities array out of Room, because Entities should be able to roam between rooms on the floor, plus it was making room-scaling difficult.
 
 int enemyGlossarySize;
+int buffer = 3; // Buffer to check for room collisions and out of bounds cases.
 
 unsigned int roomCount;
 
@@ -160,7 +161,7 @@ void main() {
 	}
 	int* consoleDimensions = getConsoleWindow();
 	printf("Console dimensions: %d rows, %d columns\n", consoleDimensions[0], consoleDimensions[1]);
-	roomRunner();
+	//roomRunner();
 
 
 }
@@ -611,25 +612,31 @@ int checkBounds(Dun_Coord newPos, Dun_Vec delta) {
 }
 
 int checkOverlappingArea(Room room1, Room room2) {
-	Dun_Coord r1[5] = { {room1.startLocation.x, room1.startLocation.y}, // Top Left
-									{room1.startLocation.x + room1.xdim - 1, room1.startLocation.y}, // Top Right
-									{room1.startLocation.x, room1.startLocation.y + room1.ydim - 1}, // Bottom Left
-									{room1.startLocation.x + room1.xdim - 1, room1.startLocation.y + room1.ydim - 1}, // Bottom Right
-									getRoomCenter(room1) }; // Center of Room 1
-	Dun_Coord r2[5] = { {room2.startLocation.x, room2.startLocation.y}, // Top Left
-									{room2.startLocation.x + room2.xdim - 1, room2.startLocation.y}, // Top Right
-									{room2.startLocation.x, room2.startLocation.y + room2.ydim - 1}, // Bottom Left
-									{room2.startLocation.x + room2.xdim - 1, room2.startLocation.y + room2.ydim - 1}, // Bottom Right
-									getRoomCenter(room2) }; // Center of Room 2
-	
+
+
+	Room temp1 = (Room){ {room1.startLocation.x - buffer,room1.startLocation.y - buffer}, room1.xdim - 1 + buffer, room1.ydim - 1 + buffer };
+	Room temp2 = (Room){ {room2.startLocation.x - buffer,room2.startLocation.y - buffer}, room2.xdim - 1 + buffer, room2.ydim - 1 + buffer };
+
+	Dun_Coord r1[5] = { {room1.startLocation.x - buffer, room1.startLocation.y - buffer}, // Top Left
+						{room1.startLocation.x + room1.xdim - 1 + buffer, room1.startLocation.y - buffer}, // Top Right
+						{room1.startLocation.x - buffer, room1.startLocation.y + room1.ydim - 1 + buffer}, // Bottom Left
+						{room1.startLocation.x + room1.xdim - 1 + buffer, room1.startLocation.y + room1.ydim - 1 + buffer}, // Bottom Right
+							getRoomCenter(room1) }; // Center of Room 1
+	Dun_Coord r2[5] = { {room2.startLocation.x - buffer, room2.startLocation.y - buffer}, // Top Left
+						{room2.startLocation.x + room2.xdim - 1 + buffer, room2.startLocation.y - buffer}, // Top Right
+						{room2.startLocation.x - buffer, room2.startLocation.y + room2.ydim - 1 + buffer}, // Bottom Left
+						{room2.startLocation.x + room2.xdim - 1 + buffer, room2.startLocation.y + room2.ydim - 1 + buffer}, // Bottom Right
+							getRoomCenter(room2) }; // Center of Room 2
+
 
 	
 	//check and see if two rooms overlap, if they do, return 1 (true)
 	for (int x = 0; x < 5; x++) {
-		if (isInRoom(room1,r2[x]) || isInRoom(room2,r1[x])) {
+		if (isInRoom(temp1,r2[x]) || isInRoom(temp2,r1[x])) {
 			return 1;
 		}
 	}
+
 
 	return 0;
 }
@@ -821,13 +828,13 @@ Room* makeRooms() {
 		temp[i].startLocation.x = (unsigned int)(rand() % (XBOUND - temp[i].xdim));
 		temp[i].startLocation.y = (unsigned int)(rand() % (YBOUND - temp[i].ydim));
 		if(temp[i].startLocation.x == 0)
-			temp[i].startLocation.x = 2;
+			temp[i].startLocation.x = buffer + 1;
 		if (temp[i].startLocation.y == 0)
-			temp[i].startLocation.y = 2; 
-		if(temp[i].startLocation.x + temp[i].xdim >= XBOUND)
-			temp[i].startLocation.x = XBOUND - temp[i].xdim - 2; // Adjust xdim if it exceeds bounds
+			temp[i].startLocation.y = buffer + 1; 
+		if (temp[i].startLocation.x + temp[i].xdim >= XBOUND)
+			temp[i].startLocation.x = XBOUND - temp[i].xdim - (2 * buffer); // Adjust xdim if it exceeds bounds
 		if (temp[i].startLocation.y + temp[i].ydim >= YBOUND)
-			temp[i].startLocation.y = YBOUND - temp[i].ydim - 2; // Adjust ydim if it exceeds bounds
+			temp[i].startLocation.y = YBOUND - temp[i].ydim - (2 * buffer); // Adjust ydim if it exceeds bounds
 		for (unsigned int j = 0; j < i; j++) {
 			if (checkOverlappingArea(temp[i], temp[j])) {
 				if (DEBUG) {
@@ -1175,31 +1182,32 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 		wallSide = rand() % 4; // Randomly choose a wall side
 	else
 		wallSide = getVectorDirection(d); // Get the direction of the vector
+	// 0 = Up, 1 = Right, 2 = Down, 3 = Left
 	switch (wallSide) {
 		case 0: 
-				for(int i = r.startLocation.y; i < r.startLocation.y + r.ydim; i++) {
-					if (world[r.startLocation.x][i].ref == '.') {
-						return (Dun_Coord) { r.startLocation.x, i }; // Return the first found spot
-					}
+			for (int i = r.startLocation.y; i < r.startLocation.y + r.ydim; i++) {
+				if (world[r.startLocation.x][i].passable) {
+					return (Dun_Coord) { r.startLocation.x, i }; // Return the first found spot
 				}
+			}break;
 		case 1: 
-				for(int i = r.startLocation.x; i < r.startLocation.x + r.xdim; i++) {
-					if (world[i][r.startLocation.y + r.ydim - 1].ref == '.') {
-						return (Dun_Coord) { i, r.startLocation.y + r.ydim - 1 }; // Return the first found spot
-					}
+			for (int i = r.startLocation.x; i < r.startLocation.x + r.xdim; i++) {
+				if (world[i][r.startLocation.y + r.ydim - 1].passable) {
+					return (Dun_Coord) { i, r.startLocation.y + r.ydim - 1 }; // Return the first found spot
 				}
+			}break;
 		case 2: 
-				for(int i = r.startLocation.y; i < r.startLocation.y + r.ydim; i++) {
-					if (world[r.startLocation.x + r.xdim - 1][i].ref == '.') {
-						return (Dun_Coord) { r.startLocation.x + r.xdim - 1, i }; // Return the first found spot
-					}
+			for (int i = r.startLocation.y; i < r.startLocation.y + r.ydim; i++) {
+				if (world[r.startLocation.x + r.xdim - 1][i].passable) {
+					return (Dun_Coord) { r.startLocation.x + r.xdim - 1, i }; // Return the first found spot
 				}
+			}break;
 		case 3: 
-				for(int i = r.startLocation.x; i < r.startLocation.x + r.xdim; i++) {
-					if (world[i][r.startLocation.y].ref == '.') {
-						return (Dun_Coord) { i, r.startLocation.y }; // Return the first found spot
-					}
+			for (int i = r.startLocation.x; i < r.startLocation.x + r.xdim; i++) {
+				if (world[i][r.startLocation.y].passable) {
+					return (Dun_Coord) { i, r.startLocation.y }; // Return the first found spot
 				}
+			}break;
 	}
 
 	int minSearch = 0;
@@ -1410,18 +1418,26 @@ void cutPaths() {
 		}
 		wallLoc[0] = getSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[0]))));
 		wallLoc[1] = getSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[1]))));
-		endLoc[0] = getSpotOnWall(nearestRooms[0], getVector(getRoomCenter(nearestRooms[0]), getRoomCenter(r)));
-		endLoc[1] = getSpotOnWall(nearestRooms[1], getVector(getRoomCenter(nearestRooms[1]), getRoomCenter(r)));
-
-
 
 		world[wallLoc[0].x][wallLoc[0].y].ref = '.';
 		world[wallLoc[1].x][wallLoc[1].y].ref = '.';
 		world[wallLoc[0].x][wallLoc[0].y].passable = 1; // Set the wall location as passable
 		world[wallLoc[1].x][wallLoc[1].y].passable = 1; // Set the wall location as passable
 
+		endLoc[0] = getSpotOnWall(nearestRooms[0], getVector(getRoomCenter(nearestRooms[0]), getRoomCenter(r)));
+		endLoc[1] = getSpotOnWall(nearestRooms[1], getVector(getRoomCenter(nearestRooms[1]), getRoomCenter(r)));
+
+		
 		popAdMat(wallLoc[0]);
 		popAdMat(wallLoc[1]);
+
+		world[endLoc[0].x][endLoc[0].y].ref = '.';
+		world[endLoc[1].x][endLoc[1].y].ref = '.';
+		world[endLoc[0].x][endLoc[0].y].passable = 1; // Set the end location as passable
+		world[endLoc[1].x][endLoc[1].y].passable = 1; // Set the end location as passable
+
+		popAdMat(endLoc[0]);
+		popAdMat(endLoc[1]);
 
 
 
