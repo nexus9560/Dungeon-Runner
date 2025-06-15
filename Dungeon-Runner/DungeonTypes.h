@@ -79,6 +79,7 @@ typedef struct {
 	unsigned int xdim;
 	unsigned int ydim;
 	unsigned int roomID; // Number of the room in the world
+	unsigned int closestRoomIDs[2];
 
 } Room;
 
