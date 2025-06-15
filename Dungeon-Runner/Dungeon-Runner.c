@@ -1028,10 +1028,10 @@ Room* getNearest2Rooms(Room r) {
 		printf("Memory allocation failed\n");
 		return NULL;
 	}
-	for(int i = 0; i < roomCount; i++) {
+	for(unsigned int i = 0; i < roomCount; i++) {
 		nearestRoomIndices[i] = 0; // Initialize indices
 	}
-	for (int i = 0; i < roomCount; i++) {
+	for (unsigned int i = 0; i < roomCount; i++) {
 		if(i == r.roomID-1) {
 			if(DEBUG)
 				printf("Skipping room %d as it is the current room.\n", i);
@@ -1048,7 +1048,7 @@ Room* getNearest2Rooms(Room r) {
 	int firstNearestIndex = -1, secondNearestIndex = -1, doubleCheck = 0;
 	while (doubleCheck < 2) {
 		int minDis = INT_MAX;
-		for (int i = 0;i < roomCount;i++) {
+		for (unsigned int i = 0;i < roomCount;i++) {
 			if(nearestRoomIndices[i] < minDis && nearestRoomIndices[i] != 0) {
 				if (firstNearestIndex != -1) {
 					secondNearestIndex = firstNearestIndex;
@@ -1185,25 +1185,25 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 	// 0 = Up, 1 = Right, 2 = Down, 3 = Left
 	switch (wallSide) {
 		case 0: 
-			for (int i = r.startLocation.y; i < r.startLocation.y + r.ydim; i++) {
+			for (unsigned int i = r.startLocation.y; i < r.startLocation.y + r.ydim; i++) {
 				if (world[r.startLocation.x][i].passable) {
 					return (Dun_Coord) { r.startLocation.x, i }; // Return the first found spot
 				}
 			}break;
 		case 1: 
-			for (int i = r.startLocation.x; i < r.startLocation.x + r.xdim; i++) {
+			for (unsigned int i = r.startLocation.x; i < r.startLocation.x + r.xdim; i++) {
 				if (world[i][r.startLocation.y + r.ydim - 1].passable) {
 					return (Dun_Coord) { i, r.startLocation.y + r.ydim - 1 }; // Return the first found spot
 				}
 			}break;
 		case 2: 
-			for (int i = r.startLocation.y; i < r.startLocation.y + r.ydim; i++) {
+			for (unsigned int i = r.startLocation.y; i < r.startLocation.y + r.ydim; i++) {
 				if (world[r.startLocation.x + r.xdim - 1][i].passable) {
 					return (Dun_Coord) { r.startLocation.x + r.xdim - 1, i }; // Return the first found spot
 				}
 			}break;
 		case 3: 
-			for (int i = r.startLocation.x; i < r.startLocation.x + r.xdim; i++) {
+			for (unsigned int i = r.startLocation.x; i < r.startLocation.x + r.xdim; i++) {
 				if (world[i][r.startLocation.y].passable) {
 					return (Dun_Coord) { i, r.startLocation.y }; // Return the first found spot
 				}
@@ -1234,7 +1234,7 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 
 	int runner = minSearch + 0;
 
-	while(runner <= maxSearch) {
+	while(runner < maxSearch) {
 		switch (wallSide) {
 			case 0: // Top Wall
 				if (world[r.startLocation.x][runner].ref == '.') {
@@ -1386,7 +1386,7 @@ void updateWorldAdMat() {
 
 
 void cutPaths() {
-	for (int i = 0; i < roomCount; i++) {
+	for (unsigned int i = 0; i < roomCount; i++) {
 		Room r = rooms[i];
 		Room* nearestRooms = malloc(2 * sizeof(Room));
 		int* visited = malloc(roomCount * sizeof(int));
@@ -1394,7 +1394,7 @@ void cutPaths() {
 			printf("Memory allocation failed\n");
 			return;
 		}
-		for (int j = 0; j < roomCount; j++)
+		for (unsigned int j = 0; j < roomCount; j++)
 			visited[j] = 0; // Initialize visited array
 		nearestRooms = getNearest2Rooms(r);
 		if (nearestRooms == NULL) {
