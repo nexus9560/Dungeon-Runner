@@ -37,6 +37,8 @@ const Dun_Vec left	= {  0, -1 };
 
 Room* rooms;
 
+Dun_Coord*** exitNodes;
+
 unsigned int currRoomCount = 0;
 
 void mapClearing();
@@ -1183,85 +1185,73 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 	else
 		wallSide = getVectorDirection(d); // Get the direction of the vector
 	// 0 = Up, 1 = Right, 2 = Down, 3 = Left
-	switch (wallSide) {
-		case 0: 
-			for (unsigned int i = r.startLocation.y; i < r.startLocation.y + r.ydim; i++) {
-				if (world[r.startLocation.x][i].passable) {
-					return (Dun_Coord) { r.startLocation.x, i }; // Return the first found spot
-				}
-			}break;
-		case 1: 
-			for (unsigned int i = r.startLocation.x; i < r.startLocation.x + r.xdim; i++) {
-				if (world[i][r.startLocation.y + r.ydim - 1].passable) {
-					return (Dun_Coord) { i, r.startLocation.y + r.ydim - 1 }; // Return the first found spot
-				}
-			}break;
-		case 2: 
-			for (unsigned int i = r.startLocation.y; i < r.startLocation.y + r.ydim; i++) {
-				if (world[r.startLocation.x + r.xdim - 1][i].passable) {
-					return (Dun_Coord) { r.startLocation.x + r.xdim - 1, i }; // Return the first found spot
-				}
-			}break;
-		case 3: 
-			for (unsigned int i = r.startLocation.x; i < r.startLocation.x + r.xdim; i++) {
-				if (world[i][r.startLocation.y].passable) {
-					return (Dun_Coord) { i, r.startLocation.y }; // Return the first found spot
-				}
-			}break;
+	
+	if (exitNodes == NULL) {
+		return (Dun_Coord) { XBOUND + 1, YBOUND + 1 };
 	}
 
 	int minSearch = 0;
 	int maxSearch = 0;
 
 	switch (wallSide) {
-		case 0:
-			minSearch = r.startLocation.y;
-			maxSearch = r.startLocation.y + r.ydim - 1;
-			break;
-		case 1:
-			minSearch = r.startLocation.x;
-			maxSearch = r.startLocation.x + r.xdim - 1;
-			break;
-		case 2:
-			minSearch = r.startLocation.y;
-			maxSearch = r.startLocation.y + r.ydim - 1;
-			break;
-		case 3:
-			minSearch = r.startLocation.x;
-			maxSearch = r.startLocation.x + r.xdim - 1;
-			break;
+	case 0:
+		minSearch = r.startLocation.y;
+		maxSearch = r.startLocation.y + r.ydim - 1;
+		break;
+	case 1:
+		minSearch = r.startLocation.x;
+		maxSearch = r.startLocation.x + r.xdim - 1;
+		break;
+	case 2:
+		minSearch = r.startLocation.y;
+		maxSearch = r.startLocation.y + r.ydim - 1;
+		break;
+	case 3:
+		minSearch = r.startLocation.x;
+		maxSearch = r.startLocation.x + r.xdim - 1;
+		break;
 	}
+
+	Dun_Coord t = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
 
 	int runner = minSearch + 0;
 
-	while(runner < maxSearch) {
+	while (runner < maxSearch) {
 		switch (wallSide) {
 			case 0: // Top Wall
 				if (world[r.startLocation.x][runner].ref == '.') {
-					if(DEBUG)
+					if (DEBUG)
 						printf("Found a spot on the top wall at [%d,%d]\n", r.startLocation.x, runner);
-					return (Dun_Coord) { r.startLocation.x, runner }; // Return the first found spot
+					t = (Dun_Coord) { r.startLocation.x, runner };
+					runner = maxSearch + 1;
+					continue;
 				}
 				break;
 			case 1: // Right Wall
 				if (world[runner][r.startLocation.y + r.ydim - 1].ref == '.') {
-					if(DEBUG)
+					if (DEBUG)
 						printf("Found a spot on the right wall at [%d,%d]\n", runner, r.startLocation.y + r.ydim - 1);
-					return (Dun_Coord) { runner, r.startLocation.y + r.ydim - 1 }; // Return the first found spot
+					t = (Dun_Coord) { runner, r.startLocation.y + r.ydim - 1 };
+					runner = maxSearch + 1;
+					continue;
 				}
 				break;
 			case 2: // Bottom Wall
 				if (world[r.startLocation.x + r.xdim - 1][runner].ref == '.') {
-					if(DEBUG)
+					if (DEBUG)
 						printf("Found a spot on the bottom wall at [%d,%d]\n", r.startLocation.x + r.xdim - 1, runner);
-					return (Dun_Coord) { r.startLocation.x + r.xdim - 1, runner }; // Return the first found spot
+					t = (Dun_Coord) { r.startLocation.x + r.xdim - 1, runner };
+					runner = maxSearch + 1;
+					continue;
 				}
 				break;
 			case 3: // Left Wall
 				if (world[runner][r.startLocation.y].ref == '.') {
-					if(DEBUG)
+					if (DEBUG)
 						printf("Found a spot on the left wall at [%d,%d]\n", runner, r.startLocation.y);
-					return (Dun_Coord) { runner, r.startLocation.y }; // Return the first found spot
+					t = (Dun_Coord) { runner, r.startLocation.y };
+					runner = maxSearch + 1;
+					continue;
 				}
 				break;
 			default:
@@ -1271,35 +1261,42 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 		runner++;
 	}
 
-	if(DEBUG)
-		printf("No valid spot found on the wall for room %d at [%d,%d], returning random spot.\n", r.roomID, r.startLocation.x, r.startLocation.y);
-
-
-	switch (wallSide) {
-		case 0: // Top Wall
-			wallloc.x = r.startLocation.x;
-			wallloc.y = (r.ydim > 7 ? r.startLocation.y + 2 + (rand() % (r.ydim - 4)) : 2);
-			break;
-		case 1: // Right Wall
-			wallloc.x = (r.xdim > 7 ? r.startLocation.x + 2 + (rand() % (r.xdim - 4)) : 2);
-			wallloc.y = r.startLocation.y + r.ydim - 1;
-			break;
-		case 2: // Bottom Wall
-			wallloc.x = r.startLocation.x + r.xdim - 1;
-			wallloc.y = (r.ydim > 7 ? r.startLocation.y + 2 + (rand() % (r.ydim - 4)) : 2);
-			break;
-		case 3: // Left Wall
-			wallloc.x = (r.xdim > 7 ? r.startLocation.x + 2 + (rand() % (r.xdim - 4)) : 2);;
-			wallloc.y = r.startLocation.y;
-			break;
-		default:
-			printf("Error: Invalid wall side chosen.\n");
-			return (Dun_Coord) { -1, -1 }; // Return an invalid coordinate
+	if (!(t.x < XBOUND && t.y < YBOUND)) {
+		switch (wallSide) {
+			case 0: // Top Wall
+				t.x = r.startLocation.x;
+				t.y = (r.ydim > 7 ? r.startLocation.y + 2 + (rand() % (r.ydim - 4)) : 2);
+				break;
+			case 1: // Right Wall
+				t.x = (r.xdim > 7 ? r.startLocation.x + 2 + (rand() % (r.xdim - 4)) : 2);
+				t.y = r.startLocation.y + r.ydim - 1;
+				break;
+			case 2: // Bottom Wall
+				t.x = r.startLocation.x + r.xdim - 1;
+				t.y = (r.ydim > 7 ? r.startLocation.y + 2 + (rand() % (r.ydim - 4)) : 2);
+				break;
+			case 3: // Left Wall
+				t.x = (r.xdim > 7 ? r.startLocation.x + 2 + (rand() % (r.xdim - 4)) : 2);;
+				t.y = r.startLocation.y;
+				break;
+			default:
+				printf("Error: Invalid wall side chosen.\n");
+				return (Dun_Coord) { -1, -1 }; // Return an invalid coordinate
+		}
 	}
-	
-	if(DEBUG)
-		printf("Random spot on wall: [%d,%d]\n", wallloc.x, wallloc.y);
-
+	if (exitNodes[r.roomID - 1][wallSide][0].x > XBOUND && exitNodes[r.roomID - 1][wallSide][0].y > YBOUND)
+		exitNodes[r.roomID - 1][wallSide][0] = (Dun_Coord){ t.x,t.y };
+	else if ((!isAdjacent(exitNodes[r.roomID - 1][wallSide][0], t)) && exitNodes[r.roomID - 1][wallSide][1].x > XBOUND && exitNodes[r.roomID - 1][wallSide][1].y > YBOUND)
+		exitNodes[r.roomID - 1][wallSide][1] = (Dun_Coord){ t.x,t.y };
+	else {
+		Dun_Vec d = getVector(t,exitNodes[r.roomID - 1][wallSide][0]);
+		t.x += d.dx;
+		t.y += d.dy;
+		exitNodes[r.roomID - 1][wallSide][1] = (Dun_Coord){ t.x,t.y };
+		
+	}
+	wallloc.x = t.x;
+	wallloc.y = t.y;
 	return wallloc;
 }
 
@@ -1424,12 +1421,57 @@ void cutPaths() {
 		world[wallLoc[0].x][wallLoc[0].y].passable = 1; // Set the wall location as passable
 		world[wallLoc[1].x][wallLoc[1].y].passable = 1; // Set the wall location as passable
 
+		popAdMat(wallLoc[0]);
+		popAdMat(wallLoc[1]);
+
+		for (int i = 0; i < buffer-1; i++) {
+			if (world[wallLoc[0].x][wallLoc[0].y].admat[0]) {
+				wallLoc[0].x += down.dx;
+				wallLoc[0].y += down.dy;
+			}
+			else if (world[wallLoc[0].x][wallLoc[0].y].admat[1]) {
+				wallLoc[0].x += left.dx;
+				wallLoc[0].y += left.dy;
+			}
+			else if (world[wallLoc[0].x][wallLoc[0].y].admat[2]) {
+				wallLoc[0].x += up.dx;
+				wallLoc[0].y += up.dy;
+			}
+			else if (world[wallLoc[0].x][wallLoc[0].y].admat[3]) {
+				wallLoc[0].x += right.dx;
+				wallLoc[0].y += right.dy;
+			}
+
+			if (world[wallLoc[1].x][wallLoc[1].y].admat[0]) {
+				wallLoc[1].x += down.dx;
+				wallLoc[1].y += down.dy;
+			}
+			else if (world[wallLoc[1].x][wallLoc[1].y].admat[1]) {
+				wallLoc[1].x += left.dx;
+				wallLoc[1].y += left.dy;
+			}
+			else if (world[wallLoc[1].x][wallLoc[1].y].admat[2]) {
+				wallLoc[1].x += up.dx;
+				wallLoc[1].y += up.dy;
+			}
+			else if (world[wallLoc[1].x][wallLoc[1].y].admat[3]) {
+				wallLoc[1].x += right.dx;
+				wallLoc[1].y += right.dy;
+			}
+
+			world[wallLoc[0].x][wallLoc[0].y].ref = '.';
+			world[wallLoc[1].x][wallLoc[1].y].ref = '.';
+			world[wallLoc[0].x][wallLoc[0].y].passable = 1; // Set the wall location as passable
+			world[wallLoc[1].x][wallLoc[1].y].passable = 1; // Set the wall location as passable
+
+			popAdMat(wallLoc[0]);
+			popAdMat(wallLoc[1]);
+		}
+
 		endLoc[0] = getSpotOnWall(nearestRooms[0], getVector(getRoomCenter(nearestRooms[0]), getRoomCenter(r)));
 		endLoc[1] = getSpotOnWall(nearestRooms[1], getVector(getRoomCenter(nearestRooms[1]), getRoomCenter(r)));
 
 		
-		popAdMat(wallLoc[0]);
-		popAdMat(wallLoc[1]);
 
 		world[endLoc[0].x][endLoc[0].y].ref = '.';
 		world[endLoc[1].x][endLoc[1].y].ref = '.';

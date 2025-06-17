@@ -167,12 +167,35 @@ Room* loadRooms(int ovr) {
 		fclose(file);
 		return NULL;
 	}
+	exitNodes = malloc(roomCount * sizeof(Dun_Coord**));
 	temp = malloc(roomCount * sizeof(Room));
-	if (temp == NULL) {
+	if (temp == NULL || exitNodes == NULL) {
 		printf("Error: Memory allocation failed.\n");
 		fclose(file);
+		free(exitNodes);
 		return NULL;
 	}
+	for (unsigned int i = 0; i < roomCount; i++) {
+		exitNodes[i] = malloc(4 * sizeof(Dun_Coord*));
+		if (exitNodes[i] == NULL) {
+			printf("Error: Memory allocation failed.\n");
+			fclose(file);
+			free(exitNodes);
+			return NULL;
+		}
+		for (unsigned int j = 0; j < 4; j++) {
+			exitNodes[i][j] = malloc(2 * sizeof(Dun_Coord));
+			if (exitNodes[i][j] == NULL) {
+				printf("Error: Memory allocation failed.\n");
+				fclose(file);
+				free(exitNodes);
+				return NULL;
+			}
+			exitNodes[i][j][0] = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
+			exitNodes[i][j][1] = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
+		}
+	}
+
 	for (unsigned int i = 0; i < roomCount; i++) {
 		fscanf(file, "Room %4d: Start Location: [%6d,%6d], Dimensions: [%6d,%6d]\n",
 			&temp[i].roomID,
@@ -181,7 +204,9 @@ Room* loadRooms(int ovr) {
 			&temp[i].xdim,
 			&temp[i].ydim
 		);
-
+		for (unsigned int j = 0; j < 4;j++) {
+			temp[i].egressCount[j] = 2;
+		}
 	}
 	fclose(file);
 
