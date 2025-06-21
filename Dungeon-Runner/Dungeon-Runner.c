@@ -826,13 +826,9 @@ Room* makeRooms() {
 		unsigned int randX = (unsigned int)(rand() % (unsigned int)(XBOUND * 0.08));
 		unsigned int randY = (unsigned int)(rand() % (unsigned int)(YBOUND * 0.06));
 		temp[i].xdim = (randX < 9 ? 9 : randX);
-		temp[i].buffXDim = temp[i].xdim + ( 2 * buffer ) - 1;
 		temp[i].ydim = (randY < 9 ? 9 : randY);
-		temp[i].buffYDim = temp[i].ydim + ( 2 * buffer ) - 1;
 		temp[i].startLocation.x = (unsigned int)(rand() % (XBOUND - temp[i].xdim));
-		temp[i].bufferLocation.x = temp[i].startLocation.x - buffer;
 		temp[i].startLocation.y = (unsigned int)(rand() % (YBOUND - temp[i].ydim));
-		temp[i].bufferLocation.y = temp[i].startLocation.y - buffer;
 		if(temp[i].startLocation.x == 0)
 			temp[i].startLocation.x = buffer + 1;
 		if (temp[i].startLocation.y == 0)
