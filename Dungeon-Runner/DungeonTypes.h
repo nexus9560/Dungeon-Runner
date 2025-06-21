@@ -14,6 +14,7 @@
 #include <ctype.h>
 #include <time.h>
 #include <math.h>
+#include <limits.h>
 
 #define XBOUND 256
 #define YBOUND 512
@@ -75,9 +76,10 @@ typedef struct {
 } Player;
 
 typedef struct {
+	Dun_Coord bufferLocation;
 	Dun_Coord startLocation; // Corner location in the world map, as well as the initial offset
-	unsigned int xdim;
-	unsigned int ydim;
+	unsigned int xdim, buffXDim;
+	unsigned int ydim, buffYDim;
 	unsigned int roomID; // Number of the room in the world
 	unsigned int egressCount[4];
 

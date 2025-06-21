@@ -178,10 +178,10 @@ void mapClearing() {
 			world[x][y].ref = '#';
 		}
 	}
-	
+
 }
 
-int* getConsoleWindow() {  
+int* getConsoleWindow() {
    static int dimensions[2] = {0, 0}; // [rows, columns]
 
 #ifdef _WIN32
@@ -205,7 +205,7 @@ int* getConsoleWindow() {
 }
 
 void drawMap() {
-	
+
 	int* conDims = getConsoleWindow();
 	int renderX = (int)((conDims[0] * 0.75) > XBOUND ? XBOUND : (conDims[0] * 0.55));
 	int renderY = (int)((conDims[1] * 0.80) > YBOUND ? YBOUND : (conDims[1] * 0.80));
@@ -215,7 +215,7 @@ void drawMap() {
 		return;
 	}
 	/*
-		
+
 	if ((xoffset == 0 && yoffset == 0) || (xoffset == 0 && yoffset == (YBOUND - 1)) || (xoffset == (XBOUND - 1) && yoffset == 0) || (xoffset == (XBOUND - 1) && yoffset == (YBOUND - 1))) {
 				map[x * renderY + y] = '+';
 				continue;
@@ -229,8 +229,8 @@ void drawMap() {
 				continue;
 			}
 	*/
-		
-		
+
+
 	for (int x = 0; x < renderX;x++) {
 		int xoffset = you.base.location.x - (renderX / 2) + x;
 		for (int y = 0;y < renderY;y++) {
@@ -272,14 +272,14 @@ void clearScreen() {
 void roomRunner() {
 	int isBrief = 1;
 	do {
-		
+
 		drawMap();
 		printf("\n");
 		printf("%s\n",printPlayerStatus(isBrief));
 		actionChecker();
 		//delay(1);
 		clearScreen();
-		
+
 	} while (1);
 }
 
@@ -341,7 +341,7 @@ void actionChecker() {
 	   printf("F to Inspect\n");
 	   printf("Spacebar to Attack\n");
 #ifdef _WIN32
-	   
+
 		int ch;
 		if (_kbhit()) {
 			ch = _getch(); // Get the actual key code
@@ -395,9 +395,9 @@ void actionChecker() {
 				default:break;
 			}
 		}
-	   
-	   
-	   
+
+
+
 
 #elif __unix__ || __APPLE__
 	   struct termios oldt, newt;
@@ -532,29 +532,29 @@ int compareVectors(Dun_Vec a, Dun_Vec b) {
 }
 
 
-void inspectElement(Dun_Coord pos) {  
-   int res = 0;  
-   printf("Inspect what?\n");  
-   printf("0 - Go back\n");  
-   printf("1 - Inspect yourself\n");  
-   printf("2 - Inspect the room\n");  
-   printf("3 - Trace your steps\n\n");  
-   scanf("%d", &res);  
-   clearScreen();  
-   switch (res) {  
-       case 1: {  
-           printf("You are:\n");  
-           printf("Name: %s\n", you.base.name);  
-           printf("Health: %d / %d\n", you.base.curHealth, you.base.health);  
-           printf("Attack: %d\n", you.base.atk);  
-           printf("To-Hit: %d\n", you.base.hit);  
-           printf("Defense: %d\n", you.base.def);  
-           printf("Experience: %d\n", you.base.exp);  
-           printf("Evasion: %d\n", you.base.eva);  
-           printf("Level: %d\n", you.base.level);  
-           break;  
-       }  
-       case 2: {  
+void inspectElement(Dun_Coord pos) {
+   int res = 0;
+   printf("Inspect what?\n");
+   printf("0 - Go back\n");
+   printf("1 - Inspect yourself\n");
+   printf("2 - Inspect the room\n");
+   printf("3 - Trace your steps\n\n");
+   scanf("%d", &res);
+   clearScreen();
+   switch (res) {
+       case 1: {
+           printf("You are:\n");
+           printf("Name: %s\n", you.base.name);
+           printf("Health: %d / %d\n", you.base.curHealth, you.base.health);
+           printf("Attack: %d\n", you.base.atk);
+           printf("To-Hit: %d\n", you.base.hit);
+           printf("Defense: %d\n", you.base.def);
+           printf("Experience: %d\n", you.base.exp);
+           printf("Evasion: %d\n", you.base.eva);
+           printf("Level: %d\n", you.base.level);
+           break;
+       }
+       case 2: {
            printf("You are in cell %d\n", world[pos.x][pos.y].locationID);
 		   for (int x = 0;x < XBOUND;x++) {
 			   for (int y = 0;y < YBOUND;y++) {
@@ -564,15 +564,15 @@ void inspectElement(Dun_Coord pos) {
 				   }
 			   }
 		   }
-           break;  
-       }  
-       case 3:  
-           for (int i = 0; i < LOG_BUFFER; i++) { // Ensure the loop respects the buffer size  
-               printf("Step %d: [%4d,%4d], ", (i + 1), you.base.stepLog[i].x, you.base.stepLog[i].y);  
-           }  
-           printf("\n\n");  
-           break;  
-       default: return;  
+           break;
+       }
+       case 3:
+           for (int i = 0; i < LOG_BUFFER; i++) { // Ensure the loop respects the buffer size
+               printf("Step %d: [%4d,%4d], ", (i + 1), you.base.stepLog[i].x, you.base.stepLog[i].y);
+           }
+           printf("\n\n");
+           break;
+       default: return;
    }
    scanf("");
 }
@@ -603,12 +603,12 @@ void delay(int seconds) {
 #endif
 }
 
-int checkBounds(Dun_Coord newPos, Dun_Vec delta) {  
-	int temp[2] = { newPos.x, newPos.y }; 
-	
+int checkBounds(Dun_Coord newPos, Dun_Vec delta) {
+	int temp[2] = { newPos.x, newPos.y };
 
-   temp[0] += delta.dx;  
-   temp[1] += delta.dy;  
+
+   temp[0] += delta.dx;
+   temp[1] += delta.dy;
 
    return world[temp[0]][temp[1]].passable && (temp[0] > 0 && temp[0] < XBOUND) && (temp[1] > 0 && temp[1] < YBOUND) ;
 }
@@ -631,7 +631,7 @@ int checkOverlappingArea(Room room1, Room room2) {
 							getRoomCenter(room2) }; // Center of Room 2
 
 
-	
+
 	//check and see if two rooms overlap, if they do, return 1 (true)
 	for (int x = 0; x < 5; x++) {
 		if (isInRoom(temp1,r2[x]) || isInRoom(temp2,r1[x])) {
@@ -656,9 +656,9 @@ Entity shiftEntity(Entity e, Dun_Vec delta) {
 		if(DEBUG)
 			printf("Error: %s cannot move out of bounds.\n",e.name);
 	}
-	
-	
-	
+
+
+
 	return logStep(e);
 }
 
@@ -732,7 +732,7 @@ Dun_Coord getNearestSafeLocation(Dun_Coord d) {
 
 Room getRoomByLocation(Dun_Coord d) {
 	Room temp = { {0,0},XBOUND,YBOUND };
-	
+
 	for (unsigned int i = 0; i < roomCount;i++) {
 		if (isInRoom(rooms[i], d)) {
 			return rooms[i];
@@ -826,13 +826,17 @@ Room* makeRooms() {
 		unsigned int randX = (unsigned int)(rand() % (unsigned int)(XBOUND * 0.08));
 		unsigned int randY = (unsigned int)(rand() % (unsigned int)(YBOUND * 0.06));
 		temp[i].xdim = (randX < 9 ? 9 : randX);
+		temp[i].buffXDim = temp[i].xdim + ( 2 * buffer ) - 1;
 		temp[i].ydim = (randY < 9 ? 9 : randY);
+		temp[i].buffYDim = temp[i].ydim + ( 2 * buffer ) - 1;
 		temp[i].startLocation.x = (unsigned int)(rand() % (XBOUND - temp[i].xdim));
+		temp[i].bufferLocation.x = temp[i].startLocation.x - buffer;
 		temp[i].startLocation.y = (unsigned int)(rand() % (YBOUND - temp[i].ydim));
+		temp[i].bufferLocation.y = temp[i].startLocation.y - buffer;
 		if(temp[i].startLocation.x == 0)
 			temp[i].startLocation.x = buffer + 1;
 		if (temp[i].startLocation.y == 0)
-			temp[i].startLocation.y = buffer + 1; 
+			temp[i].startLocation.y = buffer + 1;
 		if (temp[i].startLocation.x + temp[i].xdim >= XBOUND)
 			temp[i].startLocation.x = XBOUND - temp[i].xdim - (2 * buffer); // Adjust xdim if it exceeds bounds
 		if (temp[i].startLocation.y + temp[i].ydim >= YBOUND)
@@ -846,7 +850,7 @@ Room* makeRooms() {
 				break; // Break out of the inner loop to regenerate
 			}
 		}
-		
+
 	}
 	for(unsigned int x=0;x<roomCount;x++)
 		temp[x].roomID = x;
@@ -925,7 +929,7 @@ void makeRoomSpace(Room r) {
 			}
 		}
 	}
-	
+
 }
 
 Dun_Coord getRoomCenter(Room r) {
@@ -985,7 +989,7 @@ void printMap() {
                 mapChar = '-';
             } else if (y == 0 || y == YBOUND - 1) {
                 mapChar = '|';
-            } else 
+            } else
 	*/
 
     for (int x = 0; x < XBOUND; x++) {
@@ -1059,7 +1063,7 @@ Room* getNearest2Rooms(Room r) {
 					firstNearestIndex = i;
 				}
 				minDis = nearestRoomIndices[i];
-				
+
 			}
 		}
 		doubleCheck++;
@@ -1079,7 +1083,7 @@ Room* getNearest2Rooms(Room r) {
 		printf("Nearest room 1: %d at [%d,%d] with a distance of %d\n", nearestRooms[0].roomID, nearestRooms[0].startLocation.x, nearestRooms[0].startLocation.y,nearestRoomIndices[firstNearestIndex]);
 		printf("Nearest room 2: %d at [%d,%d] with a distance of %d\n", nearestRooms[1].roomID, nearestRooms[1].startLocation.x, nearestRooms[1].startLocation.y,nearestRoomIndices[secondNearestIndex]);
 	}
-	
+
 	return nearestRooms;
 }
 
@@ -1102,7 +1106,7 @@ int getVectorDirection(Dun_Vec d) {
 
 Dun_Vec getVectorToWallFromCenter(Room r, Dun_Vec d) {
 	Dun_Vec ret = { d.dx, d.dy };
-	
+
 	if(d.dx == 0 && d.dy == 0) {
 		printf("Error: Vector cannot be zero.\n");
 		return (Dun_Vec) { 0, 0 }; // Return a zero vector
@@ -1168,7 +1172,7 @@ Dun_Coord* getCellsOnVector(Dun_Coord start, Dun_Coord end) {
 			d.dy = closerToZero(d.dy);
 		}
 		ret[index++] = copyCoord(current); // Add the current coordinate to the array
-		
+
 	} while (current.x != end.x || current.y != end.y);
 
 	return ret;
@@ -1178,14 +1182,14 @@ Dun_Coord* getCellsOnVector(Dun_Coord start, Dun_Coord end) {
 Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 	Dun_Coord wallloc = getRoomCenter(r);
 
-	
+
 	int wallSide = -1; // Initialize wallSide to an invalid value
 	if (d.dx == 0 && d.dy == 0)
 		wallSide = rand() % 4; // Randomly choose a wall side
 	else
 		wallSide = getVectorDirection(d); // Get the direction of the vector
 	// 0 = Up, 1 = Right, 2 = Down, 3 = Left
-	
+
 	if (exitNodes == NULL) {
 		return (Dun_Coord) { XBOUND + 1, YBOUND + 1 };
 	}
@@ -1293,7 +1297,7 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 		t.x += d.dx;
 		t.y += d.dy;
 		exitNodes[r.roomID - 1][wallSide][1] = (Dun_Coord){ t.x,t.y };
-		
+
 	}
 	wallloc.x = t.x;
 	wallloc.y = t.y;
@@ -1365,7 +1369,7 @@ void popAdMat(Dun_Coord d) {
 		}
 	}
 	free(adjacent); // Free the allocated memory for adjacent cells
-	
+
 }
 
 void updateWorldAdMat() {
@@ -1471,7 +1475,7 @@ void cutPaths() {
 		endLoc[0] = getSpotOnWall(nearestRooms[0], getVector(getRoomCenter(nearestRooms[0]), getRoomCenter(r)));
 		endLoc[1] = getSpotOnWall(nearestRooms[1], getVector(getRoomCenter(nearestRooms[1]), getRoomCenter(r)));
 
-		
+
 
 		world[endLoc[0].x][endLoc[0].y].ref = '.';
 		world[endLoc[1].x][endLoc[1].y].ref = '.';
@@ -1495,7 +1499,7 @@ void cutPaths() {
 			printf("Wall location 2: [%d,%d]\n", wallLoc[1].x, wallLoc[1].y);
 		}
 
-		
+
 
 
 	}

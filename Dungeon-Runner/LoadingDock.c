@@ -1,6 +1,6 @@
 #include "DungeonTypes.h"
 
-Item* itemGlossary = NULL;
+
 
 
 void savePlayer() {
@@ -10,7 +10,7 @@ void savePlayer() {
 		return;
 	}
 
-	// Write the player's position to the file  
+	// Write the player's position to the file
 	fprintf(file, "Location:[%4d,%4d]\n", you.base.location.x, you.base.location.y);
 	fprintf(file, "Name:%s\n", you.base.name);
 	fprintf(file, "Health:%d\n", you.base.health);
