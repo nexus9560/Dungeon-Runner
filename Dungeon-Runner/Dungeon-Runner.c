@@ -74,6 +74,7 @@ int closeToZero(int a, int b); // Returns a if it is closer to zero than b, othe
 int isAdjacent(Dun_Coord a, Dun_Coord b); // Returns 1 if a and b are adjacent, otherwise returns 0.
 int compareVectors(Dun_Vec a, Dun_Vec b); // Returns 1 if vectors are equal, otherwise returns 0.
 int isSafeSpot(Dun_Coord d);
+int isThereAPath(Dun_Coord start, Dun_Coord end);
 
 Room* makeRooms();
 Room getRoomByLocation(Dun_Coord d);
@@ -1495,8 +1496,36 @@ void cutPaths() {
 			printf("Wall location 2: [%d,%d]\n", wallLoc[1].x, wallLoc[1].y);
 		}
 
-
-
-
 	}
+
+}
+
+int isThereAPath(Dun_Coord start, Dun_Coord end) {
+    Entity e;
+    e.location.x = start.x;
+    e.location.y = start.y;
+
+    int admap[XBOUND][YBOUND] = {0};
+    int visited[XBOUND][YBOUND] = {0};
+    admap[e.location.x][e.location.y] = 0;
+    visited[e.location.x][e.location.y] = 1;
+
+    Dun_Vec d = getVector(start, end);
+    int totalMove = pow(abs(d.dx) + abs(d.dy), 2);
+    int minMove = abs(d.dx) + abs(d.dy);
+    while(totalMove > 0){
+        if (e.location.x == end.x && e.location.y == end.y){
+            return 1;
+        }
+        Dun_Coord neighbors[4];
+        neighbors[0] = (Dun_Coord){e.location.x+up.dx, e.location.y+up.dy};
+        neighbors[1] = (Dun_Coord){e.location.x+right.dx, e.location.y+right.dy};
+        neighbors[2] = (Dun_Coord){e.location.x+down.dx, e.location.y+down.dy};
+        neighbors[3] = (Dun_Coord){e.location.x+left.dx, e.location.y+left.dy};
+
+
+    }
+
+
+	return 0;
 }
