@@ -30,11 +30,6 @@ unsigned int roomCount;
 
 Item* itemGlossary;
 
-const Dun_Vec up	= { -1,  0 };
-const Dun_Vec right = {  0,  1 };
-const Dun_Vec down	= {  1,  0 };
-const Dun_Vec left	= {  0, -1 };
-
 Room* rooms;
 
 Dun_Coord*** exitNodes;
@@ -1500,6 +1495,91 @@ void cutPaths() {
 
 }
 
+/*
+ * function Dijkstra(Graph, source):
+ *      // initialize two arrays of
+        for each vertex v in Graph.Vertices:
+            dist[v] ← INFINITY
+            prev[v] ← UNDEFINED
+            add v to Q
+        dist[source] ← 0
+
+        while Q is not empty:
+            u ← vertex in Q with minimum dist[u]
+            Q.remove(u)
+
+            for each arc (u, v) in Q:
+                alt ← dist[u] + Graph.Edges(u, v)
+                if alt < dist[v]:
+                    dist[v] ← alt
+                    prev[v] ← u
+
+        return dist[], prev[]
+ */
+
+
+
+Dun_Coord_Queue Dijkstra(Dun_Coord currLoc, Dun_Coord endLoc, int maxSteps){
+
+    int dist[XBOUND][YBOUND];
+    Dun_Coord prev[XBOUND][YBOUND];
+
+    for(int i = 0; i < XBOUND; i++){
+        for(int j = 0; j < YBOUND; j++){
+            dist[i][j] = -1;
+            prev[i][j] = (Dun_Coord){XBOUND + 1, YBOUND + 1};
+        }
+    }
+    DCQ queue;
+    DCQ_init(&queue, XBOUND);
+
+    dist[currLoc.x][currLoc.y] = 0;
+    DCQ_append(&queue, currLoc);
+
+    Dun_Coord u;
+    while(!DCQ_is_empty(&queue)){
+        u = DCQ_pop(&queue);
+        if(u.x == endLoc.x && u.y == endLoc.y){
+            break;
+        }
+        if(dist[u.x][u.y] >= maxSteps){
+            continue;
+        }
+        for(int i = 0; i < 4; i++){
+            Dun_Vec direction = directions[i];
+            Dun_Coord target = {u.x + direction.dx, u.y + direction.dy};
+            if( target.x >= XBOUND ||  target.y >= YBOUND || dist[target.x][target.y] != -1){
+                continue;
+            }
+            if(dist[u.x][u.y] < maxSteps){
+                continue;
+            }
+            dist[target.x][target.y] = dist[u.x][u.y] + 1;
+            prev[target.x][target.y] = u;
+            DCQ_append(&queue, target);
+        }
+    }
+
+    // don't need this until the end
+    DCQ path;
+    DCQ_init(&path, XBOUND);
+
+    //
+
+    Dun_Coord * coords = malloc(sizeof(Dun_Coord) * maxSteps);
+    int index = 0;
+    if(dist[endLoc.x][endLoc.y] != -1){
+        Dun_Coord curr = endLoc;
+        while(curr.x != XBOUND + 1 && curr.y != YBOUND + 1){
+            coords[index++] = curr;
+            curr = prev[curr.x][curr.y];
+        }
+    }
+    DCQ_destroy(&queue);
+    return path;
+    return queue;
+}
+
 int isThereAPath(Dun_Coord start, Dun_Coord end) {
     Entity e;
     e.location.x = start.x;
@@ -1513,6 +1593,8 @@ int isThereAPath(Dun_Coord start, Dun_Coord end) {
     Dun_Vec d = getVector(start, end);
     int totalMove = pow(abs(d.dx) + abs(d.dy), 2);
     int minMove = abs(d.dx) + abs(d.dy);
+    int tailRegister = 0;
+    Dun_Coord* tail = NULL;
     while(totalMove > 0){
         if (e.location.x == end.x && e.location.y == end.y){
             return 1;
@@ -1522,7 +1604,6 @@ int isThereAPath(Dun_Coord start, Dun_Coord end) {
         neighbors[1] = (Dun_Coord){e.location.x+right.dx, e.location.y+right.dy};
         neighbors[2] = (Dun_Coord){e.location.x+down.dx, e.location.y+down.dy};
         neighbors[3] = (Dun_Coord){e.location.x+left.dx, e.location.y+left.dy};
-
 
     }
 

@@ -1,5 +1,6 @@
 #ifndef DUNGEONTYPES_H
 #define DUNGEONTYPES_H
+#pragma once
 
 #ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
@@ -38,6 +39,36 @@ typedef struct {
 	unsigned int x;
 	unsigned int y;
 } Dun_Coord;
+
+
+
+typedef struct {
+    unsigned int capacity;
+    unsigned int head;
+    unsigned int tail;
+    Dun_Coord * items;
+} Dun_Coord_Queue;
+
+typedef Dun_Coord_Queue DCQ;
+
+void DCQ_init(DCQ* instance, unsigned int capacity);
+void DCQ_destroy(Dun_Coord_Queue *dcq);
+
+bool DCQ_is_empty(Dun_Coord_Queue *dcq);
+
+void DCQ_append(Dun_Coord_Queue *dcq, Dun_Coord coord);
+Dun_Coord DCQ_pop(Dun_Coord_Queue *dcq);
+
+void DCQ_resize(Dun_Coord_Queue *dcq, unsigned int new_capacity);
+
+
+
+// typedef struct {
+//     Dun_Coord * items;
+//     unsigned int capacity;
+// } Dun_Coord_Vector;
+
+// Dun_Coord* DCQ_to_DC_Vec(Dun_Coord_Queue *dcq);
 
 typedef struct {
 	char name[32];
@@ -93,10 +124,11 @@ typedef struct {
 					// Positions: 0 = up, 1 = right, 2 = down, 3 = left
 } Cell;
 
-extern const Dun_Vec up;	// { -1,  0 };
-extern const Dun_Vec right; // {  0,  1 };
-extern const Dun_Vec down;	// {  1,  0 };
-extern const Dun_Vec left;	// {  0, -1 };
+extern const Dun_Vec up;
+extern const Dun_Vec right;
+extern const Dun_Vec down;
+extern const Dun_Vec left;
+extern const Dun_Vec directions[4];
 
 extern Cell world[XBOUND][YBOUND];
 
