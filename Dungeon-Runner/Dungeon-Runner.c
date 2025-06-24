@@ -36,6 +36,12 @@ Dun_Coord*** exitNodes;
 
 unsigned int currRoomCount = 0;
 
+//const Dun_Vec up = { -1, 0 };
+//const Dun_Vec right =	{  0, 1 };
+//const Dun_Vec down =	{  1, 0 };
+//const Dun_Vec left =	{  0,-1 };
+//const Dun_Vec directions[4] = { { -1, 0 }, { 0, 1 }, { 1, 0 }, { 0, -1 } };
+
 void mapClearing();
 void makeRoomSpace(Room r);
 void roomRunner();
@@ -1591,7 +1597,7 @@ int isThereAPath(Dun_Coord start, Dun_Coord end) {
     visited[e.location.x][e.location.y] = 1;
 
     Dun_Vec d = getVector(start, end);
-    int totalMove = pow(abs(d.dx) + abs(d.dy), 2);
+    int totalMove = (int)(pow(abs(d.dx) + abs(d.dy), 2));
     int minMove = abs(d.dx) + abs(d.dy);
     int tailRegister = 0;
     Dun_Coord* tail = NULL;

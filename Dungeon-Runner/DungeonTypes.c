@@ -4,7 +4,7 @@ const Dun_Vec up	= { -1,  0 };
 const Dun_Vec right = {  0,  1 };
 const Dun_Vec down	= {  1,  0 };
 const Dun_Vec left	= {  0, -1 };
-const Dun_Vec directions[4] = {up, right, down, left};
+const Dun_Vec directions[4] = { { -1, 0 }, { 0, 1 }, { 1, 0 }, { 0, -1 } };
 
 void DCQ_init(DCQ* instance, unsigned int capacity) {
     instance->head = 0;
