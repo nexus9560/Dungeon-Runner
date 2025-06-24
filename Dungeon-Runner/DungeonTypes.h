@@ -40,8 +40,6 @@ typedef struct {
 	unsigned int y;
 } Dun_Coord;
 
-
-
 typedef struct {
     unsigned int capacity;
     unsigned int head;

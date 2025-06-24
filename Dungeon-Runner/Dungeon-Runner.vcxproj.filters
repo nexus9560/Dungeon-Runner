@@ -24,7 +24,7 @@
     <ClCompile Include="DungeonTypes.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Entity.c">
+    <ClCompile Include="Entity_Manager.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -38,7 +38,7 @@
     <ClInclude Include="LoadingDock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Entity.h">
+    <ClInclude Include="Entity_Manager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
