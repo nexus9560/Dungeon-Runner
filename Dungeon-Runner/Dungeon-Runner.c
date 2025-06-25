@@ -1,6 +1,7 @@
 ﻿
 #include "DungeonTypes.h"
 #include "LoadingDock.h"
+#include "Effect_Manager.h"
 
 #ifdef _WIN32
 #define CLEAR_COMMAND "cls"
