@@ -131,7 +131,7 @@
     <ClCompile Include="Dungeon-Runner.c" />
     <ClCompile Include="DungeonTypes.c" />
     <ClCompile Include="LoadingDock.c" />
-    <ClCompile Include="Entity_Manager.c" />
+    <ClCompile Include="Effect_Manager.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="map.dat" />
@@ -139,7 +139,7 @@
   <ItemGroup>
     <ClInclude Include="DungeonTypes.h" />
     <ClInclude Include="LoadingDock.h" />
-    <ClInclude Include="Entity_Manager.h" />
+    <ClInclude Include="Effect_Manager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
