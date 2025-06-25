@@ -77,6 +77,16 @@ Effect getEffectByName(EffectList list, char* name) {
 	return (Effect) { 0 };
 }
 
+Effect getEffectByMasterID(EffectList list, unsigned int masterID) {
+	for (unsigned int i = 0; i < list.size; i++) {
+		if (list.effects[i].masterListID == masterID) {
+			return list.effects[i];
+		}
+	}
+	printf("Error: Effect with master ID %u not found.\n", masterID);
+	return (Effect) { 0 };
+}
+
 int isEffectInList(EffectList list, int id) {
 	for (unsigned int i = 0; i < list.size; i++) {
 		if (list.effects[i].id == id) {
