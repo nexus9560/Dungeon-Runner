@@ -12,7 +12,7 @@
 *.out
 .vscode-workspace
 .vscode
-Dungeon-Runner
+*.o
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -365,5 +365,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
-/Dungeon-Runner/player.dat
-/Dungeon-Runner/map.dat
+Dungeon-Runner/player.dat
+Dungeon-Runner/map.dat
+Dungeon-Runner/rooms.dat
+**/*.dat
+debug.txt
+Runner-Dungeon
