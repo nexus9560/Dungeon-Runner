@@ -1,6 +1,5 @@
 #ifndef LOADINGDOCK_H
 #define LOADINGDOCK_H
-#pragma once
 
 int loadPlayer();
 void savePlayer();

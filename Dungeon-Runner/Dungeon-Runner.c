@@ -2,6 +2,7 @@
 #include "DungeonTypes.h"
 #include "LoadingDock.h"
 #include "Effect_Manager.h"
+#include "pathlib.h"
 
 #ifdef _WIN32
 #define CLEAR_COMMAND "cls"
@@ -32,8 +33,6 @@ unsigned int roomCount;
 Item* itemGlossary;
 
 Room* rooms;
-
-Dun_Coord*** exitNodes;
 
 unsigned int currRoomCount = 0;
 
@@ -101,7 +100,7 @@ Entity moveEntity(Entity e, Dun_Coord newLoc);
 //int goDown();
 //int goLeft();
 
-void main() {
+int main() {
 
 	clearScreen();
 	loadEntities(0);
@@ -168,7 +167,7 @@ void main() {
 	printf("Console dimensions: %d rows, %d columns\n", consoleDimensions[0], consoleDimensions[1]);
 	//roomRunner();
 
-
+	return 0;
 }
 
 
@@ -974,9 +973,11 @@ Entity moveEntity(Entity e, Dun_Coord newLoc) {
 }
 
 void printMap() {
-    FILE* file = fopen("map.dat", "w");
+    char map_path[1024];
+    path__join("debug-data", "map.dat", map_path);
+    FILE* file = fopen(map_path, "w");
     if (file == NULL) {
-        printf("Error: Could not open map.dat for writing.\n");
+        printf("Error: Could not open %s for writing.\n", map_path);
         return;
     }
 
@@ -999,13 +1000,15 @@ void printMap() {
         fputc('\n', file);
     }
     fclose(file);
-    printf("Full map written to map.dat\n");
+    printf("Full map written to %s\n", map_path);
 }
 
 void printAdMap() {
-	FILE* file = fopen("admap.dat", "w");
+    char map_path[1024];
+    path__join("debug-data", "admap.dat", map_path);
+    FILE* file = fopen(map_path, "w");
 	if (file == NULL) {
-		printf("Error: Could not open map.dat for writing.\n");
+		printf("Error: Could not open %s for writing.\n", map_path);
 		return;
 	}
 	for (int x = 0; x < XBOUND; x++) {
@@ -1022,7 +1025,7 @@ void printAdMap() {
 		fputc('\n', file);
 	}
 	fclose(file);
-	printf("Full adjacency map written to admap.dat\n");
+	printf("Full adjacency map written to %s\n", map_path);
 }
 
 
@@ -1189,9 +1192,6 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 		wallSide = getVectorDirection(d); // Get the direction of the vector
 	// 0 = Up, 1 = Right, 2 = Down, 3 = Left
 
-	if (exitNodes == NULL) {
-		return (Dun_Coord) { XBOUND + 1, YBOUND + 1 };
-	}
 
 	int minSearch = 0;
 	int maxSearch = 0;
@@ -1287,16 +1287,15 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 				return (Dun_Coord) { -1, -1 }; // Return an invalid coordinate
 		}
 	}
-	if (exitNodes[r.roomID - 1][wallSide][0].x > XBOUND && exitNodes[r.roomID - 1][wallSide][0].y > YBOUND)
-		exitNodes[r.roomID - 1][wallSide][0] = (Dun_Coord){ t.x,t.y };
-	else if ((!isAdjacent(exitNodes[r.roomID - 1][wallSide][0], t)) && exitNodes[r.roomID - 1][wallSide][1].x > XBOUND && exitNodes[r.roomID - 1][wallSide][1].y > YBOUND)
-		exitNodes[r.roomID - 1][wallSide][1] = (Dun_Coord){ t.x,t.y };
-	else {
-		Dun_Vec d = getVector(t,exitNodes[r.roomID - 1][wallSide][0]);
+	if (r.exitNodes[wallSide][0].x > XBOUND && r.exitNodes[wallSide][0].y > YBOUND){
+		r.exitNodes[wallSide][0] = (Dun_Coord){ t.x,t.y };
+	} else if ((!isAdjacent(r.exitNodes[wallSide][0], t)) && r.exitNodes[wallSide][1].x > XBOUND && r.exitNodes[wallSide][1].y > YBOUND){
+		r.exitNodes[wallSide][1] = (Dun_Coord){ t.x,t.y };
+	} else {
+		Dun_Vec d = getVector(t,r.exitNodes[wallSide][0]);
 		t.x += d.dx;
 		t.y += d.dy;
-		exitNodes[r.roomID - 1][wallSide][1] = (Dun_Coord){ t.x,t.y };
-
+		r.exitNodes[wallSide][1] = (Dun_Coord){ t.x,t.y };
 	}
 	wallloc.x = t.x;
 	wallloc.y = t.y;
@@ -1408,25 +1407,37 @@ void cutPaths() {
 			printf("Nearest room 2: %d at [%d,%d]\n", nearestRooms[1].roomID, nearestRooms[1].startLocation.x, nearestRooms[1].startLocation.y);
 		}
 
-		Dun_Coord* wallLoc = malloc(2 * sizeof(Dun_Coord));
-		Dun_Coord* endLoc = malloc(2 * sizeof(Dun_Coord));
-		if (wallLoc == NULL || endLoc == NULL) {
-			printf("Memory allocation failed\n");
-			free(nearestRooms);
-			free(visited);
-			return;
-		}
+		Dun_Coord wallLoc[2];
+		Dun_Coord endLoc[2];
+		// if (wallLoc == NULL || endLoc == NULL) {
+		// 	printf("Memory allocation failed\n");
+		// 	free(nearestRooms);
+		// 	free(visited);
+		// 	return;
+		// }
+		#if DEBUG
+		    printf("Here!\n");
+		#endif
 		wallLoc[0] = getSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[0]))));
 		wallLoc[1] = getSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[1]))));
-
+		#if DEBUG
+		    printf("Here 2!\n");
+			printf("Wall Loc 0: (%d, %d)\n", wallLoc[0].x, wallLoc[0].y);
+			printf("Wall Loc 1: (%d, %d)\n", wallLoc[1].x, wallLoc[1].y);
+			printf("Here 2.5!\n");
+		#endif
 		world[wallLoc[0].x][wallLoc[0].y].ref = '.';
 		world[wallLoc[1].x][wallLoc[1].y].ref = '.';
 		world[wallLoc[0].x][wallLoc[0].y].passable = 1; // Set the wall location as passable
 		world[wallLoc[1].x][wallLoc[1].y].passable = 1; // Set the wall location as passable
-
+		#if DEBUG
+		    printf("Here 3!\n");
+		#endif
 		popAdMat(wallLoc[0]);
 		popAdMat(wallLoc[1]);
-
+		#if DEBUG
+		    printf("Here 4!\n");
+		#endif
 		for (int i = 0; i < buffer-1; i++) {
 			if (world[wallLoc[0].x][wallLoc[0].y].admat[0]) {
 				wallLoc[0].x += down.dx;
@@ -1470,20 +1481,28 @@ void cutPaths() {
 			popAdMat(wallLoc[0]);
 			popAdMat(wallLoc[1]);
 		}
-
+		#if DEBUG
+		    printf("Here 5!\n");
+		#endif
 		endLoc[0] = getSpotOnWall(nearestRooms[0], getVector(getRoomCenter(nearestRooms[0]), getRoomCenter(r)));
 		endLoc[1] = getSpotOnWall(nearestRooms[1], getVector(getRoomCenter(nearestRooms[1]), getRoomCenter(r)));
-
+		#if DEBUG
+		    printf("Here 6!\n");
+		#endif
 
 
 		world[endLoc[0].x][endLoc[0].y].ref = '.';
 		world[endLoc[1].x][endLoc[1].y].ref = '.';
 		world[endLoc[0].x][endLoc[0].y].passable = 1; // Set the end location as passable
 		world[endLoc[1].x][endLoc[1].y].passable = 1; // Set the end location as passable
-
+		#if DEBUG
+		    printf("Here 7!\n");
+		#endif
 		popAdMat(endLoc[0]);
 		popAdMat(endLoc[1]);
-
+		#if DEBUG
+		    printf("Here 8!\n");
+		#endif
 
 
 
@@ -1497,8 +1516,14 @@ void cutPaths() {
 			printf("Wall location 1: [%d,%d]\n", wallLoc[0].x, wallLoc[0].y);
 			printf("Wall location 2: [%d,%d]\n", wallLoc[1].x, wallLoc[1].y);
 		}
+		#if DEBUG
+		    printf("Here 9!\n");
+		#endif
 
 	}
+	#if DEBUG
+	    printf("Here 10!\n");
+	#endif
 
 }
 

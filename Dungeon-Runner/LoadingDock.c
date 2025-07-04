@@ -1,10 +1,14 @@
 #include "DungeonTypes.h"
-
-
-
+#include "pathlib.h"
+#include <stdlib.h>
 
 void savePlayer() {
-	FILE* file = fopen("player.dat", "w");
+    char player_path[1024];
+    path__join("data", "player.dat", player_path);
+    #if DEBUG
+        printf("Saving player to %s\n", player_path);
+    #endif
+	FILE* file = fopen(player_path, "w");
 	if (file == NULL) {
 		printf("Error: Could not open or create file for saving.\n");
 		return;
@@ -27,20 +31,16 @@ void savePlayer() {
 }
 
 int loadPlayer() {
-
-#ifdef _WIN32
-	FILE* file = fopen("player.dat", "r");
+    char player_path[1024];
+    path__join("data", "player.dat", player_path);
+    #if DEBUG
+        printf("Loading player from %s\n", player_path);
+    #endif
+	FILE* file = fopen(player_path, "w");
 	if (file == NULL) {
 		printf("Error: Could not open player data file.\n");
 		return 0;
 	}
-#else
-	FILE* file = fopen("player.dat", "r");
-	if (file == NULL) {
-		printf("Error: Could not open player data file.\n");
-		return 0;
-	}
-#endif
 
 	int lineCount = countLines(file);
 	for (int x = 0;x < lineCount;x++) {
@@ -89,13 +89,19 @@ int loadPlayer() {
 
 
 	fclose(file);
-	if (DEBUG)
+	#if DEBUG
 		printf("Player data loaded successfully.\n");
+	#endif
 	return 1;
 }
 
 void loadEntities(int ovr) {
-	FILE* file = fopen("entities.dat", "r");
+    char entities_path[1024];
+    path__join("data", "entities.dat", entities_path);
+    #if DEBUG
+        printf("Loading entities from %s\n", entities_path);
+    #endif
+	FILE* file = fopen(entities_path, "r");
 	if (file == NULL) {
 		printf("Error: Could not open file for loading.\n");
 
@@ -155,8 +161,13 @@ void loadEntities(int ovr) {
 
 
 Room* loadRooms(int ovr) {
-	FILE* file = fopen("rooms.dat", "r");
-	Room* temp = NULL;
+    char rooms_path[1024];
+    path__join("data", "rooms.dat", rooms_path);
+    #if DEBUG
+        printf("Loading rooms from %s\n", rooms_path);
+    #endif
+    FILE* file = fopen(rooms_path, "r");
+	Room* rooms = NULL;
 	if (file == NULL) {
 		printf("Error: Could not open rooms.dat for reading.\n");
 		return 0;
@@ -167,55 +178,39 @@ Room* loadRooms(int ovr) {
 		fclose(file);
 		return NULL;
 	}
-	exitNodes = malloc(roomCount * sizeof(Dun_Coord**));
-	temp = malloc(roomCount * sizeof(Room));
-	if (temp == NULL || exitNodes == NULL) {
+	rooms = malloc(roomCount * sizeof(Room));
+	if (rooms == NULL) {
 		printf("Error: Memory allocation failed.\n");
 		fclose(file);
-		free(exitNodes);
 		return NULL;
-	}
-	for (unsigned int i = 0; i < roomCount; i++) {
-		exitNodes[i] = malloc(4 * sizeof(Dun_Coord*));
-		if (exitNodes[i] == NULL) {
-			printf("Error: Memory allocation failed.\n");
-			fclose(file);
-			free(exitNodes);
-			return NULL;
-		}
-		for (unsigned int j = 0; j < 4; j++) {
-			exitNodes[i][j] = malloc(2 * sizeof(Dun_Coord));
-			if (exitNodes[i][j] == NULL) {
-				printf("Error: Memory allocation failed.\n");
-				fclose(file);
-				free(exitNodes);
-				return NULL;
-			}
-			exitNodes[i][j][0] = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
-			exitNodes[i][j][1] = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
-		}
 	}
 
 	for (unsigned int i = 0; i < roomCount; i++) {
 		fscanf(file, "Room %4d: Start Location: [%6d,%6d], Dimensions: [%6d,%6d]\n",
-			&temp[i].roomID,
-			&temp[i].startLocation.x,
-			&temp[i].startLocation.y,
-			&temp[i].xdim,
-			&temp[i].ydim
+			&rooms[i].roomID,
+			&rooms[i].startLocation.x,
+			&rooms[i].startLocation.y,
+			&rooms[i].xdim,
+			&rooms[i].ydim
 		);
 		for (unsigned int j = 0; j < 4;j++) {
-			temp[i].egressCount[j] = 2;
+			rooms[i].exitNodes[j][0] = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
+			rooms[i].exitNodes[j][1] = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
 		}
 	}
 	fclose(file);
 
-	return temp;
+	return rooms;
 }
 
 
 void saveRooms() {
-	FILE* file = fopen("rooms.dat", "w");
+    char rooms_path[1024];
+    path__join("data", "rooms.dat", rooms_path);
+#if DEBUG
+    printf("Saving rooms to %s\n", rooms_path);
+#endif
+	FILE* file = fopen(rooms_path, "w");
 	if (file == NULL) {
 		printf("Error: Could not open rooms.dat for writing.\n");
 		return;
@@ -234,7 +229,9 @@ void saveRooms() {
 
 
 void loadItems(int ovr) {
-	FILE* file = fopen("items.dat", "r");
+    char items_path[1024];
+    path__join("data", "items.dat", items_path);
+	FILE* file = fopen(items_path, "r");
 	if (file == NULL) {
 		printf("Error: Could not open file for loading.\n");
 		return;
@@ -249,7 +246,7 @@ void loadItems(int ovr) {
 	for (int i = 0; i < numLines; i++) {
 		//		[ATK:001,TYPE:0]:PLAIN-SWORD
 		fscanf(file, "[%3s:%3d,TYPE:%d]:%31s\n",
-			&items[i].stat, &items[i].bonus, &items[i].type, &items[i].name
+			items[i].stat, &items[i].bonus, &items[i].type, items[i].name
 		);
 	}
 	fclose(file);

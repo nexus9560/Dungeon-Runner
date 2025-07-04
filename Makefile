@@ -7,8 +7,9 @@ CFLAGS = -Wall -Wextra -g
 # Source files and output
 SRC_DIR = Dungeon-Runner
 SRC = $(wildcard $(SRC_DIR)/*.c)
+OUT_DIR = $(SRC_DIR)/build
 OBJ = $(SRC:.c=.o)
-EXECUTABLE = Runner-Dungeon
+EXECUTABLE = $(SRC_DIR)/Dungeon-Runner
 
 # Default target
 all: $(EXECUTABLE)
