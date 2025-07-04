@@ -1259,7 +1259,7 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 				break;
 			default:
 				printf("Error: Invalid wall side chosen.\n");
-				return (Dun_Coord) { -1, -1 }; // Return an invalid coordinate
+				return (Dun_Coord) { XBOUND+1, YBOUND+1 }; // Return an invalid coordinate
 		}
 		runner++;
 	}
@@ -1284,7 +1284,7 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 				break;
 			default:
 				printf("Error: Invalid wall side chosen.\n");
-				return (Dun_Coord) { -1, -1 }; // Return an invalid coordinate
+				return (Dun_Coord) { XBOUND+1, YBOUND+1 }; // Return an invalid coordinate
 		}
 	}
 	if (r.exitNodes[wallSide][0].x > XBOUND && r.exitNodes[wallSide][0].y > YBOUND){

@@ -16,6 +16,7 @@
 #include <time.h>
 #include <math.h>
 #include <limits.h>
+#include "Effect_Manager.h"
 
 #define XBOUND 256
 #define YBOUND 512

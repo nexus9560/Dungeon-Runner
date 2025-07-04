@@ -1,6 +1,8 @@
 #ifndef LOADINGDOCK_H
 #define LOADINGDOCK_H
 
+#pragma once
+#include "DungeonTypes.h"
 int loadPlayer();
 void savePlayer();
 

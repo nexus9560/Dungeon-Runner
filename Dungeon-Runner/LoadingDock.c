@@ -1,6 +1,7 @@
 #include "DungeonTypes.h"
 #include "pathlib.h"
 #include <stdlib.h>
+#include "LoadingDock.h"
 
 void savePlayer() {
     char player_path[1024];

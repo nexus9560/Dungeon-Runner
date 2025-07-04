@@ -368,6 +368,11 @@ FodyWeavers.xsd
 Dungeon-Runner/player.dat
 Dungeon-Runner/map.dat
 Dungeon-Runner/rooms.dat
-**/*.dat
+Dungeon-Runner/admap.dat
+player.dat
+map.dat
+rooms.dat
+admap.dat
 debug.txt
 Runner-Dungeon
+Dungeon-Runner/Dungeon-Runner
