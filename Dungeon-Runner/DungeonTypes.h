@@ -109,7 +109,6 @@ typedef struct {
 	unsigned int xdim;
 	unsigned int ydim;
 	unsigned int roomID; // Number of the room in the world
-	unsigned int egressCount[4];
 	Dun_Coord exitNodes[4][2];
 } Room;
 
@@ -143,8 +142,6 @@ extern unsigned int currRoomCount;
 extern Item* itemGlossary;
 
 extern Room* rooms;
-
-extern Dun_Coord* exitNodes;
 
 int countLines(FILE* file);
 
