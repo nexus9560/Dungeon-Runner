@@ -17,6 +17,7 @@
 #include <math.h>
 #include <limits.h>
 #include "Effect_Manager.h"
+#include "list.h"
 
 #define XBOUND 256
 #define YBOUND 512
@@ -122,6 +123,8 @@ typedef struct {
 					// Positions: 0 = up, 1 = right, 2 = down, 3 = left
 } Cell;
 
+DR_LIST_DEF(Entity)
+
 extern const Dun_Vec up;
 extern const Dun_Vec right;
 extern const Dun_Vec down;
@@ -133,6 +136,7 @@ extern Cell world[XBOUND][YBOUND];
 extern Player you;
 
 extern Entity* enemyGlossary;
+extern Entity__List masterEntityList;
 extern Entity* enemiesOnFloor; // Took the Entities array out of Room, because Entities should be able to roam between rooms on the floor, plus it was making room-scaling difficult.
 
 extern int enemyGlossarySize;

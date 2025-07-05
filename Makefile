@@ -2,8 +2,9 @@
 
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -g
+CFLAGS = -g
 
+# -Wall -Wextra
 # Source files and output
 SRC_DIR = Dungeon-Runner
 SRC = $(wildcard $(SRC_DIR)/*.c)

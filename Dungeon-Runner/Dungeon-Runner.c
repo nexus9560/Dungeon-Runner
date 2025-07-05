@@ -1,7 +1,6 @@
 ﻿
 #include "DungeonTypes.h"
 #include "LoadingDock.h"
-#include "Effect_Manager.h"
 #include "pathlib.h"
 
 #ifdef _WIN32
@@ -165,7 +164,7 @@ int main() {
 	}
 	int* consoleDimensions = getConsoleWindow();
 	printf("Console dimensions: %d rows, %d columns\n", consoleDimensions[0], consoleDimensions[1]);
-	//roomRunner();
+	roomRunner();
 
 	return 0;
 }
@@ -526,7 +525,7 @@ int countLines(FILE* file) {
 }
 
 int isAdjacent(Dun_Coord a, Dun_Coord b) {
-	return (abs(a.x - b.x) == 1 && a.y == b.y) || (abs(a.y - b.y) == 1 && a.x == b.x);
+	return (abs((signed int)(a.x) - (signed int)(b.x)) == 1 && a.y == b.y) || (abs((signed int)(a.y) - (signed int)(b.y)) == 1 && a.x == b.x);
 }
 
 int compareVectors(Dun_Vec a, Dun_Vec b) {
@@ -665,7 +664,7 @@ Entity shiftEntity(Entity e, Dun_Vec delta) {
 }
 
 int isSafeSpot(Dun_Coord d) {
-	if (world[d.x][d.y].passable == 1 && world[d.x][d.y].occupied == 0) {
+	if (world[d.x][d.y].passable == 1 && world[d.x][d.y].occupied == 0 && inRangeExclusive(d.x, 0+buffer, XBOUND-buffer) && inRangeExclusive(d.y, 0+buffer, YBOUND-buffer)) {
 		return 1; // Safe spot
 	}
 	return 0; // Not a safe spot
@@ -691,7 +690,7 @@ int isInARoom(Dun_Coord d) {
 }
 
 Dun_Coord getNearestSafeLocation(Dun_Coord d) {
-	Dun_Coord safeLocation = { 0, 0 };
+	Dun_Coord safeLocation = { XBOUND/2, YBOUND/2 };
 
 	if (isInARoom(d))
 		return d;
@@ -767,7 +766,7 @@ void showPlayerInventory() {
 
 int getRandomEnemyIndex() {
 	srand((unsigned int)time(NULL)); // Seed the random number generator with the current time
-	return rand() % sizeof(enemyGlossary); // Generate a random number between 0 and MAX_ENTITIES - 1
+	return rand() % masterEntityList.size; // Generate a random number between 0 and MAX_ENTITIES - 1
 }
 
 char* printPlayerStatus(int brief) {
@@ -1636,7 +1635,7 @@ int isThereAPath(Dun_Coord start, Dun_Coord end) {
         neighbors[1] = (Dun_Coord){e.location.x+right.dx, e.location.y+right.dy};
         neighbors[2] = (Dun_Coord){e.location.x+down.dx, e.location.y+down.dy};
         neighbors[3] = (Dun_Coord){e.location.x+left.dx, e.location.y+left.dy};
-
+        totalMove--;
     }
 
 

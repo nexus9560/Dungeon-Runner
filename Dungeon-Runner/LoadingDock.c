@@ -2,10 +2,48 @@
 #include "pathlib.h"
 #include <stdlib.h>
 #include "LoadingDock.h"
+#include <stdio.h>
+#include <errno.h>
+
+Entity__List masterEntityList;
+
+#if defined(_WIN32) || defined(_WIN64)
+    #include <direct.h>
+    #define MKDIR(path) _mkdir(path)
+    #define DIR_EXISTS(path) (dir_exists_win(path))
+    #include <sys/stat.h>
+    int dir_exists_win(const char *path) {
+        struct _stat st;
+        return (_stat(path, &st) == 0 && (st.st_mode & _S_IFDIR));
+    }
+#else
+    #include <sys/stat.h>
+    #include <sys/types.h>
+    #define MKDIR(path) mkdir(path, 0755)
+    #define DIR_EXISTS(path) (dir_exists_unix(path))
+    int dir_exists_unix(const char *path) {
+        struct stat st;
+        return (stat(path, &st) == 0 && S_ISDIR(st.st_mode));
+    }
+#endif
+
+// Ensures a directory exists, creates it if not
+void ensure_directory(const char *path) {
+    if (!DIR_EXISTS(path)) {
+        if (MKDIR(path) == 0) {
+            printf("Directory created: %s\n", path);
+        } else if (errno == EEXIST) {
+            // Directory already exists (race condition)
+        } else {
+            perror("mkdir failed");
+        }
+    }
+}
 
 void savePlayer() {
     char player_path[1024];
     path__join("data", "player.dat", player_path);
+    ensure_directory("data");
     #if DEBUG
         printf("Saving player to %s\n", player_path);
     #endif
@@ -34,6 +72,7 @@ void savePlayer() {
 int loadPlayer() {
     char player_path[1024];
     path__join("data", "player.dat", player_path);
+    ensure_directory("data");
     #if DEBUG
         printf("Loading player from %s\n", player_path);
     #endif
@@ -99,6 +138,7 @@ int loadPlayer() {
 void loadEntities(int ovr) {
     char entities_path[1024];
     path__join("data", "entities.dat", entities_path);
+    ensure_directory("data");
     #if DEBUG
         printf("Loading entities from %s\n", entities_path);
     #endif
@@ -109,6 +149,7 @@ void loadEntities(int ovr) {
 		return;
 	}
 	enemyGlossarySize = countLines(file);
+	Entity__List_init(&masterEntityList, enemyGlossarySize);
 	enemyGlossary = malloc(enemyGlossarySize * sizeof(Entity));
 	if (enemyGlossary == NULL) {
 		printf("Error: Memory allocation failed.\n");
@@ -119,7 +160,7 @@ void loadEntities(int ovr) {
 		// Use [HP:  2,ATK:  1,AGR:  0,TOH:  1,DEF:  0,EXP:  1,EVA:  0,LVL:  1]:SLUG as the format
 		int agr = 0;
 		char namebuf[32] = {0};
-		int ret = fscanf(file, "[HP:%d,ATK:%d,AGR:%d,TOH:%d,DEF:%d,EXP:%d,EVA:%d,LVL:%d]:%31s\n",
+		int ret = fscanf(file, "[HP:%3d,ATK:%3d,AGR:%3d,TOH:%3d,DEF:%3d,EXP:%3d,EVA:%3d,LVL:%3d]:%31s\n",
 		&enemyGlossary[i].health,
 		&enemyGlossary[i].atk,
 		&agr,
@@ -134,6 +175,7 @@ void loadEntities(int ovr) {
 			enemyGlossary[i].agr = agr;
 			strncpy(enemyGlossary[i].name, namebuf, sizeof(enemyGlossary[i].name) - 1);
 			enemyGlossary[i].name[sizeof(enemyGlossary[i].name) - 1] = '\0';
+			Entity__List_push(&masterEntityList, enemyGlossary[i]);
 		} else {
 			printf("Warning: Failed to parse entity line %d (fscanf returned %d)\n", i + 1, ret);
 			memset(&enemyGlossary[i], 0, sizeof(enemyGlossary[i]));
@@ -164,6 +206,7 @@ void loadEntities(int ovr) {
 Room* loadRooms(int ovr) {
     char rooms_path[1024];
     path__join("data", "rooms.dat", rooms_path);
+    ensure_directory("data");
     #if DEBUG
         printf("Loading rooms from %s\n", rooms_path);
     #endif
@@ -208,9 +251,9 @@ Room* loadRooms(int ovr) {
 void saveRooms() {
     char rooms_path[1024];
     path__join("data", "rooms.dat", rooms_path);
-#if DEBUG
-    printf("Saving rooms to %s\n", rooms_path);
-#endif
+    ensure_directory("data");
+    if(DEBUG)
+        printf("Saving rooms to %s\n", rooms_path);
 	FILE* file = fopen(rooms_path, "w");
 	if (file == NULL) {
 		printf("Error: Could not open rooms.dat for writing.\n");
@@ -232,6 +275,7 @@ void saveRooms() {
 void loadItems(int ovr) {
     char items_path[1024];
     path__join("data", "items.dat", items_path);
+    ensure_directory("data");
 	FILE* file = fopen(items_path, "r");
 	if (file == NULL) {
 		printf("Error: Could not open file for loading.\n");
