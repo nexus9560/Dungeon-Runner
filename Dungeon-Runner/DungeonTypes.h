@@ -18,6 +18,7 @@
 #include <limits.h>
 #include "Effect_Manager.h"
 #include "list.h"
+#include "PathFinder.h"
 
 #define XBOUND 256
 #define YBOUND 512
