@@ -1,6 +1,7 @@
+#pragma once
 #ifndef DUNGEONTYPES_H
 #define DUNGEONTYPES_H
-#pragma once
+
 
 #ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
@@ -18,7 +19,6 @@
 #include <limits.h>
 #include "Effect_Manager.h"
 #include "list.h"
-#include "PathFinder.h"
 
 #define XBOUND 256
 #define YBOUND 512
@@ -31,6 +31,7 @@
 #define inRangeInclusive(x, min, max) ((x) >= (min) && (x) <= (max)) // Check if x is in the range [min, max)
 #define inRangeExclusive(x, min, max) ((x) > (min) && (x) < (max)) // Check if x is in the range (min, max)
 #define matchSign(x, y) (((x) < 0 && (y) < 0) || ((x) >= 0 && (y) >= 0)) // Check if x and y have the same sign
+#define BUFFER 3 // Buffer to check for room collisions and out of bounds cases.
 
 
 typedef struct {
@@ -61,6 +62,10 @@ void DCQ_append(Dun_Coord_Queue *dcq, Dun_Coord coord);
 Dun_Coord DCQ_pop(Dun_Coord_Queue *dcq);
 
 void DCQ_resize(Dun_Coord_Queue *dcq, unsigned int new_capacity);
+
+
+Dun_Vec getVector(Dun_Coord start, Dun_Coord end);
+
 
 
 

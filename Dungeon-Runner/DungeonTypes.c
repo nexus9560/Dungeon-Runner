@@ -9,6 +9,13 @@ const Dun_Vec directions[4] = { { -1, 0 }, { 0, 1 }, { 1, 0 }, { 0, -1 } };
 
 DR_LIST_IMPL(Entity)
 
+Dun_Vec getVector(Dun_Coord start, Dun_Coord end) {
+    Dun_Vec delta;
+    delta.dx = end.x - start.x;
+    delta.dy = end.y - start.y;
+    return delta;
+}
+
 void DCQ_init(DCQ* instance, unsigned int capacity) {
     instance->head = 0;
     instance->tail = 0;

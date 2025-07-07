@@ -1,3 +1,4 @@
+#pragma once
 // Effect_Manager.h
 
 #ifndef EFFECT_MANAGER_H
@@ -5,7 +6,6 @@
 #include "list.h"
 #include <stdio.h>
 #include <string.h>
-#pragma once
 
 #include <stdbool.h>
 #include "queue.h"

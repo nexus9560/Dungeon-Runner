@@ -1,9 +1,10 @@
 ﻿
 #include "DungeonTypes.h"
 #include "LoadingDock.h"
+#include "PathFinder.h"
 #include "pathlib.h"
 
-#ifdef _WIN32 || _WIN64
+#ifdef _WIN32
 #define CLEAR_COMMAND "cls"
 #include <conio.h>
 #include <windows.h>
@@ -25,7 +26,6 @@ Entity* enemyGlossary;
 Entity* enemiesOnFloor; // Took the Entities array out of Room, because Entities should be able to roam between rooms on the floor, plus it was making room-scaling difficult.
 
 int enemyGlossarySize;
-int buffer = 3; // Buffer to check for room collisions and out of bounds cases.
 
 unsigned int roomCount;
 
@@ -86,7 +86,6 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d);
 Dun_Coord copyCoord(Dun_Coord d);
 Dun_Coord* getCellsOnVector(Dun_Coord start, Dun_Coord end);
 
-Dun_Vec getVector(Dun_Coord start, Dun_Coord end);
 Dun_Vec getVectorToWallFromCenter(Room r, Dun_Vec v);
 
 Entity logStep(Entity e);
@@ -131,7 +130,7 @@ int main() {
 		you.base.location = getNearestSafeLocation(you.base.location);
 		// Name
 		printf("Please enter your name:\n");
-		if (scanf("%31s", you.base.name) != 1) { // Limit input to 31 characters to prevent buffer overflow
+		if (scanf("%31s", you.base.name) != 1) { // Limit input to 31 characters to prevent BUFFER overflow
 			strcoll(you.base.name, "Illiterate");
 		}
 		// Health
@@ -617,18 +616,18 @@ int checkBounds(Dun_Coord newPos, Dun_Vec delta) {
 int checkOverlappingArea(Room room1, Room room2) {
 
 
-	Room temp1 = (Room){ {room1.startLocation.x - buffer,room1.startLocation.y - buffer}, room1.xdim - 1 + buffer, room1.ydim - 1 + buffer };
-	Room temp2 = (Room){ {room2.startLocation.x - buffer,room2.startLocation.y - buffer}, room2.xdim - 1 + buffer, room2.ydim - 1 + buffer };
+	Room temp1 = (Room){ {room1.startLocation.x - BUFFER,room1.startLocation.y - BUFFER}, room1.xdim - 1 + BUFFER, room1.ydim - 1 + BUFFER };
+	Room temp2 = (Room){ {room2.startLocation.x - BUFFER,room2.startLocation.y - BUFFER}, room2.xdim - 1 + BUFFER, room2.ydim - 1 + BUFFER };
 
-	Dun_Coord r1[5] = { {room1.startLocation.x - buffer, room1.startLocation.y - buffer}, // Top Left
-						{room1.startLocation.x + room1.xdim - 1 + buffer, room1.startLocation.y - buffer}, // Top Right
-						{room1.startLocation.x - buffer, room1.startLocation.y + room1.ydim - 1 + buffer}, // Bottom Left
-						{room1.startLocation.x + room1.xdim - 1 + buffer, room1.startLocation.y + room1.ydim - 1 + buffer}, // Bottom Right
+	Dun_Coord r1[5] = { {room1.startLocation.x - BUFFER, room1.startLocation.y - BUFFER}, // Top Left
+						{room1.startLocation.x + room1.xdim - 1 + BUFFER, room1.startLocation.y - BUFFER}, // Top Right
+						{room1.startLocation.x - BUFFER, room1.startLocation.y + room1.ydim - 1 + BUFFER}, // Bottom Left
+						{room1.startLocation.x + room1.xdim - 1 + BUFFER, room1.startLocation.y + room1.ydim - 1 + BUFFER}, // Bottom Right
 							getRoomCenter(room1) }; // Center of Room 1
-	Dun_Coord r2[5] = { {room2.startLocation.x - buffer, room2.startLocation.y - buffer}, // Top Left
-						{room2.startLocation.x + room2.xdim - 1 + buffer, room2.startLocation.y - buffer}, // Top Right
-						{room2.startLocation.x - buffer, room2.startLocation.y + room2.ydim - 1 + buffer}, // Bottom Left
-						{room2.startLocation.x + room2.xdim - 1 + buffer, room2.startLocation.y + room2.ydim - 1 + buffer}, // Bottom Right
+	Dun_Coord r2[5] = { {room2.startLocation.x - BUFFER, room2.startLocation.y - BUFFER}, // Top Left
+						{room2.startLocation.x + room2.xdim - 1 + BUFFER, room2.startLocation.y - BUFFER}, // Top Right
+						{room2.startLocation.x - BUFFER, room2.startLocation.y + room2.ydim - 1 + BUFFER}, // Bottom Left
+						{room2.startLocation.x + room2.xdim - 1 + BUFFER, room2.startLocation.y + room2.ydim - 1 + BUFFER}, // Bottom Right
 							getRoomCenter(room2) }; // Center of Room 2
 
 
@@ -664,7 +663,7 @@ Entity shiftEntity(Entity e, Dun_Vec delta) {
 }
 
 int isSafeSpot(Dun_Coord d) {
-	if (world[d.x][d.y].passable == 1 && world[d.x][d.y].occupied == 0 && inRangeExclusive((signed int)d.x, (signed int)0+buffer, (signed int)XBOUND-buffer) && inRangeExclusive((signed int)d.y, (signed int)0+buffer, (signed int)YBOUND-buffer)) {
+	if (world[d.x][d.y].passable == 1 && world[d.x][d.y].occupied == 0 && inRangeExclusive((signed int)d.x, (signed int)0+BUFFER, (signed int)XBOUND-BUFFER) && inRangeExclusive((signed int)d.y, (signed int)0+BUFFER, (signed int)YBOUND-BUFFER)) {
 		return 1; // Safe spot
 	}
 	return 0; // Not a safe spot
@@ -831,13 +830,13 @@ Room* makeRooms() {
 		temp[i].startLocation.x = (unsigned int)(rand() % (XBOUND - temp[i].xdim));
 		temp[i].startLocation.y = (unsigned int)(rand() % (YBOUND - temp[i].ydim));
 		if(temp[i].startLocation.x == 0)
-			temp[i].startLocation.x = buffer + 1;
+			temp[i].startLocation.x = BUFFER + 1;
 		if (temp[i].startLocation.y == 0)
-			temp[i].startLocation.y = buffer + 1;
+			temp[i].startLocation.y = BUFFER + 1;
 		if (temp[i].startLocation.x + temp[i].xdim >= XBOUND)
-			temp[i].startLocation.x = XBOUND - temp[i].xdim - (2 * buffer); // Adjust xdim if it exceeds bounds
+			temp[i].startLocation.x = XBOUND - temp[i].xdim - (2 * BUFFER); // Adjust xdim if it exceeds bounds
 		if (temp[i].startLocation.y + temp[i].ydim >= YBOUND)
-			temp[i].startLocation.y = YBOUND - temp[i].ydim - (2 * buffer); // Adjust ydim if it exceeds bounds
+			temp[i].startLocation.y = YBOUND - temp[i].ydim - (2 * BUFFER); // Adjust ydim if it exceeds bounds
 		for (unsigned int j = 0; j < i; j++) {
 			if (checkOverlappingArea(temp[i], temp[j])) {
 				if (DEBUG) {
@@ -944,12 +943,6 @@ Entity logStep(Entity e) {
 	return e;
 }
 
-Dun_Vec getVector(Dun_Coord start, Dun_Coord end) {
-	Dun_Vec delta;
-	delta.dx = end.x - start.x;
-	delta.dy = end.y - start.y;
-	return delta;
-}
 
 Entity moveEntity(Entity e, Dun_Coord newLoc) {
 	Dun_Vec delta = getVector(e.location, newLoc);
@@ -1437,7 +1430,7 @@ void cutPaths() {
 		#if DEBUG
 		    printf("Here 4!\n");
 		#endif
-		for (int i = 0; i < buffer-1; i++) {
+		for (int i = 0; i < BUFFER-1; i++) {
 			if (world[wallLoc[0].x][wallLoc[0].y].admat[0]) {
 				wallLoc[0].x += down.dx;
 				wallLoc[0].y += down.dy;
