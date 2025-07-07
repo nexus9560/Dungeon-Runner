@@ -7,6 +7,8 @@ int loadPlayer();
 void savePlayer();
 
 void loadEntities(int ovr);
+void ensure_directory(const char* path);
+
 
 Room* loadRooms(int ovr);
 void saveRooms();
