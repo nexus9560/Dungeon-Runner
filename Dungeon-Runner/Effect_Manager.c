@@ -1,5 +1,9 @@
 #include "Effect_Manager.h"
 
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 DR_LIST_IMPL(Effect)
 
 // EffectList newEffectList() {
@@ -249,7 +253,7 @@ DR_LIST_IMPL(Effect)
 //
 char* Effect_tostring(Effect effect) {
     char* buffer = malloc(256 * sizeof(char));
-    sprintf(buffer, "ID: %3d, Name: %s, Duration: %d, Strength: %d, Type: %d, SubType: %d, Description: %s, Exclusive: %d\n",
+    printf(buffer, "ID: %3d, Name: %s, Duration: %d, Strength: %d, Type: %d, SubType: %d, Description: %s, Exclusive: %d\n",
         effect.id, effect.name, effect.duration,
         effect.strength, effect.type, effect.subType,
         effect.description, effect.exclusive
@@ -262,7 +266,7 @@ char* Effect__List_tostring(Effect__List *l) {
     buffer[0] = '\0'; // Initialize the buffer
     for (unsigned int i = 0; i < l->size; i++) {
         char * as_string = Effect_tostring(l->items[i]);
-        strncat(buffer, as_string, 256);
+        strncat_s(buffer, l->size * 256, as_string, _TRUNCATE);
         free(as_string);
     }
     return buffer;

@@ -132,14 +132,18 @@
     <ClCompile Include="DungeonTypes.c" />
     <ClCompile Include="LoadingDock.c" />
     <ClCompile Include="Effect_Manager.c" />
+    <ClCompile Include="pathlib.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="map.dat" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DungeonTypes.h" />
+    <ClInclude Include="list.h" />
     <ClInclude Include="LoadingDock.h" />
     <ClInclude Include="Effect_Manager.h" />
+    <ClInclude Include="pathlib.h" />
+    <ClInclude Include="queue.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

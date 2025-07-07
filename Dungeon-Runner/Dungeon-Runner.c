@@ -664,7 +664,7 @@ Entity shiftEntity(Entity e, Dun_Vec delta) {
 }
 
 int isSafeSpot(Dun_Coord d) {
-	if (world[d.x][d.y].passable == 1 && world[d.x][d.y].occupied == 0 && inRangeExclusive(d.x, 0+buffer, XBOUND-buffer) && inRangeExclusive(d.y, 0+buffer, YBOUND-buffer)) {
+	if (world[d.x][d.y].passable == 1 && world[d.x][d.y].occupied == 0 && inRangeExclusive((signed int)d.x, (signed int)0+buffer, (signed int)XBOUND-buffer) && inRangeExclusive((signed int)d.y, (signed int)0+buffer, (signed int)YBOUND-buffer)) {
 		return 1; // Safe spot
 	}
 	return 0; // Not a safe spot
