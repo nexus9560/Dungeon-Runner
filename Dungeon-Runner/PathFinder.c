@@ -8,8 +8,12 @@ DR_LIST_IMPL(PF_Cell)
 //Revisit this for later optimization
 
 PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
+	if(DEBUG) {
+		printf("AStar called with start: (%d, %d) and goal: (%d, %d)\n", start.x, start.y, goal.x, goal.y);
+	}
 	PFCL path;
 	PF_Cell__List_init(&path, 0);
+
 
 	if (start.x >= XBOUND || start.y >= YBOUND || goal.x >= XBOUND || goal.y >= YBOUND) {
 		printf("Error: Start or goal coordinates are out of bounds.\n");
@@ -40,17 +44,36 @@ PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
 	PF_Cell__List_push(&openSet, startCell); // Add start cell to open set
 	PF_Cell__List_init(&closedSet, 0); // Initialize closed set
 
+	if(DEBUG) {
+		printf("Start cell initialized at (%d, %d) with cost %u, heuristic %u, total cost %u\n",
+			startCell.pos.x, startCell.pos.y, startCell.cost, startCell.heuristic, startCell.totalCost);
+	}
+
 	while (openSet.size > 0) {
+		if(DEBUG) {
+			printf("Open set size: %zu, Closed set size: %zu\n", openSet.size, closedSet.size);
+		}
 		PF_Cell currentCell;
 		PF_Cell__List_pop(&openSet, &currentCell); // Pop the cell with the lowest total cost from open set
 		currentCell.isVisited = true; // Mark the current cell as visited
 		PF_Cell__List_push(&closedSet, currentCell); // Add it to the closed set
-
+		if (DEBUG) {
+			printf("Current cell popped from open set at (%d, %d) with cost %u, heuristic %u, total cost %u\n",
+				currentCell.pos.x, currentCell.pos.y, currentCell.cost, currentCell.heuristic, currentCell.totalCost);
+		}
 		if(currentCell.pos.x == goal.x && currentCell.pos.y == goal.y) {
+			if(DEBUG) {
+				printf("Goal reached at (%d, %d) with cost %u, heuristic %u, total cost %u\n",
+					currentCell.pos.x, currentCell.pos.y, currentCell.cost, currentCell.heuristic, currentCell.totalCost);
+			}
 			// Goal reached, construct the path
 			PF_Cell* cell = &currentCell;
 			while (cell->parent != NULL) {
 				PF_Cell__List_push(&path, *cell); // Push the cell onto the path
+				if(DEBUG) {
+					printf("Adding cell (%d, %d) to path with cost %u, heuristic %u, total cost %u\n",
+						cell->pos.x, cell->pos.y, cell->cost, cell->heuristic, cell->totalCost);
+				}
 				PFCL_List_pop_by_coords(&closedSet, *cell->parent, cell); // Pop the parent cell from closed set
 			}
 			return path;
@@ -62,10 +85,18 @@ PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
 			exit(1);
 		}
 		getNeighbors(currentCell.pos, neighbors); // Get neighbors of the current cell
-
+		if (DEBUG) {
+			printf("Neighbors found: ");
+			for (unsigned int i = 0; i < 4; i++) {
+				if (neighbors[i].x < XBOUND && neighbors[i].y < YBOUND && neighbors[i].x >= 0 && neighbors[i].y >= 0) {
+					printf("(%d, %d) ", neighbors[i].x, neighbors[i].y);
+				}
+			}
+			printf("\n");
+		}
 		for (unsigned int i = 0; i < 4; i++) {
 			Dun_Coord neighborPos = neighbors[i];
-			if (neighborPos.x > XBOUND || neighborPos.y > YBOUND || neighborPos.x < 0 || neighborPos.y < 0) {
+			if (neighborPos.x >= XBOUND || neighborPos.y >= YBOUND || neighborPos.x < 0 || neighborPos.y < 0) {
 				continue; // Skip if the neighbor is out of bounds
 			}
             PF_Cell neighborCell = (PF_Cell){
@@ -83,10 +114,14 @@ PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
 			}
 			else {
 				unsigned int tentativeCost = currentCell.cost + 1; // Assuming uniform cost for each step
+				if (DEBUG) {
+					printf("Checking neighbor at (%d, %d) with tentative cost %u\n", neighborCell.pos.x, neighborCell.pos.y, tentativeCost);
+					printf("Current cell cost: %u, Heuristic: %u, Total cost: %u\n", currentCell.cost, currentCell.heuristic, currentCell.totalCost);
+				}
 				if (tentativeCost < neighborCell.cost) {
 					// If the new cost is lower, update the cell
 					neighborCell.parent = &currentCell.pos; // Set the parent to the current cell
-					neighborCell.parentCounter = 1; // Set parent counter to 1
+					neighborCell.parentCounter = currentCell.parentCounter + 1; // Set parent counter to current cell's counter + 1
 					neighborCell.cost = tentativeCost; // Update cost
 					neighborCell.totalCost = tentativeCost + neighborCell.heuristic; // Update total cost
 					if (!isinPFCL(&openSet, &neighborCell)) {

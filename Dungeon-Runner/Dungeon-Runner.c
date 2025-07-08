@@ -1521,7 +1521,9 @@ void cutPaths() {
 				printf("Cutting path at [%d,%d]\n", current.pos.x, current.pos.y);
 			}
 		}
-
+		
+		PF_Cell__List_destroy(&path1);
+		PF_Cell__List_destroy(&path2);
 	}
 	if(DEBUG)
 	    printf("Here 10!\n");
