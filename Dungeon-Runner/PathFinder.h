@@ -26,9 +26,11 @@ typedef PF_Cell__List PFCL;
 
 PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls);
 
-DCQ getNeighbors(Dun_Coord pos);
+bool getNeighbors(Dun_Coord pos, Dun_Coord *neighbors);
 
 bool isinPFCL(PFCL* list, PF_Cell* cell);
+
+bool PFCL_List_pop_by_coords(PFCL* list, Dun_Coord coords, PF_Cell* cell);
 
 DCQ ExtractPath(PFCL path);
 

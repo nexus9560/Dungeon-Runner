@@ -118,7 +118,6 @@ int main() {
 	saveRooms();
 	cutPaths();
 
-	updateWorldAdMat();
 
 	printAdMap();
 	printMap();
@@ -163,7 +162,7 @@ int main() {
 	}
 	int* consoleDimensions = getConsoleWindow();
 	printf("Console dimensions: %d rows, %d columns\n", consoleDimensions[0], consoleDimensions[1]);
-	roomRunner();
+	//roomRunner();
 
 	return 0;
 }
@@ -1493,28 +1492,36 @@ void cutPaths() {
 		endLoc[0] = getSpotOnWall(nearestRooms[0], getVector(getRoomCenter(nearestRooms[0]), getRoomCenter(r)));
 		endLoc[1] = getSpotOnWall(nearestRooms[1], getVector(getRoomCenter(nearestRooms[1]), getRoomCenter(r)));
 
-		DCQ path1 = ExtractPath(AStar(wallLoc[0], endLoc[0], 1));
-		//DCQ path2 = ExtractPath(AStar(wallLoc[1], endLoc[1], 1));
-
-		while (path1.capacity > 0 ) {
-			Dun_Coord current = DCQ_pop(&path1);
-		}
-
-		if (DEBUG) {
-			printf("Wall location 1: [%d,%d]\n", wallLoc[0].x, wallLoc[0].y);
-			printf("Wall location 2: [%d,%d]\n", wallLoc[1].x, wallLoc[1].y);
-		}
-		while (!DCQ_is_empty(&path1)) {
-			Dun_Coord current = DCQ_pop(&path1);
-			if (current.x < 0 || current.y < 0 || current.x >= XBOUND || current.y >= YBOUND) {
-				if (DEBUG)
-					printf("Skipping out of bounds coordinate [%d,%d]\n", current.x, current.y);
-				continue; // Skip out of bounds coordinates
+		PFCL path1 = AStar(wallLoc[0], endLoc[0], 1);
+		PFCL path2 = AStar(wallLoc[1], endLoc[1], 1);
+		if (DEBUG)
+			printf("the Size of Path 1 and Path 2 is %d and %d respectively",(int)path1.size,(int)path2.size);
+		while (path1.size > 0) {
+			PF_Cell current;
+			PF_Cell__List_pop(&path1, &current);
+			if(DEBUG)
+				printf("Cutting path at [%d,%d]\n", current.pos.x, current.pos.y);
+			world[current.pos.x][current.pos.y].ref = '.'; // Mark the path as passable
+			world[current.pos.x][current.pos.y].passable = 1; // Set the path as passable
+			popAdMat(current.pos); // Update the adjacency matrix for the path
+			if (DEBUG) {
+				printf("Cutting path at [%d,%d]\n", current.pos.x, current.pos.y);
 			}
-			world[current.x][current.y].ref = '.'; // Mark the path as passable
-			world[current.x][current.y].passable = 1; // Set the path as passable
-			popAdMat(current); // Update the adjacency matrix for the path
 		}
+
+		while (path2.size > 0) {
+			PF_Cell current;
+			PF_Cell__List_pop(&path2, &current);
+			if (DEBUG)
+				printf("Cutting path at [%d,%d]\n", current.pos.x, current.pos.y);
+			world[current.pos.x][current.pos.y].ref = '.'; // Mark the path as passable
+			world[current.pos.x][current.pos.y].passable = 1; // Set the path as passable
+			popAdMat(current.pos); // Update the adjacency matrix for the path
+			if (DEBUG) {
+				printf("Cutting path at [%d,%d]\n", current.pos.x, current.pos.y);
+			}
+		}
+
 	}
 	if(DEBUG)
 	    printf("Here 10!\n");
