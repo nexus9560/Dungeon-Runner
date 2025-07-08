@@ -138,9 +138,6 @@
     <ClCompile Include="Player.c" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="map.dat" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="DungeonTypes.h" />
     <ClInclude Include="list.h" />
     <ClInclude Include="LoadingDock.h" />

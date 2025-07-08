@@ -54,14 +54,13 @@ typedef struct {
 typedef Dun_Coord_Queue DCQ;
 
 void DCQ_init(DCQ* instance, unsigned int capacity);
-void DCQ_destroy(Dun_Coord_Queue *dcq);
+void DCQ_destroy(DCQ *dcq);
 
-bool DCQ_is_empty(Dun_Coord_Queue *dcq);
+bool DCQ_is_empty(DCQ *dcq);
+void DCQ_append(DCQ *dcq, Dun_Coord coord);
+Dun_Coord DCQ_pop(DCQ *dcq);
 
-void DCQ_append(Dun_Coord_Queue *dcq, Dun_Coord coord);
-Dun_Coord DCQ_pop(Dun_Coord_Queue *dcq);
-
-void DCQ_resize(Dun_Coord_Queue *dcq, unsigned int new_capacity);
+void DCQ_resize(DCQ *dcq, unsigned int new_capacity);
 
 
 Dun_Vec getVector(Dun_Coord start, Dun_Coord end);
@@ -117,7 +116,8 @@ typedef struct {
 	unsigned int xdim;
 	unsigned int ydim;
 	unsigned int roomID; // Number of the room in the world
-	Dun_Coord exitNodes[4][2];
+	// Side exit nodes, nodes[X][0,1] are the holes in the wall, nodes[X][2,3] are the nodes for pathing between rooms
+	Dun_Coord exitNodes[4][4];
 } Room;
 
 typedef struct {

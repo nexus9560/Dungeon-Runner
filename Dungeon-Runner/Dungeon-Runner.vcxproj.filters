@@ -38,9 +38,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="map.dat" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="DungeonTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>

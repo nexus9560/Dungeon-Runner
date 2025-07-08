@@ -967,6 +967,7 @@ Entity moveEntity(Entity e, Dun_Coord newLoc) {
 void printMap() {
     char map_path[1024];
     path__join("debug-data", "map.dat", map_path);
+	ensure_directory("debug-data");
     FILE* file = fopen(map_path, "w");
     if (file == NULL) {
         printf("Error: Could not open %s for writing.\n", map_path);
@@ -998,6 +999,7 @@ void printMap() {
 void printAdMap() {
     char map_path[1024];
     path__join("debug-data", "admap.dat", map_path);
+	ensure_directory("debug-data");
     FILE* file = fopen(map_path, "w");
 	if (file == NULL) {
 		printf("Error: Could not open %s for writing.\n", map_path);
@@ -1183,28 +1185,31 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 	else
 		wallSide = getVectorDirection(d); // Get the direction of the vector
 	// 0 = Up, 1 = Right, 2 = Down, 3 = Left
-
+	if (!(r.exitNodes[wallSide][0].x > XBOUND && r.exitNodes[wallSide][0].y > YBOUND) && !(r.exitNodes[wallSide][1].x > XBOUND && r.exitNodes[wallSide][1].y > YBOUND)) {
+		srand((unsigned int)time(NULL)); // Seed the random number generator with the current time
+		return (rand() % 2 == 0) ? r.exitNodes[wallSide][2] : r.exitNodes[wallSide][3]; // Randomly choose one of the exit nodes
+	}
 
 	int minSearch = 0;
 	int maxSearch = 0;
 
 	switch (wallSide) {
-	case 0:
-		minSearch = r.startLocation.y;
-		maxSearch = r.startLocation.y + r.ydim - 1;
-		break;
-	case 1:
-		minSearch = r.startLocation.x;
-		maxSearch = r.startLocation.x + r.xdim - 1;
-		break;
-	case 2:
-		minSearch = r.startLocation.y;
-		maxSearch = r.startLocation.y + r.ydim - 1;
-		break;
-	case 3:
-		minSearch = r.startLocation.x;
-		maxSearch = r.startLocation.x + r.xdim - 1;
-		break;
+		case 0:
+			minSearch = r.startLocation.y;
+			maxSearch = r.startLocation.y + r.ydim - 1;
+			break;
+		case 1:
+			minSearch = r.startLocation.x;
+			maxSearch = r.startLocation.x + r.xdim - 1;
+			break;
+		case 2:
+			minSearch = r.startLocation.y;
+			maxSearch = r.startLocation.y + r.ydim - 1;
+			break;
+		case 3:
+			minSearch = r.startLocation.x;
+			maxSearch = r.startLocation.x + r.xdim - 1;
+			break;
 	}
 
 	Dun_Coord t = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
@@ -1291,6 +1296,28 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 	}
 	wallloc.x = t.x;
 	wallloc.y = t.y;
+	world[wallloc.x][wallloc.y].ref = '.'; // Mark the wall location as passable
+	world[wallloc.x][wallloc.y].passable = 1; // Mark the wall location as passable
+	popAdMat(wallloc); // Update the adjacency matrix for the wall location
+	
+
+	for (unsigned int i = 0; i < BUFFER - 1; i++) {
+		switch (wallSide) {
+			case 0:wallloc.x += up.dx; wallloc.y += up.dy; break; // Up
+			case 1:wallloc.x += right.dx; wallloc.y += right.dy; break; // Right
+			case 2:wallloc.x += down.dx; wallloc.y += down.dy; break; // Down
+			case 3:wallloc.x += left.dx; wallloc.y += left.dy; break; // Left
+		}
+		world[wallloc.x][wallloc.y].ref = '.'; // Mark the wall location as passable
+		world[wallloc.x][wallloc.y].passable = 1; // Mark the wall location as passable
+		popAdMat(wallloc); // Update the adjacency matrix for the wall location
+	}
+
+	if(r.exitNodes[wallSide][2].x > XBOUND && r.exitNodes[wallSide][2].y > YBOUND) {
+		r.exitNodes[wallSide][2] = wallloc; // Update the exit node for the wall side
+	} else {
+		r.exitNodes[wallSide][3] = wallloc; // Update the exit node for the wall side
+	}
 	return wallloc;
 }
 
@@ -1407,139 +1434,89 @@ void cutPaths() {
 		// 	free(visited);
 		// 	return;
 		// }
-		#if DEBUG
+		if (DEBUG)
 		    printf("Here!\n");
-		#endif
 		wallLoc[0] = getSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[0]))));
 		wallLoc[1] = getSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[1]))));
-		#if DEBUG
-		    printf("Here 2!\n");
+		if (DEBUG) {
+			printf("Here 2!\n");
 			printf("Wall Loc 0: (%d, %d)\n", wallLoc[0].x, wallLoc[0].y);
 			printf("Wall Loc 1: (%d, %d)\n", wallLoc[1].x, wallLoc[1].y);
 			printf("Here 2.5!\n");
-		#endif
-		world[wallLoc[0].x][wallLoc[0].y].ref = '.';
-		world[wallLoc[1].x][wallLoc[1].y].ref = '.';
-		world[wallLoc[0].x][wallLoc[0].y].passable = 1; // Set the wall location as passable
-		world[wallLoc[1].x][wallLoc[1].y].passable = 1; // Set the wall location as passable
-		#if DEBUG
-		    printf("Here 3!\n");
-		#endif
-		popAdMat(wallLoc[0]);
-		popAdMat(wallLoc[1]);
-		#if DEBUG
-		    printf("Here 4!\n");
-		#endif
-		for (int i = 0; i < BUFFER-1; i++) {
-			if (world[wallLoc[0].x][wallLoc[0].y].admat[0]) {
-				wallLoc[0].x += down.dx;
-				wallLoc[0].y += down.dy;
-			}
-			else if (world[wallLoc[0].x][wallLoc[0].y].admat[1]) {
-				wallLoc[0].x += left.dx;
-				wallLoc[0].y += left.dy;
-			}
-			else if (world[wallLoc[0].x][wallLoc[0].y].admat[2]) {
-				wallLoc[0].x += up.dx;
-				wallLoc[0].y += up.dy;
-			}
-			else if (world[wallLoc[0].x][wallLoc[0].y].admat[3]) {
-				wallLoc[0].x += right.dx;
-				wallLoc[0].y += right.dy;
-			}
-
-			if (world[wallLoc[1].x][wallLoc[1].y].admat[0]) {
-				wallLoc[1].x += down.dx;
-				wallLoc[1].y += down.dy;
-			}
-			else if (world[wallLoc[1].x][wallLoc[1].y].admat[1]) {
-				wallLoc[1].x += left.dx;
-				wallLoc[1].y += left.dy;
-			}
-			else if (world[wallLoc[1].x][wallLoc[1].y].admat[2]) {
-				wallLoc[1].x += up.dx;
-				wallLoc[1].y += up.dy;
-			}
-			else if (world[wallLoc[1].x][wallLoc[1].y].admat[3]) {
-				wallLoc[1].x += right.dx;
-				wallLoc[1].y += right.dy;
-			}
-
-			world[wallLoc[0].x][wallLoc[0].y].ref = '.';
-			world[wallLoc[1].x][wallLoc[1].y].ref = '.';
-			world[wallLoc[0].x][wallLoc[0].y].passable = 1; // Set the wall location as passable
-			world[wallLoc[1].x][wallLoc[1].y].passable = 1; // Set the wall location as passable
-
-			popAdMat(wallLoc[0]);
-			popAdMat(wallLoc[1]);
 		}
-		#if DEBUG
+		//for (int i = 0; i < BUFFER-1; i++) {
+		//	if (world[wallLoc[0].x][wallLoc[0].y].admat[0]) {
+		//		wallLoc[0].x += down.dx;
+		//		wallLoc[0].y += down.dy;
+		//	}
+		//	else if (world[wallLoc[0].x][wallLoc[0].y].admat[1]) {
+		//		wallLoc[0].x += left.dx;
+		//		wallLoc[0].y += left.dy;
+		//	}
+		//	else if (world[wallLoc[0].x][wallLoc[0].y].admat[2]) {
+		//		wallLoc[0].x += up.dx;
+		//		wallLoc[0].y += up.dy;
+		//	}
+		//	else if (world[wallLoc[0].x][wallLoc[0].y].admat[3]) {
+		//		wallLoc[0].x += right.dx;
+		//		wallLoc[0].y += right.dy;
+		//	}
+
+		//	if (world[wallLoc[1].x][wallLoc[1].y].admat[0]) {
+		//		wallLoc[1].x += down.dx;
+		//		wallLoc[1].y += down.dy;
+		//	}
+		//	else if (world[wallLoc[1].x][wallLoc[1].y].admat[1]) {
+		//		wallLoc[1].x += left.dx;
+		//		wallLoc[1].y += left.dy;
+		//	}
+		//	else if (world[wallLoc[1].x][wallLoc[1].y].admat[2]) {
+		//		wallLoc[1].x += up.dx;
+		//		wallLoc[1].y += up.dy;
+		//	}
+		//	else if (world[wallLoc[1].x][wallLoc[1].y].admat[3]) {
+		//		wallLoc[1].x += right.dx;
+		//		wallLoc[1].y += right.dy;
+		//	}
+
+		//	world[wallLoc[0].x][wallLoc[0].y].ref = '.';
+		//	world[wallLoc[1].x][wallLoc[1].y].ref = '.';
+		//	world[wallLoc[0].x][wallLoc[0].y].passable = 1; // Set the wall location as passable
+		//	world[wallLoc[1].x][wallLoc[1].y].passable = 1; // Set the wall location as passable
+		//	
+		//	popAdMat(wallLoc[0]);
+		//	popAdMat(wallLoc[1]);
+		//}
+		if (DEBUG)
 		    printf("Here 5!\n");
-		#endif
+		
 		endLoc[0] = getSpotOnWall(nearestRooms[0], getVector(getRoomCenter(nearestRooms[0]), getRoomCenter(r)));
 		endLoc[1] = getSpotOnWall(nearestRooms[1], getVector(getRoomCenter(nearestRooms[1]), getRoomCenter(r)));
-		#if DEBUG
-		    printf("Here 6!\n");
-		#endif
 
+		DCQ path1 = ExtractPath(AStar(wallLoc[0], endLoc[0], 1));
+		//DCQ path2 = ExtractPath(AStar(wallLoc[1], endLoc[1], 1));
 
-		world[endLoc[0].x][endLoc[0].y].ref = '.';
-		world[endLoc[1].x][endLoc[1].y].ref = '.';
-		world[endLoc[0].x][endLoc[0].y].passable = 1; // Set the end location as passable
-		world[endLoc[1].x][endLoc[1].y].passable = 1; // Set the end location as passable
-		#if DEBUG
-		    printf("Here 7!\n");
-		#endif
-		popAdMat(endLoc[0]);
-		popAdMat(endLoc[1]);
-		#if DEBUG
-		    printf("Here 8!\n");
-		#endif
-
-
-
-		if (wallLoc[0].x == -1 || wallLoc[0].y == -1 || wallLoc[1].x == -1 || wallLoc[1].y == -1) {
-			printf("Error: Could not find valid wall locations.\n");
-			free(nearestRooms);
-			free(visited);
-			return;
+		while (path1.capacity > 0 ) {
+			Dun_Coord current = DCQ_pop(&path1);
 		}
+
 		if (DEBUG) {
 			printf("Wall location 1: [%d,%d]\n", wallLoc[0].x, wallLoc[0].y);
 			printf("Wall location 2: [%d,%d]\n", wallLoc[1].x, wallLoc[1].y);
 		}
-		#if DEBUG
-		    printf("Here 9!\n");
-		#endif
-
+		while (!DCQ_is_empty(&path1)) {
+			Dun_Coord current = DCQ_pop(&path1);
+			if (current.x < 0 || current.y < 0 || current.x >= XBOUND || current.y >= YBOUND) {
+				if (DEBUG)
+					printf("Skipping out of bounds coordinate [%d,%d]\n", current.x, current.y);
+				continue; // Skip out of bounds coordinates
+			}
+			world[current.x][current.y].ref = '.'; // Mark the path as passable
+			world[current.x][current.y].passable = 1; // Set the path as passable
+			popAdMat(current); // Update the adjacency matrix for the path
+		}
 	}
-	#if DEBUG
+	if(DEBUG)
 	    printf("Here 10!\n");
-	#endif
 
 }
-
-/*
- * function Dijkstra(Graph, source):
- *      // initialize two arrays of
-        for each vertex v in Graph.Vertices:
-            dist[v] ← INFINITY
-            prev[v] ← UNDEFINED
-            add v to Q
-        dist[source] ← 0
-
-        while Q is not empty:
-            u ← vertex in Q with minimum dist[u]
-            Q.remove(u)
-
-            for each arc (u, v) in Q:
-                alt ← dist[u] + Graph.Edges(u, v)
-                if alt < dist[v]:
-                    dist[v] ← alt
-                    prev[v] ← u
-
-        return dist[], prev[]
- */
-
-
-
