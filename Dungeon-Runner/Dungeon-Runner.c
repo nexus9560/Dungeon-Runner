@@ -812,7 +812,8 @@ char* printPlayerStatus(int brief) {
 }
 
 Room* makeRooms() {
-	roomCount = (unsigned int)(pow((XBOUND * YBOUND), (1.0 / 3.0)));
+	//roomCount = (unsigned int)(pow((XBOUND * YBOUND), (1.0 / 3.0)));
+	roomCount = 3;
 	Room* temp = malloc(roomCount * sizeof(Room));
 	if (temp == NULL) {
 		printf("Memory allocation failed\n");
@@ -1492,36 +1493,31 @@ void cutPaths() {
 		endLoc[0] = getSpotOnWall(nearestRooms[0], getVector(getRoomCenter(nearestRooms[0]), getRoomCenter(r)));
 		endLoc[1] = getSpotOnWall(nearestRooms[1], getVector(getRoomCenter(nearestRooms[1]), getRoomCenter(r)));
 
-		PFCL path1 = AStar(wallLoc[0], endLoc[0], 1);
-		PFCL path2 = AStar(wallLoc[1], endLoc[1], 1);
-		if (DEBUG)
-			printf("the Size of Path 1 and Path 2 is %d and %d respectively",(int)path1.size,(int)path2.size);
-		while (path1.size > 0) {
-			PF_Cell current;
-			PF_Cell__List_pop(&path1, &current);
-			if(DEBUG)
-				printf("Cutting path at [%d,%d]\n", current.pos.x, current.pos.y);
-			world[current.pos.x][current.pos.y].ref = '.'; // Mark the path as passable
-			world[current.pos.x][current.pos.y].passable = 1; // Set the path as passable
-			popAdMat(current.pos); // Update the adjacency matrix for the path
-			if (DEBUG) {
-				printf("Cutting path at [%d,%d]\n", current.pos.x, current.pos.y);
-			}
+		if (DEBUG) {
+			printf("----->Beginning A Star Pathing for Room %d<-------\n",r.roomID);
 		}
 
-		while (path2.size > 0) {
-			PF_Cell current;
-			PF_Cell__List_pop(&path2, &current);
-			if (DEBUG)
-				printf("Cutting path at [%d,%d]\n", current.pos.x, current.pos.y);
-			world[current.pos.x][current.pos.y].ref = '.'; // Mark the path as passable
-			world[current.pos.x][current.pos.y].passable = 1; // Set the path as passable
-			popAdMat(current.pos); // Update the adjacency matrix for the path
-			if (DEBUG) {
-				printf("Cutting path at [%d,%d]\n", current.pos.x, current.pos.y);
+		PFCL path1 = AStar(wallLoc[0], endLoc[0], 1);
+		PFCL path2 = AStar(wallLoc[1], endLoc[1], 1);
+		if (DEBUG) {
+			printf("the Size of Path 1 and Path 2 is %d and %d respectively\n", (int)path1.size, (int)path2.size);
+		}
+		DCL path1Coords = ExtractCoordinates(path1);
+		DCL path2Coords = ExtractCoordinates(path2);
+		if (DEBUG) {
+			printf("Path 1 Coordinates:\n");
+			for (unsigned int j = 0; j < path1Coords.size; j++) {
+				printf("(%d, %d), ", path1Coords.items[j].x, path1Coords.items[j].y);
 			}
+			printf("\nPath 2 Coordinates:\n");
+			for (unsigned int j = 0; j < path2Coords.size; j++) {
+				printf("(%d, %d), ", path2Coords.items[j].x, path2Coords.items[j].y);
+			}
+			printf("\n");
 		}
 		
+
+
 		PF_Cell__List_destroy(&path1);
 		PF_Cell__List_destroy(&path2);
 	}

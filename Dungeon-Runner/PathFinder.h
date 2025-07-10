@@ -21,18 +21,25 @@ typedef struct {
 } PF_Cell;
 
 DR_LIST_DEF(PF_Cell)
+DR_LIST_DEF(Dun_Coord)
+
+typedef Dun_Coord__List DCL;
 
 typedef PF_Cell__List PFCL;
 
 PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls);
 
-bool getNeighbors(Dun_Coord pos, Dun_Coord *neighbors);
+bool getNeighbors(Dun_Coord pos, Dun_Coord *neighbors, int ignoreWalls);
+
+DCL ExtractCoordinates(PFCL list);
 
 bool isinPFCL(PFCL* list, PF_Cell* cell);
 
-bool PFCL_List_pop_by_coords(PFCL* list, Dun_Coord coords, PF_Cell* cell);
+bool areCoordsInPFCL(PFCL* list, Dun_Coord coords);
 
-DCQ ExtractPath(PFCL path);
+PF_Cell PFCL_Find_by_coords(PFCL* list, Dun_Coord coords);
+
+bool PFCL_List_pop_by_coords(PFCL* list, Dun_Coord coords, PF_Cell* cell);
 
 int isThereAPath(Dun_Coord start, Dun_Coord end);
 

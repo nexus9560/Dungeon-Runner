@@ -4,6 +4,7 @@
 
 
 DR_LIST_IMPL(PF_Cell)
+DR_LIST_IMPL(Dun_Coord)
 
 //Revisit this for later optimization
 
@@ -40,9 +41,9 @@ PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
     };
 	PFCL openSet;
 	PFCL closedSet;
-	PF_Cell__List_init(&openSet, 0);
+	PF_Cell__List_init(&openSet, (2 * distance));
 	PF_Cell__List_push(&openSet, startCell); // Add start cell to open set
-	PF_Cell__List_init(&closedSet, 0); // Initialize closed set
+	PF_Cell__List_init(&closedSet, (2 * distance)); // Initialize closed set
 
 	if(DEBUG) {
 		printf("Start cell initialized at (%d, %d) with cost %u, heuristic %u, total cost %u\n",
@@ -50,86 +51,132 @@ PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
 	}
 
 	while (openSet.size > 0) {
-		if(DEBUG) {
-			printf("Open set size: %zu, Closed set size: %zu\n", openSet.size, closedSet.size);
-		}
 		PF_Cell currentCell;
-		PF_Cell__List_pop(&openSet, &currentCell); // Pop the cell with the lowest total cost from open set
-		currentCell.isVisited = true; // Mark the current cell as visited
-		PF_Cell__List_push(&closedSet, currentCell); // Add it to the closed set
-		if (DEBUG) {
-			printf("Current cell popped from open set at (%d, %d) with cost %u, heuristic %u, total cost %u\n",
+		PF_Cell__List_pop(&openSet, &currentCell); // Pop the cell with the lowest total cost
+		if(DEBUG) {
+			printf("Current cell popped: (%d, %d) with cost %u, heuristic %u, total cost %u\n",
 				currentCell.pos.x, currentCell.pos.y, currentCell.cost, currentCell.heuristic, currentCell.totalCost);
 		}
-		if(currentCell.pos.x == goal.x && currentCell.pos.y == goal.y) {
-			if(DEBUG) {
-				printf("Goal reached at (%d, %d) with cost %u, heuristic %u, total cost %u\n",
-					currentCell.pos.x, currentCell.pos.y, currentCell.cost, currentCell.heuristic, currentCell.totalCost);
-			}
-			// Goal reached, construct the path
-			PF_Cell* cell = &currentCell;
-			while (cell->parent != NULL) {
-				PF_Cell__List_push(&path, *cell); // Push the cell onto the path
-				if(DEBUG) {
-					printf("Adding cell (%d, %d) to path with cost %u, heuristic %u, total cost %u\n",
-						cell->pos.x, cell->pos.y, cell->cost, cell->heuristic, cell->totalCost);
-				}
-				PFCL_List_pop_by_coords(&closedSet, *cell->parent, cell); // Pop the parent cell from closed set
-			}
-			return path;
-		}
 
-		Dun_Coord* neighbors = malloc(4 * sizeof(Dun_Coord));
-		if (!neighbors) {
-			printf("Error: Memory allocation failed for neighbors.\n");
-			exit(1);
-		}
-		getNeighbors(currentCell.pos, neighbors); // Get neighbors of the current cell
-		if (DEBUG) {
-			printf("Neighbors found: ");
-			for (unsigned int i = 0; i < 4; i++) {
-				if (neighbors[i].x < XBOUND && neighbors[i].y < YBOUND && neighbors[i].x >= 0 && neighbors[i].y >= 0) {
-					printf("(%d, %d) ", neighbors[i].x, neighbors[i].y);
+		if( currentCell.pos.x == goal.x && currentCell.pos.y == goal.y) {
+			printf("-----------------------------------------------------------------------------------------------\n");
+			PF_Cell__List_init(&path, currentCell.parentCounter + 1); // Initialize path with the number of parents
+			if(DEBUG) {
+				printf("Goal reached at (%d, %d)\n", goal.x, goal.y);
+				printf("Path size: %u\n", (int)path.size);
+				printf("Current cell parent counter: %u\n", currentCell.parentCounter);
+				printf("Current cell parent position: (%d, %d)\n", currentCell.parent->x, currentCell.parent->y);
+				printf("Current cell cost: %u, heuristic: %u, total cost: %u\n",
+					currentCell.cost, currentCell.heuristic, currentCell.totalCost);
+				printf("Current cell isWalkable: %d, isVisited: %d\n",
+					currentCell.isWalkable, currentCell.isVisited);
+				printf("Current cell position: (%d, %d)\n", currentCell.pos.x, currentCell.pos.y);
+				printf("Current cell parent is not NULL: %s\n", (currentCell.parent != NULL) ? "true" : "false");
+				if( currentCell.parent != NULL) {
+					printf("Current cell parent position: (%d, %d)\n", currentCell.parent->x, currentCell.parent->y);
 				}
 			}
-			printf("\n");
-		}
-		for (unsigned int i = 0; i < 4; i++) {
-			Dun_Coord neighborPos = neighbors[i];
-			if (neighborPos.x >= XBOUND || neighborPos.y >= YBOUND || neighborPos.x < 0 || neighborPos.y < 0) {
-				continue; // Skip if the neighbor is out of bounds
-			}
-            PF_Cell neighborCell = (PF_Cell){
-				.pos=neighborPos,.cost=currentCell.cost + 1,
-				.heuristic=abs((int)(neighborPos.x - goal.x)) + abs((int)(neighborPos.y - goal.y)),
-				.totalCost=currentCell.cost + 1 + abs((int)(neighborPos.x - goal.x)) + abs((int)(neighborPos.y - goal.y)),
-				.parent=&currentCell.pos,
-				.parentCounter=1,
-				.isWalkable=(world[neighborPos.x][neighborPos.y].passable == 1 && world[neighborPos.x][neighborPos.y].occupied == 0) || ignoreWalls,
-				.isVisited=false
-            };
-			if (!neighborCell.isWalkable || neighborCell.isVisited) {
-				PF_Cell__List_push(&closedSet, neighborCell); // Add to closed set if not walkable or already visited
-				continue; // Skip if the neighbor is not walkable or already visited
-			}
-			else {
-				unsigned int tentativeCost = currentCell.cost + 1; // Assuming uniform cost for each step
-				if (DEBUG) {
-					printf("Checking neighbor at (%d, %d) with tentative cost %u\n", neighborCell.pos.x, neighborCell.pos.y, tentativeCost);
-					printf("Current cell cost: %u, Heuristic: %u, Total cost: %u\n", currentCell.cost, currentCell.heuristic, currentCell.totalCost);
+
+			while(currentCell.parent != NULL) {
+				PF_Cell__List_push(&path, currentCell); // Push the cell to the path
+				if(DEBUG) {
+					printf("Adding cell to grand path: (%d, %d)\n", currentCell.pos.x, currentCell.pos.y);
 				}
-				if (tentativeCost < neighborCell.cost) {
-					// If the new cost is lower, update the cell
-					neighborCell.parent = &currentCell.pos; // Set the parent to the current cell
-					neighborCell.parentCounter = currentCell.parentCounter + 1; // Set parent counter to current cell's counter + 1
-					neighborCell.cost = tentativeCost; // Update cost
-					neighborCell.totalCost = tentativeCost + neighborCell.heuristic; // Update total cost
-					if (!isinPFCL(&openSet, &neighborCell)) {
-						PF_Cell__List_push(&openSet, neighborCell); // Add to open set if not already present
+				currentCell = PFCL_Find_by_coords(&closedSet, currentCell.pos); // Remove the cell from closed set
+				if(currentCell.parent != NULL) {
+					if(DEBUG) {
+						printf("Current cell parent position: (%d, %d)\n", currentCell.parent->x, currentCell.parent->y);
+					}
+				} else {
+					if(DEBUG) {
+						printf("Current cell has no parent.\n");
 					}
 				}
 			}
+			PF_Cell__List_destroy(&closedSet); // Clean up closed set
+			PF_Cell__List_destroy(&openSet); // Clean up open set
+			printf("-----------------------------------------------------------------------------------------------\n");
+			break; // Exit the loop if the goal is reached
+		}
+		else {
+			currentCell.isVisited = true; // Mark the current cell as visited
+			PF_Cell__List_push(&closedSet, currentCell); // Add the current cell to closed set
+			if(DEBUG) {
+				printf("Current cell (%d, %d) added to closed set\n", currentCell.pos.x, currentCell.pos.y);
+			}
+			Dun_Coord neighbors[4];
+			if(!getNeighbors(currentCell.pos, neighbors, ignoreWalls)) {
+				printf("Error: Could not get neighbors for cell (%d, %d)\n", currentCell.pos.x, currentCell.pos.y);
+				continue; // Skip to the next iteration if neighbors cannot be retrieved
+			}
+			for (unsigned int i = 0; i < 4; i++) {
+				if(neighbors[i].x >= XBOUND+1 || neighbors[i].y >= YBOUND+1) {
+					continue; // Skip invalid neighbors
+				}else if(neighbors[i].x < 0 || neighbors[i].y < 0 || neighbors[i].x >= XBOUND || neighbors[i].y >= YBOUND) {
+					if(DEBUG) {
+						printf("Skipping out of bounds neighbor (%d, %d)\n", neighbors[i].x, neighbors[i].y);
+					}
+					continue; // Skip out of bounds neighbors
+				}
+				PF_Cell neighborCell;
 
+				if(areCoordsInPFCL(&closedSet, neighbors[i])) {
+					if(DEBUG) {
+						printf("Skipping neighbor (%d, %d) as it is already in closed set\n", neighbors[i].x, neighbors[i].y);
+					}
+					continue; // Skip if the neighbor is already in closed set
+				}else if(areCoordsInPFCL(&openSet, neighbors[i])) {
+					if(DEBUG) {
+						printf("Skipping neighbor (%d, %d) as it is already in open set\n", neighbors[i].x, neighbors[i].y);
+					}
+					continue; // Skip if the neighbor is already in open set
+				}else if(world[neighbors[i].x][neighbors[i].y].occupied == 1 && !ignoreWalls) {
+					if(DEBUG) {
+						printf("Skipping neighbor (%d, %d) as it is occupied\n", neighbors[i].x, neighbors[i].y);
+					}
+					continue; // Skip if the neighbor is occupied and walls are not ignored
+				}
+				
+				// Calculate the cost to reach the neighbor
+				unsigned int cost = currentCell.cost + 1; // Assuming uniform cost for each step
+				unsigned int heuristic = abs((int)(neighbors[i].x - goal.x)) + abs((int)(neighbors[i].y - goal.y));
+				unsigned int totalCost = cost + heuristic;
+				if (DEBUG) {
+					printf("Neighbor (%d, %d) - Cost: %u, Heuristic: %u, Total Cost: %u, Location: (%d, %d)\n",
+						neighbors[i].x, neighbors[i].y, cost, heuristic, totalCost, neighbors[i].x, neighbors[i].y);
+				}
+				// Create a new PF_Cell for the neighbor
+				neighborCell = (PF_Cell){
+					.pos = neighbors[i],
+					.cost = cost,
+					.heuristic = heuristic,
+					.totalCost = totalCost,
+					.parent = &currentCell.pos, // Set the parent to the current cell's position
+					.parentCounter = currentCell.parentCounter + 1, // Increment parent counter
+					.isWalkable = (world[neighbors[i].x][neighbors[i].y].passable == 1 && world[neighbors[i].x][neighbors[i].y].occupied == 0) || ignoreWalls,
+					.isVisited = false
+				};
+				if(DEBUG) {
+					printf("Adding neighbor (%d, %d) with cost %u, heuristic %u, total cost %u\n",
+						neighborCell.pos.x, neighborCell.pos.y, neighborCell.cost, neighborCell.heuristic, neighborCell.totalCost);
+					printf("Neighbor parent position: (%d, %d)\n", neighborCell.parent->x, neighborCell.parent->y);
+				}
+				if (!(neighborCell.totalCost > (3 * distance))) {
+					PF_Cell__List_push(&openSet, neighborCell); // Add the neighbor to open set
+					if (DEBUG) {
+						printf("Neighbor (%d, %d) added to open set with cost %u, heuristic %u, total cost %u\n",
+							neighborCell.pos.x, neighborCell.pos.y, neighborCell.cost, neighborCell.heuristic, neighborCell.totalCost);
+					}
+				}
+				else {
+					PF_Cell__List_push(&closedSet, neighborCell); // If the total cost is too high, add to closed set
+					if (DEBUG) {
+						printf("Neighbor (%d, %d) added to closed set due to high cost %u\n",
+							neighborCell.pos.x, neighborCell.pos.y, neighborCell.totalCost);
+					}
+				}
+
+			}
 		}
 
 	}
@@ -146,6 +193,24 @@ bool isinPFCL(PFCL* list, PF_Cell* cell) {
 	return false; // Cell is not in the list
 }
 
+bool areCoordsInPFCL(PFCL* list, Dun_Coord coords) {
+	for (unsigned int i = 0; i < list->size; i++) {
+		if (list->items[i].pos.x == coords.x && list->items[i].pos.y == coords.y) {
+			return true; // Coordinates are already in the list
+		}
+	}
+	return false; // Coordinates are not in the list
+}
+
+PF_Cell PFCL_Find_by_coords(PFCL* list, Dun_Coord coords) {
+	for (unsigned int i = 0; i < list->size; i++) {
+		if (list->items[i].pos.x == coords.x && list->items[i].pos.y == coords.y) {
+			return list->items[i]; // Copy the cell to the output parameter
+		}
+	}
+	return (PF_Cell){ .pos = { XBOUND+1, YBOUND+1 }, .cost = INT_MAX, .heuristic = INT_MAX, .totalCost = INT_MAX, .parent = NULL, .parentCounter = 0, .isWalkable = false, .isVisited = false }; // Cell with the specified coordinates not found in the list
+}
+
 bool PFCL_List_pop_by_coords(PFCL* list, Dun_Coord coords, PF_Cell* cell) {
 	bool ret;
 	for (unsigned int i = 0; i < list->size; i++) {
@@ -159,7 +224,7 @@ bool PFCL_List_pop_by_coords(PFCL* list, Dun_Coord coords, PF_Cell* cell) {
 	return false; // Cell with the specified coordinates not found in the list
 }
 
-bool getNeighbors(Dun_Coord pos, Dun_Coord* neighbors) {
+bool getNeighbors(Dun_Coord pos, Dun_Coord* neighbors, int ignoreWalls) {
 	if (!neighbors) return false;
 
 	// Define the possible neighbor offsets (up, down, left, right)
@@ -172,7 +237,7 @@ bool getNeighbors(Dun_Coord pos, Dun_Coord* neighbors) {
 	for (int i = 0; i < 4; i++) {
 		Dun_Coord neighbor = offsets[i];
 		if (neighbor.x >= 0 && neighbor.x < XBOUND && neighbor.y >= 0 && neighbor.y < YBOUND) {
-			if (world[neighbor.x][neighbor.y].passable == 1 && world[neighbor.x][neighbor.y].occupied == 0) {
+			if ((world[neighbor.x][neighbor.y].passable == 1 && world[neighbor.x][neighbor.y].occupied == 0)||ignoreWalls) {
 				neighbors[i] = neighbor; // Append valid neighbors to the array
 			}
 			else
@@ -184,20 +249,18 @@ bool getNeighbors(Dun_Coord pos, Dun_Coord* neighbors) {
 	return true;
 }
 
-DCQ ExtractPath(PFCL path) {
-	DCQ result;
-
-	DCQ_init(&result, (unsigned int)path.size);
-	for (unsigned int i = 0; i < path.size; i++) {
-		PF_Cell cell;
-		PF_Cell__List_pop(&path, &cell); // Pop each cell from the path
-		if (&cell != NULL) {
-			Dun_Coord coord = cell.pos;
-			DCQ_append(&result, coord); // Append the coordinate to the result queue
+DCL ExtractCoordinates(PFCL list) {
+	DCL coords;
+	Dun_Coord__List_init(&coords, list.size);
+	for (unsigned int i = 0; i < list.size; i++) {
+		Dun_Coord coord = list.items[i].pos;
+		if (coord.x < XBOUND && coord.y < YBOUND) {
+			Dun_Coord__List_push(&coords, coord); // Add valid coordinates to the list
 		}
 	}
-	return result;
+	return coords; // Return the list of coordinates
 }
+
 
 int isThereAPath(Dun_Coord start, Dun_Coord end) {
 	PFCL path = AStar(start, end, false);

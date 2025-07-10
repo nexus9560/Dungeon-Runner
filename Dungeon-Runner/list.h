@@ -57,13 +57,12 @@ bool TYPE##__List_pop(TYPE##__List* l, TYPE* item);
 #define DR_LIST_POP_IMPL(TYPE) \
 bool TYPE##__List_pop(TYPE##__List* l, TYPE* item) { \
     if (TYPE##__List_empty(l)){ \
-        item = NULL; \
-        return false;\
+        return false; \
     } \
-    if (item != NULL){\
-        *item = l->items[l->size];\
-    }\
-    l->size--; \
+    if (item != NULL){ \
+        *item = l->items[l->size - 1]; \
+    } \
+    l->size=(l->size>0?l->size-1:0); \
     return true; \
 }
 
