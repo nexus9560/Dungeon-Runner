@@ -52,6 +52,7 @@ PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
 
 	while (openSet.size > 0) {
 		PF_Cell currentCell;
+		currentCell = openSet.items[openSet.size - 1];
 		PF_Cell__List_pop(&openSet, &currentCell); // Pop the cell with the lowest total cost
 		if(DEBUG) {
 			printf("Current cell popped: (%d, %d) with cost %u, heuristic %u, total cost %u\n",
@@ -65,7 +66,7 @@ PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
 				printf("Goal reached at (%d, %d)\n", goal.x, goal.y);
 				printf("Path size: %u\n", (int)path.size);
 				printf("Current cell parent counter: %u\n", currentCell.parentCounter);
-				printf("Current cell parent position: (%d, %d)\n", currentCell.parent->x, currentCell.parent->y);
+				printf("Current cell parent position: (%d, %d)\n", (currentCell.parent != NULL) ? currentCell.parent->pos.x : -1, (currentCell.parent != NULL) ? currentCell.parent->pos.y : -1);
 				printf("Current cell cost: %u, heuristic: %u, total cost: %u\n",
 					currentCell.cost, currentCell.heuristic, currentCell.totalCost);
 				printf("Current cell isWalkable: %d, isVisited: %d\n",
@@ -73,7 +74,7 @@ PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
 				printf("Current cell position: (%d, %d)\n", currentCell.pos.x, currentCell.pos.y);
 				printf("Current cell parent is not NULL: %s\n", (currentCell.parent != NULL) ? "true" : "false");
 				if( currentCell.parent != NULL) {
-					printf("Current cell parent position: (%d, %d)\n", currentCell.parent->x, currentCell.parent->y);
+					printf("Current cell parent position: (%d, %d)\n", currentCell.parent->pos.x, currentCell.parent->pos.y);
 				}
 			}
 
@@ -85,7 +86,7 @@ PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
 				currentCell = PFCL_Find_by_coords(&closedSet, currentCell.pos); // Remove the cell from closed set
 				if(currentCell.parent != NULL) {
 					if(DEBUG) {
-						printf("Current cell parent position: (%d, %d)\n", currentCell.parent->x, currentCell.parent->y);
+						printf("Current cell parent position: (%d, %d)\n", currentCell.parent->pos.x, currentCell.parent->pos.y);
 					}
 				} else {
 					if(DEBUG) {
@@ -151,7 +152,7 @@ PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
 					.cost = cost,
 					.heuristic = heuristic,
 					.totalCost = totalCost,
-					.parent = &currentCell.pos, // Set the parent to the current cell's position
+					.parent = &currentCell, // Set the parent to the current cell's structure
 					.parentCounter = currentCell.parentCounter + 1, // Increment parent counter
 					.isWalkable = (world[neighbors[i].x][neighbors[i].y].passable == 1 && world[neighbors[i].x][neighbors[i].y].occupied == 0) || ignoreWalls,
 					.isVisited = false
@@ -159,7 +160,7 @@ PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
 				if(DEBUG) {
 					printf("Adding neighbor (%d, %d) with cost %u, heuristic %u, total cost %u\n",
 						neighborCell.pos.x, neighborCell.pos.y, neighborCell.cost, neighborCell.heuristic, neighborCell.totalCost);
-					printf("Neighbor parent position: (%d, %d)\n", neighborCell.parent->x, neighborCell.parent->y);
+					printf("Neighbor parent position: (%d, %d)\n", neighborCell.parent->pos.x, neighborCell.parent->pos.y);
 				}
 				if (!(neighborCell.totalCost > (3 * distance))) {
 					PF_Cell__List_push(&openSet, neighborCell); // Add the neighbor to open set
