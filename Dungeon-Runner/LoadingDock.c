@@ -52,7 +52,18 @@ void savePlayer() {
 		printf("Error: Could not open or create file for saving.\n");
 		return;
 	}
-
+	/*
+		Location:[  17,  35]
+		Name: Nex
+		Health:10
+		CurrentHealth:10
+		Attack:1
+		To-Hit:1
+		Defense:1
+		Experience:0
+		Evasion:1
+		Level:1
+	*/
 	// Write the player's position to the file
 	fprintf(file, "Location:[%4d,%4d]\n", you.base.location.x, you.base.location.y);
 	fprintf(file, "Name:%s\n", you.base.name);
