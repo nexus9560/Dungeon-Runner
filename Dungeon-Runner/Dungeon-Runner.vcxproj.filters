@@ -63,7 +63,4 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="data\rooms.dat" />
-  </ItemGroup>
 </Project>

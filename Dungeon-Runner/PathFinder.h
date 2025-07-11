@@ -9,18 +9,17 @@
 // Ensure PF_Cell__List is properly defined before use
 
 
-struct PF_Cell{
+typedef struct {
 	Dun_Coord pos; // Position of the cell in the world
 	unsigned int cost; // Cost to reach this cell
 	unsigned int heuristic; // Heuristic cost estimate to the goal
 	unsigned int totalCost; // Total cost (cost + heuristic)
-	struct PF_Cell* parent; // Parent cell in the path
+	Dun_Coord parent; // Parent cell in the path
 	unsigned int parentCounter; // number of parents (should be 0 or 1)
 	bool isWalkable; // Whether the cell can be walked on
 	bool isVisited; // Whether the cell has been visited
-};
+} PF_Cell;
 
-typedef struct PF_Cell PF_Cell;
 
 DR_LIST_DEF(PF_Cell)
 DR_LIST_DEF(Dun_Coord)

@@ -31,7 +31,7 @@
 #define inRangeInclusive(x, min, max) ((x) >= (min) && (x) <= (max)) // Check if x is in the range [min, max)
 #define inRangeExclusive(x, min, max) ((x) > (min) && (x) < (max)) // Check if x is in the range (min, max)
 #define matchSign(x, y) (((x) < 0 && (y) < 0) || ((x) >= 0 && (y) >= 0)) // Check if x and y have the same sign
-#define BUFFER 3 // Buffer to check for room collisions and out of bounds cases.
+#define BUFFER 4 // Buffer to check for room collisions and out of bounds cases.
 
 
 typedef struct {
@@ -59,6 +59,8 @@ void DCQ_destroy(DCQ *dcq);
 bool DCQ_is_empty(DCQ *dcq);
 void DCQ_append(DCQ *dcq, Dun_Coord coord);
 Dun_Coord DCQ_pop(DCQ *dcq);
+
+int isInARoom(Dun_Coord d);
 
 void DCQ_resize(DCQ *dcq, unsigned int new_capacity);
 

@@ -147,9 +147,6 @@
     <ClInclude Include="Player.h" />
     <ClInclude Include="queue.h" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="data\rooms.dat" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

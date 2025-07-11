@@ -67,7 +67,6 @@ int checkOverlappingArea(Room room1, Room room2);
 int* getConsoleWindow();
 int getRandomEnemyIndex();
 int isInRoom(Room r, Dun_Coord d);
-int isInARoom(Dun_Coord d);
 int getVectorDirection(Dun_Vec d);
 int closerToZero(int value); // Brings passed value closer to zero.
 int closeToZero(int a, int b); // Returns a if it is closer to zero than b, otherwise returns b.
@@ -117,7 +116,7 @@ int main() {
 	}
 	saveRooms();
 	cutPaths();
-
+	updateWorldAdMat();
 
 	printAdMap();
 	printMap();
@@ -162,7 +161,7 @@ int main() {
 	}
 	int* consoleDimensions = getConsoleWindow();
 	printf("Console dimensions: %d rows, %d columns\n", consoleDimensions[0], consoleDimensions[1]);
-	//roomRunner();
+	roomRunner();
 
 	return 0;
 }
@@ -669,7 +668,7 @@ int isSafeSpot(Dun_Coord d) {
 }
 
 int isInRoom(Room r, Dun_Coord d) {
-	if (d.x < r.startLocation.x || d.x >= r.startLocation.x + r.xdim || d.y < r.startLocation.y || d.y >= r.startLocation.y + r.ydim) {
+	if (d.x < r.startLocation.x-(BUFFER/2) || d.x >= r.startLocation.x + r.xdim+ (BUFFER / 2) || d.y < r.startLocation.y- (BUFFER / 2) || d.y >= r.startLocation.y + r.ydim+ (BUFFER / 2)) {
 		return 0; // Not in the room
 	}
 	return 1; // In the room
@@ -812,8 +811,8 @@ char* printPlayerStatus(int brief) {
 }
 
 Room* makeRooms() {
-	//roomCount = (unsigned int)(pow((XBOUND * YBOUND), (1.0 / 3.0)));
-	roomCount = 3;
+	roomCount = (unsigned int)(pow((XBOUND * YBOUND), (1.0 / 3.0)));
+	//roomCount = 3;
 	Room* temp = malloc(roomCount * sizeof(Room));
 	if (temp == NULL) {
 		printf("Memory allocation failed\n");
@@ -1489,7 +1488,8 @@ void cutPaths() {
 		//}
 		if (DEBUG)
 		    printf("Here 5!\n");
-		
+		PFCL path1, path2;
+		DCL path1Coords, path2Coords;
 		endLoc[0] = getSpotOnWall(nearestRooms[0], getVector(getRoomCenter(nearestRooms[0]), getRoomCenter(r)));
 		endLoc[1] = getSpotOnWall(nearestRooms[1], getVector(getRoomCenter(nearestRooms[1]), getRoomCenter(r)));
 
@@ -1497,24 +1497,27 @@ void cutPaths() {
 			printf("----->Beginning A Star Pathing for Room %d<-------\n",r.roomID);
 		}
 
-		PFCL path1 = AStar(wallLoc[0], endLoc[0], 1);
-		PFCL path2 = AStar(wallLoc[1], endLoc[1], 1);
-		if (DEBUG) {
-			printf("the Size of Path 1 and Path 2 is %d and %d respectively\n", (int)path1.size, (int)path2.size);
-		}
-		DCL path1Coords = ExtractCoordinates(path1);
-		DCL path2Coords = ExtractCoordinates(path2);
-		if (DEBUG) {
-			printf("Path 1 Coordinates:\n");
+		if (!isThereAPath(wallLoc[0],endLoc[0])) {
+			path1 = AStar(wallLoc[0], endLoc[0], 1);
+			path1Coords = ExtractCoordinates(path1);
 			for (unsigned int j = 0; j < path1Coords.size; j++) {
-				printf("(%d, %d), ", path1Coords.items[j].x, path1Coords.items[j].y);
+				world[path1Coords.items[j].x][path1Coords.items[j].y].ref = '.'; // Mark the path as passable
+				world[path1Coords.items[j].x][path1Coords.items[j].y].passable = 1; // Mark the path as passable
+				//popAdMat(path1Coords.items[j]); // Update the adjacency matrix for the path coordinates
 			}
-			printf("\nPath 2 Coordinates:\n");
-			for (unsigned int j = 0; j < path2Coords.size; j++) {
-				printf("(%d, %d), ", path2Coords.items[j].x, path2Coords.items[j].y);
-			}
-			printf("\n");
 		}
+		
+		if(!isThereAPath(wallLoc[1], endLoc[1])) {
+			path2 = AStar(wallLoc[1], endLoc[1], 1);
+			path2Coords = ExtractCoordinates(path2);
+			for (unsigned int j = 0; j < path2Coords.size; j++) {
+				world[path2Coords.items[j].x][path2Coords.items[j].y].ref = '.'; // Mark the path as passable
+				world[path2Coords.items[j].x][path2Coords.items[j].y].passable = 1; // Mark the path as passable
+				//popAdMat(path2Coords.items[j]); // Update the adjacency matrix for the path coordinates
+			}
+		}
+
+		
 		
 
 
