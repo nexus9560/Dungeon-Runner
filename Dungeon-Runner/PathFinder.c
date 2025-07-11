@@ -41,6 +41,7 @@ PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
     };
 	PFCL openSet;
 	PFCL closedSet;
+	PF_Cell currentCell, neighborCell;
 	PF_Cell__List_init(&openSet, (2 * distance));
 	PF_Cell__List_push(&openSet, startCell); // Add start cell to open set
 	PF_Cell__List_init(&closedSet, (2 * distance)); // Initialize closed set
@@ -51,9 +52,8 @@ PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
 	}
 
 	while (openSet.size > 0) {
-		PF_Cell currentCell;
-		currentCell = openSet.items[openSet.size - 1];
-		PF_Cell__List_pop(&openSet, &currentCell); // Pop the cell with the lowest total cost
+		//currentCell = openSet.items[openSet.size - 1]; // Retrieve the cell with the lowest total cost
+		PF_Cell__List_pop(&openSet, &currentCell); // Pop the cell from open set
 		if(DEBUG) {
 			printf("Current cell popped: (%d, %d) with cost %u, heuristic %u, total cost %u\n",
 				currentCell.pos.x, currentCell.pos.y, currentCell.cost, currentCell.heuristic, currentCell.totalCost);
@@ -94,8 +94,8 @@ PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
 					}
 				}
 			}
-			PF_Cell__List_destroy(&closedSet); // Clean up closed set
-			PF_Cell__List_destroy(&openSet); // Clean up open set
+			//PF_Cell__List_destroy(&closedSet); // Clean up closed set
+			//PF_Cell__List_destroy(&openSet); // Clean up open set
 			printf("-----------------------------------------------------------------------------------------------\n");
 			break; // Exit the loop if the goal is reached
 		}
@@ -119,7 +119,6 @@ PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
 					}
 					continue; // Skip out of bounds neighbors
 				}
-				PF_Cell neighborCell;
 
 				if(areCoordsInPFCL(&closedSet, neighbors[i])) {
 					if(DEBUG) {
@@ -152,11 +151,12 @@ PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
 					.cost = cost,
 					.heuristic = heuristic,
 					.totalCost = totalCost,
-					.parent = &currentCell, // Set the parent to the current cell's structure
+					.parent = malloc(sizeof(PF_Cell)), // Set the parent to the current cell's structure
 					.parentCounter = currentCell.parentCounter + 1, // Increment parent counter
 					.isWalkable = (world[neighbors[i].x][neighbors[i].y].passable == 1 && world[neighbors[i].x][neighbors[i].y].occupied == 0) || ignoreWalls,
 					.isVisited = false
 				};
+				neighborCell.parent->pos = currentCell.pos; // Set the parent position to the current cell's position
 				if(DEBUG) {
 					printf("Adding neighbor (%d, %d) with cost %u, heuristic %u, total cost %u\n",
 						neighborCell.pos.x, neighborCell.pos.y, neighborCell.cost, neighborCell.heuristic, neighborCell.totalCost);
