@@ -1427,12 +1427,8 @@ void cutPaths() {
 
 		Dun_Coord wallLoc[2];
 		Dun_Coord endLoc[2];
-		// if (wallLoc == NULL || endLoc == NULL) {
-		// 	printf("Memory allocation failed\n");
-		// 	free(nearestRooms);
-		// 	free(visited);
-		// 	return;
-		// }
+
+
 		if (DEBUG)
 		    printf("Here!\n");
 		wallLoc[0] = getSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[0]))));
@@ -1443,49 +1439,7 @@ void cutPaths() {
 			printf("Wall Loc 1: (%d, %d)\n", wallLoc[1].x, wallLoc[1].y);
 			printf("Here 2.5!\n");
 		}
-		//for (int i = 0; i < BUFFER-1; i++) {
-		//	if (world[wallLoc[0].x][wallLoc[0].y].admat[0]) {
-		//		wallLoc[0].x += down.dx;
-		//		wallLoc[0].y += down.dy;
-		//	}
-		//	else if (world[wallLoc[0].x][wallLoc[0].y].admat[1]) {
-		//		wallLoc[0].x += left.dx;
-		//		wallLoc[0].y += left.dy;
-		//	}
-		//	else if (world[wallLoc[0].x][wallLoc[0].y].admat[2]) {
-		//		wallLoc[0].x += up.dx;
-		//		wallLoc[0].y += up.dy;
-		//	}
-		//	else if (world[wallLoc[0].x][wallLoc[0].y].admat[3]) {
-		//		wallLoc[0].x += right.dx;
-		//		wallLoc[0].y += right.dy;
-		//	}
 
-		//	if (world[wallLoc[1].x][wallLoc[1].y].admat[0]) {
-		//		wallLoc[1].x += down.dx;
-		//		wallLoc[1].y += down.dy;
-		//	}
-		//	else if (world[wallLoc[1].x][wallLoc[1].y].admat[1]) {
-		//		wallLoc[1].x += left.dx;
-		//		wallLoc[1].y += left.dy;
-		//	}
-		//	else if (world[wallLoc[1].x][wallLoc[1].y].admat[2]) {
-		//		wallLoc[1].x += up.dx;
-		//		wallLoc[1].y += up.dy;
-		//	}
-		//	else if (world[wallLoc[1].x][wallLoc[1].y].admat[3]) {
-		//		wallLoc[1].x += right.dx;
-		//		wallLoc[1].y += right.dy;
-		//	}
-
-		//	world[wallLoc[0].x][wallLoc[0].y].ref = '.';
-		//	world[wallLoc[1].x][wallLoc[1].y].ref = '.';
-		//	world[wallLoc[0].x][wallLoc[0].y].passable = 1; // Set the wall location as passable
-		//	world[wallLoc[1].x][wallLoc[1].y].passable = 1; // Set the wall location as passable
-		//	
-		//	popAdMat(wallLoc[0]);
-		//	popAdMat(wallLoc[1]);
-		//}
 		if (DEBUG)
 		    printf("Here 5!\n");
 		PFCL path1, path2;
