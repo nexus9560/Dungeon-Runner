@@ -66,15 +66,15 @@ void savePlayer() {
 	*/
 	// Write the player's position to the file
 	fprintf(file, "Location:[%4d,%4d]\n", you.base.location.x, you.base.location.y);
-	fprintf(file, "Name:%s\n", you.base.name);
-	fprintf(file, "Health:%d\n", you.base.health);
-	fprintf(file, "CurrentHealth:%d\n", you.base.curHealth);
-	fprintf(file, "Attack:%d\n", you.base.atk);
-	fprintf(file, "To-Hit:%d\n", you.base.hit);
-	fprintf(file, "Defense:%d\n", you.base.def);
-	fprintf(file, "Experience:%d\n", you.base.exp);
-	fprintf(file, "Evasion:%d\n", you.base.eva);
-	fprintf(file, "Level:%d\n", you.base.level);
+	fprintf(file, "Name:%31s\n", you.base.name);
+	fprintf(file, "Health:%4d\n", you.base.health);
+	fprintf(file, "CurrentHealth:%4d\n", you.base.curHealth);
+	fprintf(file, "Attack:%4d\n", you.base.atk);
+	fprintf(file, "To-Hit:%4d\n", you.base.hit);
+	fprintf(file, "Defense:%4d\n", you.base.def);
+	fprintf(file, "Experience:%4d\n", you.base.exp);
+	fprintf(file, "Evasion:%4d\n", you.base.eva);
+	fprintf(file, "Level:%4d\n", you.base.level);
 
 	fclose(file);
 	printf("Player position saved successfully.\n");
@@ -100,34 +100,34 @@ int loadPlayer() {
 			if (sscanf(line, "Location:[%4d,%4d]", &you.base.location.x, &you.base.location.y) == 2) {
 				continue;
 			}
-			else if (sscanf(line, "Name:%s", you.base.name) == 1) {
+			else if (sscanf(line, "Name:%31s", you.base.name) == 1) {
 				continue;
 			}
-			else if (sscanf(line, "Health:%d", &you.base.health) == 1) {
+			else if (sscanf(line, "Health:%4d", &you.base.health) == 1) {
 				continue;
 			}
-			else if (sscanf(line, "CurrentHealth:%d", &you.base.curHealth) == 1) {
+			else if (sscanf(line, "CurrentHealth:%4d", &you.base.curHealth) == 1) {
 				continue;
 			}
-			else if (sscanf(line, "Attack:%d", &you.base.atk) == 1) {
+			else if (sscanf(line, "Attack:%4d", &you.base.atk) == 1) {
 				continue;
 			}
-			else if (sscanf(line, "Aggro:%d", &you.base.agr) == 1) {
+			else if (sscanf(line, "Aggro:%4d", &you.base.agr) == 1) {
 				continue;
 			}
-			else if (sscanf(line, "To-Hit:%d", &you.base.hit) == 1) {
+			else if (sscanf(line, "To-Hit:%4d", &you.base.hit) == 1) {
 				continue;
 			}
-			else if (sscanf(line, "Defense:%d", &you.base.def) == 1) {
+			else if (sscanf(line, "Defense:%4d", &you.base.def) == 1) {
 				continue;
 			}
-			else if (sscanf(line, "Experience:%d", &you.base.exp) == 1) {
+			else if (sscanf(line, "Experience:%4d", &you.base.exp) == 1) {
 				continue;
 			}
-			else if (sscanf(line, "Evasion:%d", &you.base.eva) == 1) {
+			else if (sscanf(line, "Evasion:%4d", &you.base.eva) == 1) {
 				continue;
 			}
-			else if (sscanf(line, "Level:%d", &you.base.level) == 1) {
+			else if (sscanf(line, "Level:%4d", &you.base.level) == 1) {
 				continue;
 			}
 		}

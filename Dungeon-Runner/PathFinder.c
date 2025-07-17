@@ -58,6 +58,10 @@ PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
 			printf("Current cell popped: (%d, %d) with cost %u, heuristic %u, total cost %u\n",
 				currentCell.pos.x, currentCell.pos.y, currentCell.cost, currentCell.heuristic, currentCell.totalCost);
 		}
+		if ((start.x == XBOUND + 1 && start.y == YBOUND + 1) || (goal.x == XBOUND + 1 && goal.y == YBOUND + 1)) {
+			printf("Error: Start or goal coordinates are invalid.\n");
+			return path; // Return empty path if start or goal coordinates are invalid
+		}
 
 		if( currentCell.pos.x == goal.x && currentCell.pos.y == goal.y) {
 			printf("-----------------------------------------------------------------------------------------------\n");
