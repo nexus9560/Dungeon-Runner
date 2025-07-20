@@ -1,6 +1,8 @@
+#pragma once
 #ifndef PLAYER_H
 #define PLAYER_H
-#pragma once
 #include "DungeonTypes.h"
+#include "Effect_Manager.h"
+
 
 #endif
