@@ -2,6 +2,7 @@
 #include "DungeonTypes.h"
 #include "LoadingDock.h"
 #include "PathFinder.h"
+#include "Player.h"
 #include "pathlib.h"
 
 #ifdef _WIN32

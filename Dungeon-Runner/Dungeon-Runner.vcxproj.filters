@@ -36,6 +36,9 @@
     <ClCompile Include="PathFinder.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="EntityList.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DungeonTypes.h">
@@ -60,6 +63,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PathFinder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EntityList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
