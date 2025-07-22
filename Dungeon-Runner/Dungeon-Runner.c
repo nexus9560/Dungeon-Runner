@@ -50,7 +50,6 @@ void changePosition();
 void inspectElement(Dun_Coord pos);
 void actOnYourOwn();
 void exitAction(int ec);
-void actionChecker();
 void delay(int seconds);
 void showPlayerInventory();
 void cutPaths();
@@ -65,6 +64,8 @@ char* printPlayerStatus(int brief);
 int checkBounds( Dun_Coord newPos, Dun_Vec delta);
 int checkOccupied(Dun_Coord newPos, Dun_Vec delta);
 int checkOverlappingArea(Room room1, Room room2);
+int actionChecker();
+int enemyTurn();
 int* getConsoleWindow();
 int getRandomEnemyIndex();
 int isInRoom(Room r, Dun_Coord d);
@@ -123,7 +124,7 @@ int main() {
 	printMap();
 
 
-	if (loadPlayer() == 0) {
+	if (1 || loadPlayer() == 0) {
 		you.base.currentPos = 0;
 		printf("Error loading player position. Starting at default position.\n");
 		you.base.location = getNearestSafeLocation(you.base.location);
@@ -270,20 +271,36 @@ void clearScreen() {
 
 void roomRunner() {
 	int isBrief = 1;
+	unsigned int isPlayerTurn = 1, hasSomethingchanged = 0;
 	do {
 
 		drawMap();
 		printf("\n");
 		printf("%s\n",printPlayerStatus(isBrief));
-		actionChecker();
+		if (isPlayerTurn) {
+			if (actionChecker()) {
+				isPlayerTurn = 0;
+				hasSomethingchanged = 1; // Player did something, so we need to update the world.
+			}
+		}
+		else {
+			if (enemyTurn()) {
+				isPlayerTurn = 1;
+				hasSomethingchanged = 1; // Enemy did something, so we need to update the world.
+			}
+		}
 		//delay(1);
 		clearScreen();
 
 	} while (1);
 }
 
+int enemyTurn() {
+	return 1;
+}
 
-void actionChecker() {
+
+int actionChecker() {
    if (OLD_ACTIONS) {
 	   if (DEBUG || you.stepCount != 0) {
 		   for (int i = 0; i < (sizeof(you.base.stepLog) / LOG_BUFFER); i++) {
@@ -314,22 +331,24 @@ void actionChecker() {
 		   case 0:
 			   exitAction(0);
 		   case 1: changePosition();
-			   break;
+			   return 1;
 		   case 2: inspectElement(you.base.location);
-			   break;
+			   return 1;
 		   case 3: actOnYourOwn();
-			   break;
+			   return 1;
 		   case 4: savePlayer();
-			   break;
+			   return 1;
 		   case 5: loadPlayer();
-			   break;
+			   return 1;
 		   case 6: if (DEBUG) {
 			   loadEntities(0);
-			   break;
-		   } else { return; }
+			   return 1;
+		   } else {
+			   return 0;
+		   }
 		   default:
 			   printf("Could you try that again?\n");
-			   return;
+			   return 0;
 	   }
    }
    else {
@@ -350,48 +369,48 @@ void actionChecker() {
 				case 'w':
 				case 72: // Up arrow
 					you.base = shiftEntity(you.base, up);
-					break;
+					return 1;
 				case 'W':
 					you.base = shiftEntity(shiftEntity(you.base, up), up);
-					break;
+					return 1;
 				case 'a':
 				case 75: // Left arrow
 					you.base = shiftEntity(you.base, left);
-					break;
+					return 1;
 				case 'A':
 					you.base = shiftEntity(shiftEntity(you.base, left), left);
-					break;
+					return 1;
 				case 'd':
 				case 77: // Right arrow
 					you.base = shiftEntity(you.base, right);
-					break;
+					return 1;
 				case 'D':
 					you.base = shiftEntity(shiftEntity(you.base, right), right);
-					break;
+					return 1;
 				case 's':
 				case 80: // Down arrow
 					you.base = shiftEntity(you.base, down);
-					break;
+					return 1;
 				case 'S':
 					you.base = shiftEntity(shiftEntity(you.base, down), down);
-					break;
+					return 1;
 				case 'i':
 					printf("Inventory not implemented yet.\n");
-					break;
+					return 1;
 				case 'e':
 					printf("Interact not implemented yet.\n");
-					break;
+					return 1;
 				case 'f':
 					printf("Inspect not implemented yet.\n");
-					break;
+					return 1;
 				case ' ':
 					printf("Attack not implemented yet.\n");
-					break;
+					return 1;
 
 				case 'q':
 				case 81: // Q key
 					exitAction(0);
-				default:break;
+				default:return 0;
 			}
 		}
 
@@ -415,49 +434,49 @@ void actionChecker() {
 		   case 'w':
 		   case 72: // Up arrow
 			   you.base = shiftEntity(you.base, up);
-			   break;
+			   return 1;
 		   case 'W':
 			   you.base = shiftEntity(shiftEntity(you.base, up), up);
-			   break;
+			   return 1;
 		   case 'a':
 		   case 75: // Left arrow
 			   you.base = shiftEntity(you.base, left);
-			   break;
+			   return 1;
 		   case 'A':
 			   you.base = shiftEntity(shiftEntity(you.base, left), left);
-			   break;
+			   return 1;
 		   case 'd':
 		   case 77: // Right arrow
 			   you.base = shiftEntity(you.base, right);
-			   break;
+			   return 1;
 		   case 'D':
 			   you.base = shiftEntity(shiftEntity(you.base, right), right);
-			   break;
+			   return 1;
 		   case 's':
 		   case 80: // Down arrow
 			   you.base = shiftEntity(you.base, down);
-			   break;
+			   return 1;
 		   case 'S':
 			   you.base = shiftEntity(shiftEntity(you.base, down), down);
-			   break;
+			   return 1;
 		   case 'i':
 			   printf("Inventory not implemented yet.\n");
-			   break;
+			   return 1;
 		   case 'e':
 			   printf("Interact not implemented yet.\n");
-			   break;
+			   return 1;
 		   case 'f':
 			   printf("Inspect not implemented yet.\n");
-			   break;
+			   return 1;
 		   case ' ':
 			   printf("Attack not implemented yet.\n");
-			   break;
+			   return 1;
 
 		   case 'q':
 		   case 81: // Q key
 			   exitAction(0);
 		   default:
-			   break;
+			   return 0;
 	   }
 #else
 	   printf("Operating system not detected for raw input.\n");

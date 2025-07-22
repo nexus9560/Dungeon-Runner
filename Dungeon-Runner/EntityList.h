@@ -24,6 +24,7 @@ int EL_get(EL* list, unsigned int index, Entity* entity);
 
 int EL_set(EL* list, unsigned int index, Entity entity);
 
+int EL_Pop(EL* list, Entity* entity);
 
 
 #endif
