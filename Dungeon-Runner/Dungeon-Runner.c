@@ -58,6 +58,7 @@ void printMap();
 void printAdMap();
 void popAdMat(Dun_Coord d);
 void updateWorldAdMat();
+void drawThings(int isBrief);
 
 char* printPlayerStatus(int brief);
 
@@ -124,7 +125,7 @@ int main() {
 	printMap();
 
 
-	if (1 || loadPlayer() == 0) {
+	if (!loadPlayer()) {
 		you.base.currentPos = 0;
 		printf("Error loading player position. Starting at default position.\n");
 		you.base.location = getNearestSafeLocation(you.base.location);
@@ -163,6 +164,9 @@ int main() {
 	}
 	int* consoleDimensions = getConsoleWindow();
 	printf("Console dimensions: %d rows, %d columns\n", consoleDimensions[0], consoleDimensions[1]);
+	clearScreen();
+	drawMap();
+	drawThings(1);
 	roomRunner();
 
 	return 0;
@@ -271,12 +275,13 @@ void clearScreen() {
 
 void roomRunner() {
 	int isBrief = 1;
-	unsigned int isPlayerTurn = 1, hasSomethingchanged = 0;
+	unsigned int isPlayerTurn = 1, hasSomethingchanged = 1;
 	do {
-
-		drawMap();
-		printf("\n");
-		printf("%s\n",printPlayerStatus(isBrief));
+		if (hasSomethingchanged) {
+			clearScreen();
+			drawThings(isBrief);
+			hasSomethingchanged = 0; // Reset the flag after drawing
+		}
 		if (isPlayerTurn) {
 			if (actionChecker()) {
 				isPlayerTurn = 0;
@@ -290,13 +295,40 @@ void roomRunner() {
 			}
 		}
 		//delay(1);
-		clearScreen();
-
 	} while (1);
 }
 
 int enemyTurn() {
 	return 1;
+}
+
+void drawThings(int isBrief) {
+	drawMap();
+	printf("\n");
+	printf("%s\n", printPlayerStatus(isBrief));
+	if (OLD_ACTIONS) {
+		printf("\nYour current position is:%4d,%4d\n\n", you.base.location.x, you.base.location.y);
+		printf("What will you do?\n");
+		printf("0 - Exit\n");
+		printf("1 - Move\n");
+		printf("2 - Inspect\n");
+		printf("3 - Act\n");
+		printf("4 - Save\n");
+		printf("5 - Load\n");
+		if (DEBUG) {
+			printf("6 - Debug\n");
+		}
+		printf("\n\n");
+
+	}
+	else {
+		printf("WASD to move\n");
+		printf("Q to quit\n");
+		printf("I to Open Inventory\n");
+		printf("E to Interact\n");
+		printf("F to Inspect\n");
+		printf("Spacebar to Attack\n");
+	}
 }
 
 
@@ -309,23 +341,7 @@ int actionChecker() {
 		   printf("\n\n");
 	   }
 	   int choice = 0;
-	   printf("\nYour current position is:%4d,%4d\n\n", you.base.location.x, you.base.location.y);
-	   printf("What will you do?\n");
-	   printf("0 - Exit\n");
-	   printf("1 - Move\n");
-	   printf("2 - Inspect\n");
-	   printf("3 - Act\n");
-	   printf("4 - Save\n");
-	   printf("5 - Load\n");
-	   if (DEBUG) {
-		   printf("6 - Debug\n");
-	   }
-	   printf("\n\n");
 	   scanf("%d", &choice);
-
-	   clearScreen();
-
-	   drawMap();
 
 	   switch (choice) {
 		   case 0:
@@ -352,12 +368,7 @@ int actionChecker() {
 	   }
    }
    else {
-	   printf("WASD to move\n");
-	   printf("Q to quit\n");
-	   printf("I to Open Inventory\n");
-	   printf("E to Interact\n");
-	   printf("F to Inspect\n");
-	   printf("Spacebar to Attack\n");
+	   
 #ifdef _WIN32
 
 		int ch;
@@ -396,16 +407,16 @@ int actionChecker() {
 					return 1;
 				case 'i':
 					printf("Inventory not implemented yet.\n");
-					return 1;
+					return 0;
 				case 'e':
 					printf("Interact not implemented yet.\n");
-					return 1;
+					return 0;
 				case 'f':
 					printf("Inspect not implemented yet.\n");
-					return 1;
+					return 0;
 				case ' ':
 					printf("Attack not implemented yet.\n");
-					return 1;
+					return 0;
 
 				case 'q':
 				case 81: // Q key
