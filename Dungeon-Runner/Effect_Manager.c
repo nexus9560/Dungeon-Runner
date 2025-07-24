@@ -1,8 +1,5 @@
 #include "Effect_Manager.h"
 
-#ifdef _MSC_VER
-#define _CRT_SECURE_NO_WARNINGS
-#endif
 
 DR_LIST_IMPL(Effect)
 
@@ -253,6 +250,10 @@ DR_LIST_IMPL(Effect)
 //
 char* Effect_tostring(Effect effect) {
     char* buffer = malloc(256 * sizeof(char));
+    if (buffer == NULL) {
+        printf("Error: Memory allocation failed for effect string.\n");
+        return NULL;
+	}
     printf(buffer, "ID: %3d, Name: %s, Duration: %d, Strength: %d, Type: %d, SubType: %d, Description: %s, Exclusive: %d\n",
         effect.id, effect.name, effect.duration,
         effect.strength, effect.type, effect.subType,
@@ -263,6 +264,10 @@ char* Effect_tostring(Effect effect) {
 
 char* Effect__List_tostring(Effect__List *l) {
     char* buffer = malloc(l->size * 256 * sizeof(char));
+    if (buffer == NULL) {
+        printf("Error: Memory allocation failed for effect list string.\n");
+        return NULL;
+	}
     buffer[0] = '\0'; // Initialize the buffer
     for (unsigned int i = 0; i < l->size; i++) {
         char * as_string = Effect_tostring(l->items[i]);
