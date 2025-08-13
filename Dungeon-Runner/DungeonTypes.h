@@ -32,6 +32,7 @@
 #define inRangeExclusive(x, min, max) ((x) > (min) && (x) < (max)) // Check if x is in the range (min, max)
 #define matchSign(x, y) (((x) < 0 && (y) < 0) || ((x) >= 0 && (y) >= 0)) // Check if x and y have the same sign
 #define BUFFER 4 // Buffer to check for room collisions and out of bounds cases.
+#define elif else if
 
 
 typedef struct {

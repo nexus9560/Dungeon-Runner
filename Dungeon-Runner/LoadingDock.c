@@ -78,15 +78,26 @@ void savePlayer() {
 
 	fclose(file);
 	printf("Player position saved successfully.\n");
+	if (DEBUG) {
+		printf("Here is what was saved:\n");
+		printf("Location: [%4d,%4d]\n", you.base.location.x, you.base.location.y);
+		printf("Name: %31s\n", you.base.name);
+		printf("Health: %4d\n", you.base.health);
+		printf("CurrentHealth: %4d\n", you.base.curHealth);
+		printf("Attack: %4d\n", you.base.atk);
+		printf("To-Hit: %4d\n", you.base.hit);
+		printf("Defense: %4d\n", you.base.def);
+		printf("Experience: %4d\n", you.base.exp);
+		printf("Evasion: %4d\n", you.base.eva);
+		printf("Level: %4d\n", you.base.level);
+	}
 }
 
 int loadPlayer() {
- //   char player_path[1024];
- //   path__join("data", "player.dat", player_path);
- //   ensure_directory("data");
- //   #if DEBUG
- //       printf("Loading player from %s\n", player_path);
- //   #endif
+    char player_path[1024];
+    path__join("data", "player.dat", player_path);
+    ensure_directory("data");
+
 	//FILE* file = fopen(player_path, "w");
 	//if (file == NULL) {
 	//	printf("Error: Could not open player data file.\n");

@@ -113,9 +113,11 @@ int main() {
 
 	for(unsigned int i = 0; i < roomCount; i++) {
 		makeRoomSpace(rooms[i]);
+		/*
 		if (DEBUG) {
 			printf("Room %4d: [%4d,%4d] - [%4d,%4d]\n", i, rooms[i].startLocation.x, rooms[i].startLocation.y, rooms[i].xdim, rooms[i].ydim);
 		}
+		*/
 	}
 	saveRooms();
 	cutPaths();
@@ -153,12 +155,12 @@ int main() {
 	else {
 		printf("%s loaded successfully.\n", you.base.name);
 		if (isInARoom(you.base.location) || isSafeSpot(you.base.location)) {
-			if(DEBUG)
-				printf("Player position is within bounds.\n");
+			//if(DEBUG)
+			//	printf("Player position is within bounds.\n");
 		}
 		else {
-			if(DEBUG)
-				printf("Player position is out of bounds, teleporting you to the middle of the nearest room.\n");
+			//if(DEBUG)
+			//	printf("Player position is out of bounds, teleporting you to the middle of the nearest room.\n");
 			you.base.location = getNearestSafeLocation(you.base.location);
 		}
 	}
@@ -374,8 +376,8 @@ int actionChecker() {
 		int ch;
 		if (_kbhit()) {
 			ch = _getch(); // Get the actual key code
-			if(DEBUG)
-				printf("Key pressed: %c : %d\n", ch,ch);
+			//if(DEBUG)
+			//	printf("Key pressed: %c : %d\n", ch,ch);
 			switch (ch) {
 				case 'w':
 				case 72: // Up arrow
@@ -439,8 +441,8 @@ int actionChecker() {
 	   ch = getchar(); // Read a single character
 	   // Restore the old terminal settings
 	   tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-	   if (DEBUG)
-		   printf("Key pressed: %c : %d\n", ch, ch);
+	   //if (DEBUG)
+		  // printf("Key pressed: %c : %d\n", ch, ch);
 	   switch (ch) {
 		   case 'w':
 		   case 72: // Up arrow
@@ -546,9 +548,9 @@ int countLines(FILE* file) {
 		}
 	}
 	rewind(file); // Reset file pointer to the beginning
-	if (DEBUG) {
-		printf("Number of lines: %d\n", lines);
-	}
+	//if (DEBUG) {
+	//	printf("Number of lines: %d\n", lines);
+	//}
 	return lines;
 }
 
@@ -612,8 +614,8 @@ void actOnYourOwn() {
 
 int checkOccupied(Dun_Coord newPos, Dun_Vec delta) {
 	if (world[newPos.x+delta.dx][newPos.y+delta.dy].occupied == 1) {
-		if(DEBUG)
-			printf("Error: This space is already occupied.\n");
+		//if(DEBUG)
+		//	printf("Error: This space is already occupied.\n");
 		return 1;
 	}
 	else {
@@ -673,18 +675,16 @@ int checkOverlappingArea(Room room1, Room room2) {
 }
 
 Entity shiftEntity(Entity e, Dun_Vec delta) {
-	if(DEBUG)
-		printf("Entity %s is moving from [%d,%d] to [%d,%d]\n", e.name, e.location.x, e.location.y, e.location.x + delta.dx, e.location.y + delta.dy);
+	//if(DEBUG)
+	//	printf("Entity %s is moving from [%d,%d] to [%d,%d]\n", e.name, e.location.x, e.location.y, e.location.x + delta.dx, e.location.y + delta.dy);
 	if (checkBounds(e.location, delta)) {
 		world[e.location.x][e.location.y].occupied = 0;
 		e.location.x += delta.dx;
 		e.location.y += delta.dy;
 		world[e.location.x][e.location.y].occupied = 1;
 	}
-	else {
-		if(DEBUG)
-			printf("Error: %s cannot move out of bounds.\n",e.name);
-	}
+	//elif(DEBUG)
+	//	printf("Error: %s cannot move out of bounds.\n",e.name);
 
 
 
@@ -869,9 +869,9 @@ Room* makeRooms() {
 			temp[i].startLocation.y = YBOUND - temp[i].ydim - (2 * BUFFER); // Adjust ydim if it exceeds bounds
 		for (unsigned int j = 0; j < i; j++) {
 			if (checkOverlappingArea(temp[i], temp[j])) {
-				if (DEBUG) {
-					printf("Room %d overlaps with Room %d, regenerating...\n", i, j);
-				}
+				//if (DEBUG) {
+				//	printf("Room %d overlaps with Room %d, regenerating...\n", i, j);
+				//}
 				i--; // Decrement i to regenerate this room
 				break; // Break out of the inner loop to regenerate
 			}
@@ -977,8 +977,8 @@ Entity logStep(Entity e) {
 Entity moveEntity(Entity e, Dun_Coord newLoc) {
 	Dun_Vec delta = getVector(e.location, newLoc);
 	if (checkOccupied(e.location, delta)) {
-		if (DEBUG)
-			printf("Error: This space is already occupied.\n");
+		//if (DEBUG)
+		//	printf("Error: This space is already occupied.\n");
 		return logStep(e);
 	}
 	else if (checkBounds(e.location, delta)) {
@@ -988,8 +988,8 @@ Entity moveEntity(Entity e, Dun_Coord newLoc) {
 		world[e.location.x][e.location.y].occupied = 1;
 	}
 	else {
-		if (DEBUG)
-			printf("Error: %s cannot move out of bounds.\n", e.name);
+		//if (DEBUG)
+		//	printf("Error: %s cannot move out of bounds.\n", e.name);
 	}
 	return logStep(e);
 }
@@ -1065,16 +1065,16 @@ Room* getNearest2Rooms(Room r) {
 	}
 	for (unsigned int i = 0; i < roomCount; i++) {
 		if(i == r.roomID-1) {
-			if(DEBUG)
-				printf("Skipping room %d as it is the current room.\n", i);
+			//if(DEBUG)
+			//	printf("Skipping room %d as it is the current room.\n", i);
 			nearestRoomIndices[i] = 0; // Mark as skipped
 			continue; // Skip the current room
 		}
 		Dun_Vec d = getVector(getRoomCenter(r), getRoomCenter(rooms[i]));
 		nearestRoomIndices[i] = abs(d.dx) + abs(d.dy); // Calculate the distance to the room
-		if(DEBUG) {
-			printf("Distance from room %d to room %d: %d\n", r.roomID, i, nearestRoomIndices[i]);
-		}
+		//if(DEBUG) {
+		//	printf("Distance from room %d to room %d: %d\n", r.roomID, i, nearestRoomIndices[i]);
+		//}
 	}
 
 	int firstNearestIndex = -1, secondNearestIndex = -1, doubleCheck = 0;
@@ -1105,10 +1105,10 @@ Room* getNearest2Rooms(Room r) {
 	nearestRooms[1].xdim = rooms[secondNearestIndex].xdim;
 	nearestRooms[1].ydim = rooms[secondNearestIndex].ydim;
 
-	if(DEBUG) {
-		printf("Nearest room 1: %d at [%d,%d] with a distance of %d\n", nearestRooms[0].roomID, nearestRooms[0].startLocation.x, nearestRooms[0].startLocation.y,nearestRoomIndices[firstNearestIndex]);
-		printf("Nearest room 2: %d at [%d,%d] with a distance of %d\n", nearestRooms[1].roomID, nearestRooms[1].startLocation.x, nearestRooms[1].startLocation.y,nearestRoomIndices[secondNearestIndex]);
-	}
+	//if(DEBUG) {
+	//	printf("Nearest room 1: %d at [%d,%d] with a distance of %d\n", nearestRooms[0].roomID, nearestRooms[0].startLocation.x, nearestRooms[0].startLocation.y,nearestRoomIndices[firstNearestIndex]);
+	//	printf("Nearest room 2: %d at [%d,%d] with a distance of %d\n", nearestRooms[1].roomID, nearestRooms[1].startLocation.x, nearestRooms[1].startLocation.y,nearestRoomIndices[secondNearestIndex]);
+	//}
 
 	return nearestRooms;
 }
@@ -1250,8 +1250,8 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 		switch (wallSide) {
 			case 0: // Top Wall
 				if (world[r.startLocation.x][runner].ref == '.') {
-					if (DEBUG)
-						printf("Found a spot on the top wall at [%d,%d]\n", r.startLocation.x, runner);
+					//if (DEBUG)
+					//	printf("Found a spot on the top wall at [%d,%d]\n", r.startLocation.x, runner);
 					t = (Dun_Coord) { r.startLocation.x, runner };
 					runner = maxSearch + 1;
 					continue;
@@ -1259,8 +1259,8 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 				break;
 			case 1: // Right Wall
 				if (world[runner][r.startLocation.y + r.ydim - 1].ref == '.') {
-					if (DEBUG)
-						printf("Found a spot on the right wall at [%d,%d]\n", runner, r.startLocation.y + r.ydim - 1);
+					//if (DEBUG)
+					//	printf("Found a spot on the right wall at [%d,%d]\n", runner, r.startLocation.y + r.ydim - 1);
 					t = (Dun_Coord) { runner, r.startLocation.y + r.ydim - 1 };
 					runner = maxSearch + 1;
 					continue;
@@ -1268,8 +1268,8 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 				break;
 			case 2: // Bottom Wall
 				if (world[r.startLocation.x + r.xdim - 1][runner].ref == '.') {
-					if (DEBUG)
-						printf("Found a spot on the bottom wall at [%d,%d]\n", r.startLocation.x + r.xdim - 1, runner);
+					//if (DEBUG)
+					//	printf("Found a spot on the bottom wall at [%d,%d]\n", r.startLocation.x + r.xdim - 1, runner);
 					t = (Dun_Coord) { r.startLocation.x + r.xdim - 1, runner };
 					runner = maxSearch + 1;
 					continue;
@@ -1277,8 +1277,8 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 				break;
 			case 3: // Left Wall
 				if (world[runner][r.startLocation.y].ref == '.') {
-					if (DEBUG)
-						printf("Found a spot on the left wall at [%d,%d]\n", runner, r.startLocation.y);
+					//if (DEBUG)
+					//	printf("Found a spot on the left wall at [%d,%d]\n", runner, r.startLocation.y);
 					t = (Dun_Coord) { runner, r.startLocation.y };
 					runner = maxSearch + 1;
 					continue;
@@ -1397,21 +1397,21 @@ void popAdMat(Dun_Coord d) {
 
 	for (int i = 0; i < 4; i++) {
 		if(adjacent[i].x == -1 || adjacent[i].y == -1) {
-			if (DEBUG) {
-				printf("Adjacent cell [%d,%d] is out of bounds.\n", adjacent[i].x, adjacent[i].y);
-			}
+			//if (DEBUG) {
+			//	printf("Adjacent cell [%d,%d] is out of bounds.\n", adjacent[i].x, adjacent[i].y);
+			//}
 			world[d.x][d.y].admat[i] = 0; // Mark as not passable
 			continue; // Skip to the next iteration
 		}
 		if(world[adjacent[i].x][adjacent[i].y].passable) {
-			if (DEBUG) {
-				printf("Adjacent cell [%d,%d] is passable.\n", adjacent[i].x, adjacent[i].y);
-			}
+			//if (DEBUG) {
+			//	printf("Adjacent cell [%d,%d] is passable.\n", adjacent[i].x, adjacent[i].y);
+			//}
 			world[d.x][d.y].admat[i] = 1; // Mark as passable
 		} else {
-			if (DEBUG) {
-				printf("Adjacent cell [%d,%d] is not passable.\n", adjacent[i].x, adjacent[i].y);
-			}
+			//if (DEBUG) {
+			//	printf("Adjacent cell [%d,%d] is not passable.\n", adjacent[i].x, adjacent[i].y);
+			//}
 			world[d.x][d.y].admat[i] = 0; // Mark as not passable
 		}
 	}
@@ -1423,9 +1423,9 @@ void updateWorldAdMat() {
 	for(int x = 0; x < XBOUND; x++) {
 		for(int y = 0; y < YBOUND; y++) {
 			if(world[x][y].passable) {
-				if (DEBUG) {
-					printf("Updating adjacency matrix for cell [%d,%d]\n", x, y);
-				}
+				//if (DEBUG) {
+				//	printf("Updating adjacency matrix for cell [%d,%d]\n", x, y);
+				//}
 				popAdMat((Dun_Coord){x, y}); // Update the adjacency matrix for the cell
 			}
 		}
@@ -1450,37 +1450,37 @@ void cutPaths() {
 			free(visited);
 			return;
 		}
-		if (DEBUG) {
-			printf("Cutting paths for room %d at [%d,%d]\n", r.roomID, r.startLocation.x, r.startLocation.y);
-			printf("Nearest room 1: %d at [%d,%d]\n", nearestRooms[0].roomID, nearestRooms[0].startLocation.x, nearestRooms[0].startLocation.y);
-			printf("Nearest room 2: %d at [%d,%d]\n", nearestRooms[1].roomID, nearestRooms[1].startLocation.x, nearestRooms[1].startLocation.y);
-		}
+		//if (DEBUG) {
+		//	printf("Cutting paths for room %d at [%d,%d]\n", r.roomID, r.startLocation.x, r.startLocation.y);
+		//	printf("Nearest room 1: %d at [%d,%d]\n", nearestRooms[0].roomID, nearestRooms[0].startLocation.x, nearestRooms[0].startLocation.y);
+		//	printf("Nearest room 2: %d at [%d,%d]\n", nearestRooms[1].roomID, nearestRooms[1].startLocation.x, nearestRooms[1].startLocation.y);
+		//}
 
 		Dun_Coord wallLoc[2];
 		Dun_Coord endLoc[2];
 
 
-		if (DEBUG)
-		    printf("Here!\n");
+		//if (DEBUG)
+		//    printf("Here!\n");
 		wallLoc[0] = getSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[0]))));
 		wallLoc[1] = getSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[1]))));
-		if (DEBUG) {
-			printf("Here 2!\n");
-			printf("Wall Loc 0: (%d, %d)\n", wallLoc[0].x, wallLoc[0].y);
-			printf("Wall Loc 1: (%d, %d)\n", wallLoc[1].x, wallLoc[1].y);
-			printf("Here 2.5!\n");
-		}
+		//if (DEBUG) {
+		//	printf("Here 2!\n");
+		//	printf("Wall Loc 0: (%d, %d)\n", wallLoc[0].x, wallLoc[0].y);
+		//	printf("Wall Loc 1: (%d, %d)\n", wallLoc[1].x, wallLoc[1].y);
+		//	printf("Here 2.5!\n");
+		//}
 
-		if (DEBUG)
-		    printf("Here 5!\n");
+		//if (DEBUG)
+		//    printf("Here 5!\n");
 		PFCL path1, path2;
 		DCL path1Coords, path2Coords;
 		endLoc[0] = getSpotOnWall(nearestRooms[0], getVector(getRoomCenter(nearestRooms[0]), getRoomCenter(r)));
 		endLoc[1] = getSpotOnWall(nearestRooms[1], getVector(getRoomCenter(nearestRooms[1]), getRoomCenter(r)));
 
-		if (DEBUG) {
-			printf("----->Beginning A Star Pathing for Room %d<-------\n",r.roomID);
-		}
+		//if (DEBUG) {
+		//	printf("----->Beginning A Star Pathing for Room %d<-------\n",r.roomID);
+		//}
 
 		if (!isThereAPath(wallLoc[0],endLoc[0])) {
 			path1 = AStar(wallLoc[0], endLoc[0], 1);
@@ -1506,7 +1506,7 @@ void cutPaths() {
 		
 
 	}
-	if(DEBUG)
-	    printf("Here 10!\n");
+	//if(DEBUG)
+	//    printf("Here 10!\n");
 
 }
