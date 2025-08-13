@@ -78,84 +78,75 @@ void savePlayer() {
 
 	fclose(file);
 	printf("Player position saved successfully.\n");
-	if (DEBUG) {
-		printf("Here is what was saved:\n");
-		printf("Location: [%4d,%4d]\n", you.base.location.x, you.base.location.y);
-		printf("Name: %31s\n", you.base.name);
-		printf("Health: %4d\n", you.base.health);
-		printf("CurrentHealth: %4d\n", you.base.curHealth);
-		printf("Attack: %4d\n", you.base.atk);
-		printf("To-Hit: %4d\n", you.base.hit);
-		printf("Defense: %4d\n", you.base.def);
-		printf("Experience: %4d\n", you.base.exp);
-		printf("Evasion: %4d\n", you.base.eva);
-		printf("Level: %4d\n", you.base.level);
-	}
+
 }
 
 int loadPlayer() {
     char player_path[1024];
     path__join("data", "player.dat", player_path);
     ensure_directory("data");
+	if(DEBUG) {
+		printf("Loading player from %s\n", player_path);
+	}
 
-	//FILE* file = fopen(player_path, "w");
-	//if (file == NULL) {
-	//	printf("Error: Could not open player data file.\n");
-	//	return 0;
-	//}
+	FILE* file = fopen(player_path, "r");
+	if (file == NULL) {
+		printf("Error: Could not open player data file.\n");
+		return 0;
+	}
 
-	//int lineCount = countLines(file);
-	//for (int x = 0;x < lineCount;x++) {
-	//	char line[256];
-	//	if (fgets(line, sizeof(line), file) != NULL) {
-	//		if (sscanf(line, "Location:[%4d,%4d]", &you.base.location.x, &you.base.location.y) == 2) {
-	//			continue;
-	//		}
-	//		else if (sscanf(line, "Name:%31s", you.base.name) == 1) {
-	//			continue;
-	//		}
-	//		else if (sscanf(line, "Health:%4d", &you.base.health) == 1) {
-	//			continue;
-	//		}
-	//		else if (sscanf(line, "CurrentHealth:%4d", &you.base.curHealth) == 1) {
-	//			continue;
-	//		}
-	//		else if (sscanf(line, "Attack:%4d", &you.base.atk) == 1) {
-	//			continue;
-	//		}
-	//		else if (sscanf(line, "Aggro:%4d", &you.base.agr) == 1) {
-	//			continue;
-	//		}
-	//		else if (sscanf(line, "To-Hit:%4d", &you.base.hit) == 1) {
-	//			continue;
-	//		}
-	//		else if (sscanf(line, "Defense:%4d", &you.base.def) == 1) {
-	//			continue;
-	//		}
-	//		else if (sscanf(line, "Experience:%4d", &you.base.exp) == 1) {
-	//			continue;
-	//		}
-	//		else if (sscanf(line, "Evasion:%4d", &you.base.eva) == 1) {
-	//			continue;
-	//		}
-	//		else if (sscanf(line, "Level:%4d", &you.base.level) == 1) {
-	//			continue;
-	//		}
-	//	}
-	//	else {
-	//		printf("Error: Failed to read player data.\n");
-	//	}
-	//}
+	int lineCount = countLines(file);
+	for (int x = 0;x < lineCount;x++) {
+		char line[256];
+		if (fgets(line, sizeof(line), file) != NULL) {
+			if (sscanf(line, "Location:[%4d,%4d]", &you.base.location.x, &you.base.location.y) == 2) {
+				continue;
+			}
+			else if (sscanf(line, "Name:%31s", you.base.name) == 1) {
+				continue;
+			}
+			else if (sscanf(line, "Health:%4d", &you.base.health) == 1) {
+				continue;
+			}
+			else if (sscanf(line, "CurrentHealth:%4d", &you.base.curHealth) == 1) {
+				continue;
+			}
+			else if (sscanf(line, "Attack:%4d", &you.base.atk) == 1) {
+				continue;
+			}
+			else if (sscanf(line, "Aggro:%4d", &you.base.agr) == 1) {
+				continue;
+			}
+			else if (sscanf(line, "To-Hit:%4d", &you.base.hit) == 1) {
+				continue;
+			}
+			else if (sscanf(line, "Defense:%4d", &you.base.def) == 1) {
+				continue;
+			}
+			else if (sscanf(line, "Experience:%4d", &you.base.exp) == 1) {
+				continue;
+			}
+			else if (sscanf(line, "Evasion:%4d", &you.base.eva) == 1) {
+				continue;
+			}
+			else if (sscanf(line, "Level:%4d", &you.base.level) == 1) {
+				continue;
+			}
+		}
+		else {
+			printf("Error: Failed to read player data.\n");
+			return 0;
+		}
+	}
 
 	//// Refactor this to allow for dynamically sized saved files, if a value is missing, it defaults to a specific value
 
 
-	//fclose(file);
+	fclose(file);
 	//#if DEBUG
 	//	printf("Player data loaded successfully.\n");
 	//#endif
-	//return 1;
-	return 0;
+	return 1;
 }
 
 void loadEntities(int ovr) {
