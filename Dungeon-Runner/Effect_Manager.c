@@ -271,7 +271,11 @@ char* Effect__List_tostring(Effect__List *l) {
     buffer[0] = '\0'; // Initialize the buffer
     for (unsigned int i = 0; i < l->size; i++) {
         char * as_string = Effect_tostring(l->items[i]);
+#if _WIN32 || _WIN64
         strncat_s(buffer, l->size * 256, as_string, _TRUNCATE);
+#else
+		strncat(buffer, as_string, l->size * 256 - strlen(buffer) - 1);
+#endif
         free(as_string);
     }
     return buffer;
