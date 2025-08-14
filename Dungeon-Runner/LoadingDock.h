@@ -3,6 +3,7 @@
 #define LOADINGDOCK_H
 
 #include "DungeonTypes.h"
+#include "Player.h"
 int loadPlayer();
 void savePlayer();
 

@@ -108,11 +108,7 @@ typedef struct {
 	unsigned int currentPos;
 } Entity;
 
-typedef struct {
-	Entity base;
-	int stepCount;
-	Item* inventory; // Inventory of items
-} Player;
+
 
 typedef struct {
 	Dun_Coord startLocation; // Corner location in the world map, as well as the initial offset
@@ -141,8 +137,6 @@ extern const Dun_Vec left;
 extern const Dun_Vec directions[4];
 
 extern Cell world[XBOUND][YBOUND];
-
-extern Player you;
 
 extern Entity* enemyGlossary;
 extern Entity__List masterEntityList;

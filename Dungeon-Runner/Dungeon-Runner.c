@@ -772,23 +772,20 @@ Room getRoomByLocation(Dun_Coord d) {
 }
 
 void showPlayerInventory() {
-	clearScreen();
-	if (you.inventory == NULL) {
+	Item__List* inventory = &you.inventory;
+	if (inventory == NULL || inventory->size == 0) {
 		printf("Inventory is empty.\n");
-		scanf("");
 		return;
 	}
-	else {
-		printf("Inventory:\n");
-		for (int i = 0; i < PLAYER_INVENTORY_BASE; i++) {
-			if (you.inventory[i].equipped == 1) {
-				printf("%s (Equipped)\n", you.inventory[i].name);
-			}
-			else {
-				printf("%s\n", you.inventory[i].name);
-			}
+
+	printf("Inventory:\n");
+	for (int i = 0; i < inventory->size; i++) {
+		if (inventory->items[i].equipped == 1) {
+			printf("%s (Equipped)\n", inventory->items[i].name);
 		}
-		scanf("");
+		else {
+			printf("%s\n", inventory->items[i].name);
+		}
 	}
 }
 
