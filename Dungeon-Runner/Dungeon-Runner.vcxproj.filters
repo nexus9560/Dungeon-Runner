@@ -69,4 +69,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="data\items.dat" />
+    <None Include="data\entities.dat" />
+    <None Include="data\player.dat" />
+    <None Include="data\rooms.dat" />
+    <None Include="debug-data\admap.dat" />
+    <None Include="debug-data\map.dat" />
+  </ItemGroup>
 </Project>
