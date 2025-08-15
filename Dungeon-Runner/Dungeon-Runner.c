@@ -86,7 +86,6 @@ Dun_Coord getNearestSafeLocation(Dun_Coord d);
 Dun_Coord getRoomCenter(Room r);
 Dun_Coord getSpotOnWall(Room r, Dun_Vec d);
 Dun_Coord copyCoord(Dun_Coord d);
-Dun_Coord* getCellsOnVector(Dun_Coord start, Dun_Coord end);
 
 Dun_Vec getVectorToWallFromCenter(Room r, Dun_Vec v);
 
@@ -1151,55 +1150,6 @@ Dun_Vec getVectorToWallFromCenter(Room r, Dun_Vec d) {
 	}
 
 	return ret;
-}
-
-
-Dun_Coord* getCellsOnVector(Dun_Coord start, Dun_Coord end) {
-	Dun_Vec d = getVector(start, end);
-	int distance = abs(d.dx) + abs(d.dy);
-	Dun_Coord* ret = malloc((distance+2)*sizeof(Dun_Coord));
-	for(int i = 0; i < distance + 2; i++) {
-		ret[i] = (Dun_Coord) { -1, -1 }; // Initialize with invalid coordinates
-	}
-
-	Dun_Coord current = copyCoord(start);
-
-	if (ret == NULL) {
-		printf("Memory allocation failed\n");
-		return NULL;
-	}
-	int index = 0;
-	ret[index++] = copyCoord(current); // Add the starting coordinate
-
-	do {
-		if (abs(d.dx) > abs(d.dy)) {
-			if (d.dx > 0) {
-				current.x += down.dx;
-				current.y += down.dy;
-			}
-			else {
-				current.x += up.dx;
-				current.y += up.dy;
-			}
-			d.dx = closerToZero(d.dx);
-		}
-		else {
-			if (d.dy > 0) {
-				current.x += right.dx;
-				current.y += right.dy;
-			}
-			else {
-				current.x += left.dx;
-				current.y += left.dy;
-			}
-			d.dy = closerToZero(d.dy);
-		}
-		ret[index++] = copyCoord(current); // Add the current coordinate to the array
-
-	} while (current.x != end.x || current.y != end.y);
-
-	return ret;
-
 }
 
 Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
