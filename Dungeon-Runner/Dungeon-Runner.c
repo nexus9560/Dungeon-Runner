@@ -30,7 +30,7 @@ int enemyGlossarySize;
 
 unsigned int roomCount;
 
-Item* itemGlossary;
+Item__List itemGlossary;
 
 Room* rooms;
 
@@ -165,10 +165,10 @@ int main() {
 	}
 	int* consoleDimensions = getConsoleWindow();
 	printf("Console dimensions: %d rows, %d columns\n", consoleDimensions[0], consoleDimensions[1]);
-	clearScreen();
-	drawMap();
-	drawThings(1);
-	roomRunner();
+	//clearScreen();
+	//drawMap();
+	//drawThings(1);
+	//roomRunner();
 
 	return 0;
 }
@@ -264,7 +264,8 @@ void drawMap() {
 
 void clearScreen() {
 	if (CLEAR_COMMAND[0] != '\0') { // Check if CLEAR_COMMAND is not empty
-		system(CLEAR_COMMAND);
+		printf("System clear command: %s",CLEAR_COMMAND);
+		//system(CLEAR_COMMAND);
 	}
 	else {
 		//printf("Operating system not detected.  Cannot clear screen.\n");

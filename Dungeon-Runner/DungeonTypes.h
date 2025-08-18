@@ -54,6 +54,7 @@ typedef struct {
 
 typedef Dun_Coord_Queue DCQ;
 
+
 void DCQ_init(DCQ* instance, unsigned int capacity);
 void DCQ_destroy(DCQ *dcq);
 
@@ -84,6 +85,8 @@ typedef struct {
 	int bonus;
 	int type; // 0 = weapon, 1 = armor, 2 = consumable
 	int equipped; // 0 = not equipped, 1 = equipped
+	unsigned int sortingID; // used for sorting
+	unsigned int id; // Item ID
 } Item;
 
 typedef enum {
@@ -91,6 +94,30 @@ typedef enum {
 	ARMOR = 1,
 	CONSUMABLE = 2,
 } ItemType;
+
+DR_LIST_DEF(Item)
+
+typedef Item__List IL;
+
+typedef struct {
+	unsigned int arm, left; // if arm == 1 -> arm else leg, if left == 1 -> left else right
+	Item armor;
+	Item weapon;
+
+} Limb;
+
+DR_LIST_DEF(Limb)
+
+typedef Limb__List Limblist;
+
+typedef struct {
+	Limblist limbs;
+	char name[32];
+} Segment;
+
+DR_LIST_DEF(Segment)
+
+typedef Segment__List SegList;
 
 typedef struct {
 	Dun_Coord location;
@@ -147,7 +174,7 @@ extern int enemyGlossarySize;
 extern unsigned int roomCount;
 extern unsigned int currRoomCount;
 
-extern Item* itemGlossary;
+extern Item__List itemGlossary;
 
 extern Room* rooms;
 

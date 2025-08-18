@@ -296,37 +296,32 @@ void loadItems(int ovr) {
 		return;
 	}
 	int numLines = countLines(file);
-	Item* items = malloc(numLines * sizeof(Item));
-	if (items == NULL) {
-		printf("Error: Memory allocation failed.\n");
-		fclose(file);
-		return;
-	}
+
+	Item__List_init(&itemGlossary, numLines);
+
+	Item pusher;
+
 	for (int i = 0; i < numLines; i++) {
 		//		[ATK:001,TYPE:0]:PLAIN-SWORD
 		fscanf(file, "[%3s:%3d,TYPE:%d]:%31s\n",
-			items[i].stat, &items[i].bonus, &items[i].type, items[i].name
+			pusher.stat, &pusher.bonus, &pusher.type, pusher.name
 		);
+		pusher.id = i + 1; // Assign an ID based on the line number
+		Item__List_push(&itemGlossary, pusher);
 	}
 	fclose(file);
 
 	if (DEBUG || ovr) {
-		for (int i = 0; i < numLines; i++) {
+		for (int i = 0; i < (int)(itemGlossary.size); i++) {
 			printf("Item %3d: %31s:[%3s:%3d,TYPE:%d]\n",
-				i + 1,
-				items[i].name,
-				items[i].stat,
-				items[i].bonus,
-				items[i].type
+				itemGlossary.items[i].id,
+				itemGlossary.items[i].name,
+				itemGlossary.items[i].stat,
+				itemGlossary.items[i].bonus,
+				itemGlossary.items[i].type
 			);
 		}
 		printf("\nItems loaded successfully.\n");
 	}
-
-	itemGlossary = malloc(numLines * sizeof(Item));
-
-	for (int x = 0;x < numLines; x++)
-		itemGlossary[x] = items[x];
-	free(items);
 
 }
