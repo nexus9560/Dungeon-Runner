@@ -41,17 +41,17 @@ int remove_Limb(Limb* limb, Segment* seg) {
 	return 0;
 }
 
-int add_Item_to_Inventory(Item* item) {
-	if (!item) return 0; // Check for null pointer
-	Item__List_push(&you.inventory, *item); // Add the item to the inventory
+int add_Item_to_Inventory(Player* p, Item* item) {
+	if (!p || !item) return 0; // Check for null pointers
+	Item__List_push(&p->inventory, *item); // Add the item to the inventory
 	return 1;
 }
 
-int remove_Item_from_Inventory(Item* item) {
-	if (!item) return 0; // Check for null pointer
-	for (unsigned int i = 0; i < you.inventory.size; i++) {
-		if (you.inventory.items[i].id == item->id) {
-			Item__List_pop(&you.inventory, &you.inventory.items[i]); // Remove the item from the inventory
+int remove_Item_from_Inventory(Player* p, Item* item) {
+	if (!p || !item) return 0; // Check for null pointers
+	for (unsigned int i = 0; i < p->inventory.size; i++) {
+		if (p->inventory.items[i].id == item->id) {
+			Item__List_pop(&p->inventory, &p->inventory.items[i]); // Remove the item from the inventory
 			return 1; // Successfully removed
 		}
 	}

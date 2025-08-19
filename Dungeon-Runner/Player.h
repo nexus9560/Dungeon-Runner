@@ -20,9 +20,9 @@ int add_Limb(Limb* limb, Segment* seg);
 
 int remove_Limb(Limb* limb, Segment* seg);
 
-int add_Item_to_Inventory(Item* item);
+int add_Item_to_Inventory(Player* p, Item* item);
 
-int remove_Item_from_Inventory(Item* item);
+int remove_Item_from_Inventory(Player* p, Item* item);
 
 int equip_Item_to_Limb(Item* item, Limb* limb);
 

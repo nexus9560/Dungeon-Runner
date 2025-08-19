@@ -23,10 +23,7 @@ Cell world[XBOUND][YBOUND];
 
 Player you;
 
-Entity* enemyGlossary;
-Entity* enemiesOnFloor; // Took the Entities array out of Room, because Entities should be able to roam between rooms on the floor, plus it was making room-scaling difficult.
-
-int enemyGlossarySize;
+Entity__List enemiesOnFloor; // Took the Entities array out of Room, because Entities should be able to roam between rooms on the floor, plus it was making room-scaling difficult.
 
 unsigned int roomCount;
 

@@ -75,6 +75,7 @@ void savePlayer() {
 	fprintf(file, "Experience:%4d\n", you.base.exp);
 	fprintf(file, "Evasion:%4d\n", you.base.eva);
 	fprintf(file, "Level:%4d\n", you.base.level);
+//	fprintf(file, "BodyPlan:%63s\n", you.base.bodyPlan);
 
 	fclose(file);
 	printf("Player position saved successfully.\n");
@@ -162,52 +163,45 @@ void loadEntities(int ovr) {
 
 		return;
 	}
-	enemyGlossarySize = countLines(file);
-	Entity__List_init(&masterEntityList, enemyGlossarySize);
-	enemyGlossary = malloc(enemyGlossarySize * sizeof(Entity));
-	if (enemyGlossary == NULL) {
-		printf("Error: Memory allocation failed.\n");
-		fclose(file);
-		return;
-	}
-    for (int i = 0; i < enemyGlossarySize; i++) {
+	Entity__List_init(&masterEntityList, countLines(file));
+	Entity e;
+    for (int i = 0; i < masterEntityList.size; i++) {
 		// Use [HP:  2,ATK:  1,AGR:  0,TOH:  1,DEF:  0,EXP:  1,EVA:  0,LVL:  1]:SLUG as the format
 		int agr = 0;
 		char namebuf[32] = {0};
 		int ret = fscanf(file, "[HP:%3d,ATK:%3d,AGR:%3d,TOH:%3d,DEF:%3d,EXP:%3d,EVA:%3d,LVL:%3d]:%31s\n",
-		&enemyGlossary[i].health,
-		&enemyGlossary[i].atk,
+		&e.health,
+		&e.atk,
 		&agr,
-		&enemyGlossary[i].hit,
-		&enemyGlossary[i].def,
-		&enemyGlossary[i].exp,
-		&enemyGlossary[i].eva,
-		&enemyGlossary[i].level,
+		&e.hit,
+		&e.def,
+		&e.exp,
+		&e.eva,
+		&e.level,
 		namebuf
 		);
 		if (ret == 9) {
-			enemyGlossary[i].agr = agr;
-			strncpy(enemyGlossary[i].name, namebuf, sizeof(enemyGlossary[i].name) - 1);
-			enemyGlossary[i].name[sizeof(enemyGlossary[i].name) - 1] = '\0';
-			Entity__List_push(&masterEntityList, enemyGlossary[i]);
+			e.agr = agr;
+			strncpy(e.name, namebuf, sizeof(e.name) - 1);
+			e.name[sizeof(e.name) - 1] = '\0';
+			Entity__List_push(&masterEntityList, e);
 		} else {
 			printf("Warning: Failed to parse entity line %d (fscanf returned %d)\n", i + 1, ret);
-			memset(&enemyGlossary[i], 0, sizeof(enemyGlossary[i]));
 		}
     }
 	if (DEBUG || ovr) {
-		for (int i = 0; i < enemyGlossarySize; i++) {
+		for (int i = 0; i < masterEntityList.size; i++) {
 			printf("Entity %3d: %31s:[HP:%3d,ATK:%3d,ARG:%3d,TOH:%3d,DEF:%3d,EXP:%3d,EVA:%3d,LVL:%3d]\n",
 				i + 1,
-				enemyGlossary[i].name,
-				enemyGlossary[i].health,
-				enemyGlossary[i].atk,
-				enemyGlossary[i].agr,
-				enemyGlossary[i].hit,
-				enemyGlossary[i].def,
-				enemyGlossary[i].exp,
-				enemyGlossary[i].eva,
-				enemyGlossary[i].level
+				masterEntityList.items[i].name,
+				masterEntityList.items[i].health,
+				masterEntityList.items[i].atk,
+				masterEntityList.items[i].agr,
+				masterEntityList.items[i].hit,
+				masterEntityList.items[i].def,
+				masterEntityList.items[i].exp,
+				masterEntityList.items[i].eva,
+				masterEntityList.items[i].level
 			);
 		}
 		printf("\nEntities loaded successfully.\n");

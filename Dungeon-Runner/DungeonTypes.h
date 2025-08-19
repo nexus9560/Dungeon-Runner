@@ -120,6 +120,10 @@ DR_LIST_DEF(Segment)
 typedef Segment__List SegList;
 
 typedef struct {
+	Item* armor; // Pointer to the armor item
+} Head;
+
+typedef struct {
 	Dun_Coord location;
 	char name[32];
 	int health;
@@ -165,9 +169,8 @@ extern const Dun_Vec directions[4];
 
 extern Cell world[XBOUND][YBOUND];
 
-extern Entity* enemyGlossary;
 extern Entity__List masterEntityList;
-extern Entity* enemiesOnFloor; // Took the Entities array out of Room, because Entities should be able to roam between rooms on the floor, plus it was making room-scaling difficult.
+extern Entity__List enemiesOnFloor; // Took the Entities array out of Room, because Entities should be able to roam between rooms on the floor, plus it was making room-scaling difficult.
 
 extern int enemyGlossarySize;
 
