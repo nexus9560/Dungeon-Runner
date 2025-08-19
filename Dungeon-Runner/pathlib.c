@@ -7,7 +7,12 @@
 void path__join(const char *path1, const char *path2, char *destination) {
   if (path1 && *path1) {
     size_t len = strlen(path1);
-    strcpy_s(destination, PATHLIB_MAX_PATH, path1);
+    #ifdef _WIN32
+        strcpy_s(destination, PATHLIB_MAX_PATH, path1);
+    #else
+        strncpy(destination, path1, PATHLIB_MAX_PATH - 1);
+        destination[PATHLIB_MAX_PATH - 1] = '\0';
+    #endif
 
     if (destination[len - 1] == PATHLIB_DIR_SEPARATOR) {
       if (path2 && *path2) {
@@ -26,7 +31,12 @@ void path__join(const char *path1, const char *path2, char *destination) {
     }
   }
   else if (path2 && *path2)
-    strcpy_s(destination, PATHLIB_MAX_PATH, path2);
+    #ifdef _WIN32
+        strcpy_s(destination, PATHLIB_MAX_PATH, path2);
+    #else
+        strncpy(destination, path2, PATHLIB_MAX_PATH - 1);
+        destination[PATHLIB_MAX_PATH - 1] = '\0';
+    #endif
   else
     destination[0] = '\0';
 }
