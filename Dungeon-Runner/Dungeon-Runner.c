@@ -121,6 +121,7 @@ int main() {
 	}
 	saveRooms();
 	cutPaths();
+	popItemsOnFloor();
 	updateWorldAdMat();
 
 	printAdMap();
