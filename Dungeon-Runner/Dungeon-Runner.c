@@ -25,11 +25,14 @@ Player you;
 
 Entity__List enemiesOnFloor; // Took the Entities array out of Room, because Entities should be able to roam between rooms on the floor, plus it was making room-scaling difficult.
 
-unsigned int roomCount;
-
 Item__List itemGlossary;
 
-Room* rooms;
+Item__List itemsOnFloor; // Items that are on the floor in rooms.
+
+DR_LIST_IMPL(Room)
+
+Room__List rooms;
+
 
 unsigned int currRoomCount = 0;
 
@@ -41,6 +44,7 @@ unsigned int currRoomCount = 0;
 
 void mapClearing();
 void makeRoomSpace(Room r);
+void makeRooms(Room__List* r);
 void roomRunner();
 void clearScreen();
 void changePosition();
@@ -54,6 +58,7 @@ void drawMap();
 void printMap();
 void printAdMap();
 void popAdMat(Dun_Coord d);
+void popItemsOnFloor();
 void updateWorldAdMat();
 void drawThings(int isBrief);
 
@@ -75,7 +80,6 @@ int compareVectors(Dun_Vec a, Dun_Vec b); // Returns 1 if vectors are equal, oth
 int isSafeSpot(Dun_Coord d);
 int isThereAPath(Dun_Coord start, Dun_Coord end);
 
-Room* makeRooms();
 Room getRoomByLocation(Dun_Coord d);
 Room* getNearest2Rooms(Room r);
 
@@ -102,13 +106,13 @@ int main() {
 	loadEntities(0);
 	loadItems(0);
 	mapClearing();
-	rooms = loadRooms(0);
-	if (roomCount == 0) {
-		rooms = makeRooms();
+	loadRooms(&rooms, 0);
+	if (rooms.size == 0) {
+		makeRooms(&rooms);
 	}
 
-	for(unsigned int i = 0; i < roomCount; i++) {
-		makeRoomSpace(rooms[i]);
+	for(unsigned int i = 0; i < rooms.size; i++) {
+		makeRoomSpace(rooms.items[i]);
 		/*
 		if (DEBUG) {
 			printf("Room %4d: [%4d,%4d] - [%4d,%4d]\n", i, rooms[i].startLocation.x, rooms[i].startLocation.y, rooms[i].xdim, rooms[i].ydim);
@@ -704,9 +708,9 @@ int isInRoom(Room r, Dun_Coord d) {
 }
 
 int isInARoom(Dun_Coord d) {
-	if (roomCount > 1) {
-		for (unsigned int i = 0; i < roomCount; i++) {
-			if (isInRoom(rooms[i], d)) {
+	if (rooms.size > 1) {
+		for (unsigned int i = 0; ((size_t)i) < rooms.size; i++) {
+			if (isInRoom(rooms.items[i], d)) {
 				return 1; // In a room
 			}
 		}
@@ -720,19 +724,19 @@ Dun_Coord getNearestSafeLocation(Dun_Coord d) {
 	if (isInARoom(d))
 		return d;
 
-	if(roomCount == 0) {
+	if(rooms.size == 0) {
 		printf("Nowhere is safe, good luck.\n");
 		return safeLocation; // Return default value if no rooms are available
 	}
 
-	int* roomDistances = malloc(roomCount * sizeof(int));
+	int* roomDistances = malloc(rooms.size * sizeof(int));
 	if (roomDistances == NULL) {
 		printf("Memory allocation failed\n");
 		return safeLocation; // Return default value if memory allocation fails
 	}
 
-	for (unsigned int i = 0; i < roomCount; i++) {
-		Dun_Vec vectorToCenter = getVector(d, getRoomCenter(rooms[i]));
+	for (unsigned int i = 0; i < rooms.size; i++) {
+		Dun_Vec vectorToCenter = getVector(d, getRoomCenter(rooms.items[i]));
 		roomDistances[i] = abs(vectorToCenter.dx) + abs(vectorToCenter.dy); // Manhattan distance to room center
 	}
 
@@ -742,7 +746,7 @@ Dun_Coord getNearestSafeLocation(Dun_Coord d) {
 
 
 	while (dCheck < 2) {
-		for (unsigned int i = 0; i < roomCount; i++) {
+		for (unsigned int i = 0; i < rooms.size; i++) {
 			if (roomDistances[i] < close) {
 				close = roomDistances[i];
 				closePos = i;
@@ -751,7 +755,7 @@ Dun_Coord getNearestSafeLocation(Dun_Coord d) {
 		dCheck++;
 	}
 
-	safeLocation = getRoomCenter(rooms[closePos]); // Get the center of the closest room
+	safeLocation = getRoomCenter(rooms.items[closePos]); // Get the center of the closest room
 
 	return safeLocation; // Default return value, should be replaced with actual logic
 }
@@ -759,9 +763,9 @@ Dun_Coord getNearestSafeLocation(Dun_Coord d) {
 Room getRoomByLocation(Dun_Coord d) {
 	Room temp = { {0,0},XBOUND,YBOUND };
 
-	for (unsigned int i = 0; i < roomCount;i++) {
-		if (isInRoom(rooms[i], d)) {
-			return rooms[i];
+	for (unsigned int i = 0; i < rooms.size;i++) {
+		if (isInRoom(rooms.items[i], d)) {
+			return rooms.items[i];
 		}
 	}
 
@@ -835,46 +839,45 @@ char* printPlayerStatus(int brief) {
 	return ret;
 }
 
-Room* makeRooms() {
-	roomCount = (unsigned int)(pow((XBOUND * YBOUND), (1.0 / 3.0)));
-	//roomCount = 3;
-	Room* temp = malloc(roomCount * sizeof(Room));
-	if (temp == NULL) {
-		printf("Memory allocation failed\n");
-		return NULL;
+void makeRooms(Room__List* r) {
+	unsigned int roomCount = (unsigned int)(pow((XBOUND * YBOUND), (1.0 / 3.0)));
+	if(roomCount < 3) {
+		roomCount = 3; // Ensure at least 3 rooms
 	}
+	Room__List_init(r, roomCount); // Initialize the room list with the calculated size
+	//roomCount = 3;
+	Room temp;
     // srand returns void, so call it separately, then use rand() for random numbers
     srand((unsigned int)time(NULL));
 
 	for (unsigned int i = 0; i < roomCount; i++) {
 		unsigned int randX = (unsigned int)(rand() % (unsigned int)(XBOUND * 0.08));
 		unsigned int randY = (unsigned int)(rand() % (unsigned int)(YBOUND * 0.06));
-		temp[i].xdim = (randX < 9 ? 9 : randX);
-		temp[i].ydim = (randY < 9 ? 9 : randY);
-		temp[i].startLocation.x = (unsigned int)(rand() % (XBOUND - temp[i].xdim));
-		temp[i].startLocation.y = (unsigned int)(rand() % (YBOUND - temp[i].ydim));
-		if(temp[i].startLocation.x == 0)
-			temp[i].startLocation.x = BUFFER + 1;
-		if (temp[i].startLocation.y == 0)
-			temp[i].startLocation.y = BUFFER + 1;
-		if (temp[i].startLocation.x + temp[i].xdim >= XBOUND)
-			temp[i].startLocation.x = XBOUND - temp[i].xdim - (2 * BUFFER); // Adjust xdim if it exceeds bounds
-		if (temp[i].startLocation.y + temp[i].ydim >= YBOUND)
-			temp[i].startLocation.y = YBOUND - temp[i].ydim - (2 * BUFFER); // Adjust ydim if it exceeds bounds
+		temp.xdim = (randX < 9 ? 9 : randX);
+		temp.ydim = (randY < 9 ? 9 : randY);
+		temp.startLocation.x = (unsigned int)(rand() % (XBOUND - temp.xdim));
+		temp.startLocation.y = (unsigned int)(rand() % (YBOUND - temp.ydim));
+		if(temp.startLocation.x == 0)
+			temp.startLocation.x = BUFFER + 1;
+		if (temp.startLocation.y == 0)
+			temp.startLocation.y = BUFFER + 1;
+		if (temp.startLocation.x + temp.xdim >= XBOUND)
+			temp.startLocation.x = XBOUND - temp.xdim - (2 * BUFFER); // Adjust xdim if it exceeds bounds
+		if (temp.startLocation.y + temp.ydim >= YBOUND)
+			temp.startLocation.y = YBOUND - temp.ydim - (2 * BUFFER); // Adjust ydim if it exceeds bounds
+		Room__List_push(r, temp); // Add the room to the list
 		for (unsigned int j = 0; j < i; j++) {
-			if (checkOverlappingArea(temp[i], temp[j])) {
+			if (checkOverlappingArea(temp, rooms.items[j])) {
 				//if (DEBUG) {
 				//	printf("Room %d overlaps with Room %d, regenerating...\n", i, j);
 				//}
 				i--; // Decrement i to regenerate this room
+				Room__List_pop(r,&temp); // Remove the last room added
 				break; // Break out of the inner loop to regenerate
 			}
 		}
 
 	}
-	for(unsigned int x=0;x<roomCount;x++)
-		temp[x].roomID = x;
-	return temp;
 }
 
 void makeRoomSpace(Room r) {
@@ -1034,27 +1037,27 @@ void printAdMap() {
 
 Room* getNearest2Rooms(Room r) {
 	Room* nearestRooms = malloc(2 * sizeof(Room));
-	int* nearestRoomIndices = malloc(roomCount * sizeof(int));
+	int* nearestRoomIndices = malloc(rooms.size * sizeof(int));
 	if (nearestRooms == NULL || nearestRoomIndices == NULL) {
 		printf("Memory allocation failed\n");
 		return NULL;
 	}
-	for(unsigned int i = 0; i < roomCount; i++) {
+	for(unsigned int i = 0; i < rooms.size; i++) {
 		nearestRoomIndices[i] = 0; // Initialize indices
 	}
-	for (unsigned int i = 0; i < roomCount; i++) {
+	for (unsigned int i = 0; i < rooms.size; i++) {
 		if(i == r.roomID-1) {
 			nearestRoomIndices[i] = 0; // Mark as skipped
 			continue; // Skip the current room
 		}
-		Dun_Vec d = getVector(getRoomCenter(r), getRoomCenter(rooms[i]));
+		Dun_Vec d = getVector(getRoomCenter(r), getRoomCenter(rooms.items[i]));
 		nearestRoomIndices[i] = abs(d.dx) + abs(d.dy); // Calculate the distance to the room
 	}
 
 	int firstNearestIndex = -1, secondNearestIndex = -1, doubleCheck = 0;
 	while (doubleCheck < 2) {
 		int minDis = INT_MAX;
-		for (unsigned int i = 0;i < roomCount;i++) {
+		for (unsigned int i = 0;i < rooms.size;i++) {
 			if(nearestRoomIndices[i] < minDis && nearestRoomIndices[i] != 0) {
 				if (firstNearestIndex != -1) {
 					secondNearestIndex = firstNearestIndex;
@@ -1069,15 +1072,15 @@ Room* getNearest2Rooms(Room r) {
 		doubleCheck++;
 	}
 	nearestRooms[0].roomID = firstNearestIndex + 1; // +1 to match room IDs
-	nearestRooms[0].startLocation.x = rooms[firstNearestIndex].startLocation.x;
-	nearestRooms[0].startLocation.y = rooms[firstNearestIndex].startLocation.y;
-	nearestRooms[0].xdim = rooms[firstNearestIndex].xdim;
-	nearestRooms[0].ydim = rooms[firstNearestIndex].ydim;
+	nearestRooms[0].startLocation.x = rooms.items[firstNearestIndex].startLocation.x;
+	nearestRooms[0].startLocation.y = rooms.items[firstNearestIndex].startLocation.y;
+	nearestRooms[0].xdim = rooms.items[firstNearestIndex].xdim;
+	nearestRooms[0].ydim = rooms.items[firstNearestIndex].ydim;
 	nearestRooms[1].roomID = secondNearestIndex + 1; // +1 to match room IDs
-	nearestRooms[1].startLocation.x = rooms[secondNearestIndex].startLocation.x;
-	nearestRooms[1].startLocation.y = rooms[secondNearestIndex].startLocation.y;
-	nearestRooms[1].xdim = rooms[secondNearestIndex].xdim;
-	nearestRooms[1].ydim = rooms[secondNearestIndex].ydim;
+	nearestRooms[1].startLocation.x = rooms.items[secondNearestIndex].startLocation.x;
+	nearestRooms[1].startLocation.y = rooms.items[secondNearestIndex].startLocation.y;
+	nearestRooms[1].xdim = rooms.items[secondNearestIndex].xdim;
+	nearestRooms[1].ydim = rooms.items[secondNearestIndex].ydim;
 
 
 	return nearestRooms;
@@ -1089,7 +1092,7 @@ int getVectorDirection(Dun_Vec d) {
 	if (d.dx == 0 && d.dy == 0) {
 		return -1; // Invalid direction
 	}
-	else if (abs(d.dx) > abs(d.dy)) {
+	elif (abs(d.dx) > abs(d.dy)) {
 		return (d.dx > 0) ? 2 : 0; // Up or Down
 	}
 	else {
@@ -1107,7 +1110,7 @@ Dun_Vec getVectorToWallFromCenter(Room r, Dun_Vec d) {
 		printf("Error: Vector cannot be zero.\n");
 		return (Dun_Vec) { 0, 0 }; // Return a zero vector
 	}
-	else if (abs(d.dx) > abs(d.dy)) {
+	elif (abs(d.dx) > abs(d.dy)) {
 		ret.dy = 0;
 		ret.dx = (d.dx > 0) ? (r.xdim - 1) / 2 : -(signed int)((r.xdim - 1) / 2);
 	}
@@ -1229,7 +1232,7 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 	}
 	if (r.exitNodes[wallSide][0].x > XBOUND && r.exitNodes[wallSide][0].y > YBOUND){
 		r.exitNodes[wallSide][0] = (Dun_Coord){ t.x,t.y };
-	} else if ((!isAdjacent(r.exitNodes[wallSide][0], t)) && r.exitNodes[wallSide][1].x > XBOUND && r.exitNodes[wallSide][1].y > YBOUND){
+	} elif ((!isAdjacent(r.exitNodes[wallSide][0], t)) && r.exitNodes[wallSide][1].x > XBOUND && r.exitNodes[wallSide][1].y > YBOUND){
 		r.exitNodes[wallSide][1] = (Dun_Coord){ t.x,t.y };
 	} else {
 		Dun_Vec d = getVector(t,r.exitNodes[wallSide][0]);
@@ -1336,15 +1339,15 @@ void updateWorldAdMat() {
 
 
 void cutPaths() {
-	for (unsigned int i = 0; i < roomCount; i++) {
-		Room r = rooms[i];
+	for (unsigned int i = 0; i < rooms.size; i++) {
+		Room r = rooms.items[i];
 		Room* nearestRooms = malloc(2 * sizeof(Room));
-		int* visited = malloc(roomCount * sizeof(int));
+		int* visited = malloc(rooms.size * sizeof(int));
 		if (nearestRooms == NULL || visited == NULL) {
 			printf("Memory allocation failed\n");
 			return;
 		}
-		for (unsigned int j = 0; j < roomCount; j++)
+		for (unsigned int j = 0; j < rooms.size; j++)
 			visited[j] = 0; // Initialize visited array
 		nearestRooms = getNearest2Rooms(r);
 		if (nearestRooms == NULL) {
@@ -1389,4 +1392,8 @@ void cutPaths() {
 
 	}
 
+}
+
+void popItemsOnFloor() {
+	Item__List_init(&itemsOnFloor, 0);
 }

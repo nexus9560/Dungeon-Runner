@@ -89,11 +89,27 @@ typedef struct {
 	unsigned int id; // Item ID
 } Item;
 
+typedef struct {
+	Dun_Coord loc;
+	Item* item;
+} Item_on_Ground;
+
 typedef enum {
 	WEAPON = 0,
 	ARMOR = 1,
 	CONSUMABLE = 2,
 } ItemType;
+
+// This is used for determining Item EquipID, if it's the head, it's always 0, if it's equipped to a segment,
+// it's 10 x segment ID, if it's equipped to a limb, it's segment ID + (limb ID * 1)
+// there should not be more than 10 limbs to a segment
+// further, the head is always 0, there should never be more than 1 head.
+
+typedef enum {
+	HEAD = 0,
+	SEGMENT = 10,
+	LIMB = 1
+} EquipmentSlot;
 
 DR_LIST_DEF(Item)
 
@@ -101,8 +117,9 @@ typedef Item__List IL;
 
 typedef struct {
 	unsigned int arm, left; // if arm == 1 -> arm else leg, if left == 1 -> left else right
-	Item armor;
-	Item weapon;
+	Item* armor;
+	Item* weapon;
+	int limID;
 
 } Limb;
 
@@ -112,6 +129,8 @@ typedef Limb__List Limblist;
 
 typedef struct {
 	Limblist limbs;
+	Item* armor;
+	int segID;
 	char name[32];
 } Segment;
 
@@ -121,6 +140,7 @@ typedef Segment__List SegList;
 
 typedef struct {
 	Item* armor; // Pointer to the armor item
+	int hID;
 } Head;
 
 typedef struct {
@@ -150,6 +170,8 @@ typedef struct {
 	Dun_Coord exitNodes[4][4];
 } Room;
 
+DR_LIST_DEF(Room)
+
 typedef struct {
 	int locationID;
 	char ref;
@@ -174,12 +196,9 @@ extern Entity__List enemiesOnFloor; // Took the Entities array out of Room, beca
 
 extern int enemyGlossarySize;
 
-extern unsigned int roomCount;
-extern unsigned int currRoomCount;
-
 extern Item__List itemGlossary;
 
-extern Room* rooms;
+extern Room__List rooms;
 
 int countLines(FILE* file);
 

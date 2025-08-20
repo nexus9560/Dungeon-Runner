@@ -211,48 +211,41 @@ void loadEntities(int ovr) {
 }
 
 
-Room* loadRooms(int ovr) {
+void loadRooms(Room__List* r, int ovr) {
     char rooms_path[1024];
     path__join("data", "rooms.dat", rooms_path);
     ensure_directory("data");
-    #if DEBUG
-        printf("Loading rooms from %s\n", rooms_path);
-    #endif
     FILE* file = fopen(rooms_path, "r");
-	Room* rooms = NULL;
 	if (file == NULL) {
 		printf("Error: Could not open rooms.dat for reading.\n");
-		return 0;
+		return;
 	}
-	roomCount = countLines(file);
+	unsigned int roomCount = countLines(file);
 	if (roomCount == 0) {
 		printf("Error: No rooms found in rooms.dat.\n");
 		fclose(file);
-		return NULL;
+		return;
 	}
-	rooms = malloc(roomCount * sizeof(Room));
-	if (rooms == NULL) {
-		printf("Error: Memory allocation failed.\n");
-		fclose(file);
-		return NULL;
-	}
+	Room__List_init(r, roomCount);
+	Room room;
+	room = (Room){ .roomID = 0, .startLocation = {0,0}, .xdim = 0, .ydim = 0 };
 
 	for (unsigned int i = 0; i < roomCount; i++) {
 		fscanf(file, "Room %4d: Start Location: [%6d,%6d], Dimensions: [%6d,%6d]\n",
-			&rooms[i].roomID,
-			&rooms[i].startLocation.x,
-			&rooms[i].startLocation.y,
-			&rooms[i].xdim,
-			&rooms[i].ydim
+			&room.roomID,
+			&room.startLocation.x,
+			&room.startLocation.y,
+			&room.xdim,
+			&room.ydim
 		);
 		for (unsigned int j = 0; j < 4;j++) {
-			rooms[i].exitNodes[j][0] = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
-			rooms[i].exitNodes[j][1] = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
+			room.exitNodes[j][0] = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
+			room.exitNodes[j][1] = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
 		}
+		Room__List_push(r, room);
 	}
 	fclose(file);
 
-	return rooms;
 }
 
 
@@ -260,20 +253,18 @@ void saveRooms() {
     char rooms_path[1024];
     path__join("data", "rooms.dat", rooms_path);
     ensure_directory("data");
-    if(DEBUG)
-        printf("Saving rooms to %s\n", rooms_path);
 	FILE* file = fopen(rooms_path, "w");
 	if (file == NULL) {
 		printf("Error: Could not open rooms.dat for writing.\n");
 		return;
 	}
-	for (unsigned int i = 0; i < roomCount; i++) {
+	for (unsigned int i = 0; i < rooms.size; i++) {
 		fprintf(file, "Room %4d: Start Location: [%6d,%6d], Dimensions: [%6d,%6d]\n",
 			i + 1,
-			rooms[i].startLocation.x,
-			rooms[i].startLocation.y,
-			rooms[i].xdim,
-			rooms[i].ydim
+			rooms.items[i].startLocation.x,
+			rooms.items[i].startLocation.y,
+			rooms.items[i].xdim,
+			rooms.items[i].ydim
 		);
 	}
 	fclose(file);

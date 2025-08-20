@@ -59,9 +59,32 @@ int remove_Item_from_Inventory(Player* p, Item* item) {
 }
 
 int equip_Item_to_Limb(Item* item, Limb* limb) {
-	return 1;
+	if(!limb || !item) {
+		return 0; // Check for null pointers
+	}
+	if (item->equipped) {
+		return 0; // Item is already equipped
+	}
+	item->equipped = 1;
+	if(item->type == WEAPON && limb->arm) {
+		limb->weapon = item; // Equip the item as a weapon
+		return 1;
+	} elif(item->type == ARMOR) {
+		limb->armor = item; // Equip the item as armor
+		return 1;
+	}
+	return 0;
 }
 
 int unequip_Item_from_Limb(Item* item, Limb* limb) {
+	if(!item || !limb) {
+		return 0; // Check for null pointers
+	}
+	if (!item->equipped) {
+		return 0; // Item is not equipped
+	}
+	item->equipped = 0;
+
+
 	return 1;
 }
