@@ -27,12 +27,12 @@ Entity__List enemiesOnFloor; // Took the Entities array out of Room, because Ent
 
 Item__List itemGlossary;
 
-Item__List itemsOnFloor; // Items that are on the floor in rooms.
-
-DR_LIST_IMPL(Room)
+IOG_List itemsOnFloor; // Items that are on the floor in rooms.
 
 Room__List rooms;
 
+DR_LIST_IMPL(Room)
+DR_LIST_IMPL(Item_on_Ground)
 
 unsigned int currRoomCount = 0;
 
@@ -167,10 +167,10 @@ int main() {
 	}
 	int* consoleDimensions = getConsoleWindow();
 	printf("Console dimensions: %d rows, %d columns\n", consoleDimensions[0], consoleDimensions[1]);
-	//clearScreen();
-	//drawMap();
-	//drawThings(1);
-	//roomRunner();
+	clearScreen();
+	drawMap();
+	drawThings(1);
+	roomRunner();
 
 	return 0;
 }
@@ -266,8 +266,8 @@ void drawMap() {
 
 void clearScreen() {
 	if (CLEAR_COMMAND[0] != '\0') { // Check if CLEAR_COMMAND is not empty
-		printf("System clear command: %s",CLEAR_COMMAND);
-		//system(CLEAR_COMMAND);
+		//printf("System clear command: %s",CLEAR_COMMAND);
+		system(CLEAR_COMMAND);
 	}
 	else {
 		//printf("Operating system not detected.  Cannot clear screen.\n");
@@ -337,168 +337,80 @@ void drawThings(int isBrief) {
 
 
 int actionChecker() {
-   if (OLD_ACTIONS) {
-	   if (DEBUG || you.stepCount != 0) {
-		   for (int i = 0; i < (sizeof(you.base.stepLog) / LOG_BUFFER); i++) {
-			   printf("Step %d: [%4d,%4d], ", i + 1, you.base.stepLog[i].x, you.base.stepLog[i].y);
-		   }
-		   printf("\n\n");
-	   }
-	   int choice = 0;
-	   scanf("%d", &choice);
 
-	   switch (choice) {
-		   case 0:
-			   exitAction(0);
-		   case 1: changePosition();
-			   return 1;
-		   case 2: inspectElement(you.base.location);
-			   return 1;
-		   case 3: actOnYourOwn();
-			   return 1;
-		   case 4: savePlayer();
-			   return 1;
-		   case 5: loadPlayer();
-			   return 1;
-		   case 6: if (DEBUG) {
-			   loadEntities(0);
-			   return 1;
-		   } else {
-			   return 0;
-		   }
-		   default:
-			   printf("Could you try that again?\n");
-			   return 0;
-	   }
-   }
-   else {
+	int ch = -1;
 	   
 #ifdef _WIN32
-
-		int ch;
-		if (_kbhit()) {
-			ch = _getch(); // Get the actual key code
-			//if(DEBUG)
-			//	printf("Key pressed: %c : %d\n", ch,ch);
-			switch (ch) {
-				case 'w':
-				case 72: // Up arrow
-					you.base = shiftEntity(you.base, up);
-					return 1;
-				case 'W':
-					you.base = shiftEntity(shiftEntity(you.base, up), up);
-					return 1;
-				case 'a':
-				case 75: // Left arrow
-					you.base = shiftEntity(you.base, left);
-					return 1;
-				case 'A':
-					you.base = shiftEntity(shiftEntity(you.base, left), left);
-					return 1;
-				case 'd':
-				case 77: // Right arrow
-					you.base = shiftEntity(you.base, right);
-					return 1;
-				case 'D':
-					you.base = shiftEntity(shiftEntity(you.base, right), right);
-					return 1;
-				case 's':
-				case 80: // Down arrow
-					you.base = shiftEntity(you.base, down);
-					return 1;
-				case 'S':
-					you.base = shiftEntity(shiftEntity(you.base, down), down);
-					return 1;
-				case 'i':
-					printf("Inventory not implemented yet.\n");
-					return 0;
-				case 'e':
-					printf("Interact not implemented yet.\n");
-					return 0;
-				case 'f':
-					printf("Inspect not implemented yet.\n");
-					return 0;
-				case ' ':
-					printf("Attack not implemented yet.\n");
-					return 0;
-
-				case 'q':
-				case 81: // Q key
-					exitAction(0);
-				default:return 0;
-			}
-		}
-
-
-
-
+#define kbhit _kbhit
+#define getch _getch
+	if(kbhit())
+		ch = getch(); // Get the actual key code
+	
 #elif __unix__ || __APPLE__
-	   struct termios oldt, newt;
-	   char ch;
-	   // Get the terminal settings for stdin
-	   tcgetattr(STDIN_FILENO, &oldt);
-	   newt = oldt; // Copy the old settings to new settings
-	   newt.c_lflag &= ~(ICANON | ECHO); // Disable canonical mode and echo
-	   tcsetattr(STDIN_FILENO, TCSANOW, &newt); // Apply the new settings
-	   ch = getchar(); // Read a single character
-	   // Restore the old terminal settings
-	   tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-	   //if (DEBUG)
-		  // printf("Key pressed: %c : %d\n", ch, ch);
-	   switch (ch) {
-		   case 'w':
-		   case 72: // Up arrow
-			   you.base = shiftEntity(you.base, up);
-			   return 1;
-		   case 'W':
-			   you.base = shiftEntity(shiftEntity(you.base, up), up);
-			   return 1;
-		   case 'a':
-		   case 75: // Left arrow
-			   you.base = shiftEntity(you.base, left);
-			   return 1;
-		   case 'A':
-			   you.base = shiftEntity(shiftEntity(you.base, left), left);
-			   return 1;
-		   case 'd':
-		   case 77: // Right arrow
-			   you.base = shiftEntity(you.base, right);
-			   return 1;
-		   case 'D':
-			   you.base = shiftEntity(shiftEntity(you.base, right), right);
-			   return 1;
-		   case 's':
-		   case 80: // Down arrow
-			   you.base = shiftEntity(you.base, down);
-			   return 1;
-		   case 'S':
-			   you.base = shiftEntity(shiftEntity(you.base, down), down);
-			   return 1;
-		   case 'i':
-			   printf("Inventory not implemented yet.\n");
-			   return 1;
-		   case 'e':
-			   printf("Interact not implemented yet.\n");
-			   return 1;
-		   case 'f':
-			   printf("Inspect not implemented yet.\n");
-			   return 1;
-		   case ' ':
-			   printf("Attack not implemented yet.\n");
-			   return 1;
+#define getch getchar
+	struct termios oldt, newt;
 
-		   case 'q':
-		   case 81: // Q key
-			   exitAction(0);
-		   default:
-			   return 0;
-	   }
-#else
-	   printf("Operating system not detected for raw input.\n");
-	   exitAction(0);
+	// Get the terminal settings for stdin
+	tcgetattr(STDIN_FILENO, &oldt);
+	newt = oldt; // Copy the old settings to new settings
+	newt.c_lflag &= ~(ICANON | ECHO); // Disable canonical mode and echo
+	tcsetattr(STDIN_FILENO, TCSANOW, &newt); // Apply the new settings
+	ch = getch(); // Read a single character
+	// Restore the old terminal settings
+	//if (DEBUG)
+		// printf("Key pressed: %c : %d\n", ch, ch);
+	// Restore the old terminal settings
+	tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 #endif
+	if(ch != -1)
+		switch (ch) {
+			case 'w':
+			case 72: // Up arrow
+				you.base = shiftEntity(you.base, up);
+				return 1;
+			case 'W':
+				you.base = shiftEntity(shiftEntity(you.base, up), up);
+				return 1;
+			case 'a':
+			case 75: // Left arrow
+				you.base = shiftEntity(you.base, left);
+				return 1;
+			case 'A':
+				you.base = shiftEntity(shiftEntity(you.base, left), left);
+				return 1;
+			case 'd':
+			case 77: // Right arrow
+				you.base = shiftEntity(you.base, right);
+				return 1;
+			case 'D':
+				you.base = shiftEntity(shiftEntity(you.base, right), right);
+				return 1;
+			case 's':
+			case 80: // Down arrow
+				you.base = shiftEntity(you.base, down);
+				return 1;
+			case 'S':
+				you.base = shiftEntity(shiftEntity(you.base, down), down);
+				return 1;
+			case 'i':
+				printf("Inventory not implemented yet.\n");
+				return 0;
+			case 'e':
+				printf("Interact not implemented yet.\n");
+				return 0;
+			case 'f':
+				printf("Inspect not implemented yet.\n");
+				return 0;
+			case ' ':
+				printf("Attack not implemented yet.\n");
+				return 0;
 
-   }
+			case 'q':
+			case 81: // Q key
+				exitAction(0);
+			default:return 0;
+		}
+   
 }
 
 void changePosition() {
@@ -808,12 +720,12 @@ char* printPlayerStatus(int brief) {
 		snprintf(ret, 256,
 			"+--------------------------------------------------->\n"
 			"| %s\n"
-			"| HP : %4d / %4d\n"
-			"| EXP: %4d / %4.0f\n"
-			"| Location: [%4d,%4d]\n"
-			"|\n"
+			"| HP		: %4d / %4d\n"
+			"| EXP		: %4d / %4.0f\n"
+			"| Location : [%4d,%4d]\n"
+			"| Status	: %s\n"
 			"V\n",
-			you.base.name, you.base.curHealth, you.base.health, you.base.exp, experienceValue, you.base.location.y, you.base.location.x);
+			you.base.name, you.base.curHealth, you.base.health, you.base.exp, experienceValue, you.base.location.y, you.base.location.x, (!you.last_action ? "" : you.last_action));
 	}
 	else {
 		ret = malloc(512);
@@ -824,18 +736,18 @@ char* printPlayerStatus(int brief) {
 		snprintf(ret, 512,
 			"+--------------------------------------------------->\n"
 			"| %s\n"
-			"| HP: %d / %d\n"
-			"| Attack: %d\n"
-			"| To-Hit: %d\n"
-			"| Defense: %d\n"
-			"| Experience: %4d /%4.0f\n"
-			"| Location: [%4d,%4d]\n"
-			"| Evasion: %d\n"
-			"| Level: %d\n"
-			"|\n"
+			"| HP			: %d / %d\n"
+			"| Attack		: %d\n"
+			"| To-Hit		: %d\n"
+			"| Defense		: %d\n"
+			"| Experience	: %4d /%4.0f\n"
+			"| Location		: [%4d,%4d]\n"
+			"| Evasion		: %d\n"
+			"| Level		: %d\n"
+			"| Status		: %s\n"
 			"V\n",
 			you.base.name, you.base.curHealth, you.base.health, you.base.atk,
-			you.base.hit, you.base.def, you.base.exp, experienceValue, you.base.location.y, you.base.location.x, you.base.eva, you.base.level);
+			you.base.hit, you.base.def, you.base.exp, experienceValue, you.base.location.y, you.base.location.x, you.base.eva, you.base.level, (!you.last_action ? "" : you.last_action));
 	}
 	return ret;
 }
@@ -1388,13 +1300,45 @@ void cutPaths() {
 			}
 		}
 
-		
-		
-
 	}
 
 }
 
 void popItemsOnFloor() {
-	Item__List_init(&itemsOnFloor, 0);
+	Item_on_Ground__List_init(&itemsOnFloor, 0); // Initialize the items on the floor list with a capacity of 100
+	int randomItemCount = (rand() % 4); // Random number between 0 and 4
+	if (itemGlossary.size == 0){
+		printf("Error: Item glossary is not initialized.\n");
+		return;
+	}
+
+	for (int i = 0; i < rooms.size; i++) {
+		Room r = rooms.items[i];
+		for (int j = 0; j < randomItemCount; j++) {
+			unsigned int randX = r.startLocation.x + 1 + (rand() % (r.xdim - 2));
+			unsigned int randY = r.startLocation.y + 1 + (rand() % (r.ydim - 2));
+			if (world[randX][randY].passable && world[randX][randY].occupied == 0) {
+				int itemIndex = rand() % itemGlossary.size;
+				Item_on_Ground newItem;
+				newItem.item = &itemGlossary.items[itemIndex];
+				newItem.loc = (Dun_Coord){ randX, randY };
+				if(itemsOnFloor.size == 0) {
+					world[randX][randY].ref = newItem.item->name[0]; // Use the first character of the item name as the map representation
+					Item_on_Ground__List_push(&itemsOnFloor, newItem);
+				}
+				else {
+					if (!checkItemOverlap(&itemsOnFloor, newItem)) {
+						world[randX][randY].ref = newItem.item->name[0]; // Use the first character of the item name as the map representation
+						Item_on_Ground__List_push(&itemsOnFloor, newItem);
+					}
+					else {
+						j--; // Decrement j to try again
+					}
+				}
+				
+			}
+		}
+		randomItemCount = (rand() % 4);
+	}
+
 }

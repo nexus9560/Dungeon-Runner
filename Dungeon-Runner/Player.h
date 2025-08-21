@@ -9,6 +9,7 @@ typedef struct {
 	Entity base;
 	int stepCount;
 	IL inventory; // Inventory of items
+	char* last_action;
 	SegList segments; // Segments of the player, each segment can have multiple limbs
 } Player;
 

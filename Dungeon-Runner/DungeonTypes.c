@@ -16,6 +16,15 @@ Dun_Vec getVector(Dun_Coord start, Dun_Coord end) {
     return delta;
 }
 
+int checkItemOverlap(IOG_List* itemList, Item_on_Ground newItem) {
+    for (unsigned int i = 0; i < itemList->size; i++) {
+        if (itemList->items[i].loc.x == newItem.loc.x && itemList->items[i].loc.y == newItem.loc.y) {
+			return 1; // Return true if overlap is found
+        }
+    }
+    return 0; // No overlap found
+}
+
 void DCQ_init(DCQ* instance, unsigned int capacity) {
     instance->head = 0;
     instance->tail = 0;

@@ -94,6 +94,10 @@ typedef struct {
 	Item* item;
 } Item_on_Ground;
 
+DR_LIST_DEF(Item_on_Ground)
+
+typedef Item_on_Ground__List IOG_List;
+
 typedef enum {
 	WEAPON = 0,
 	ARMOR = 1,
@@ -182,6 +186,9 @@ typedef struct {
 } Cell;
 
 DR_LIST_DEF(Entity)
+
+
+int checkItemOverlap(IOG_List* itemList, Item_on_Ground newItem);
 
 extern const Dun_Vec up;
 extern const Dun_Vec right;
