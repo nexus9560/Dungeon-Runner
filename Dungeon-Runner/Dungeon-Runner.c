@@ -214,8 +214,8 @@ int* getConsoleWindow() {
 void drawMap() {
 
 	int* conDims = getConsoleWindow();
-	int renderX = (int)((conDims[0] * 0.75) > XBOUND ? XBOUND : (conDims[0] * 0.55));
-	int renderY = (int)((conDims[1] * 0.80) > YBOUND ? YBOUND : (conDims[1] * 0.80));
+	int renderX = (int)((conDims[0] * 0.75) > XBOUND ? XBOUND : (conDims[0] * 0.55)); // My Windows terminal is 45 rows high, so use 75% of that for rendering height
+	int renderY = (int)((conDims[1] * 0.80) > YBOUND ? YBOUND : (conDims[1] * 0.80)); // My Windows terminal is 150 columns wide, so use 80& of that for rendering width
 	char* map = (char*)malloc(renderX * renderY);
 	if (map == NULL) {
 		printf("Memory allocation failed\n");
@@ -260,7 +260,7 @@ void drawMap() {
 			}
 		}
 		printf("%.*s\n", renderY, &map[x * renderY]);
-		}
+	}
 
 }
 
