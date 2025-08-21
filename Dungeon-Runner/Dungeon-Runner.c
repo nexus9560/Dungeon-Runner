@@ -167,10 +167,10 @@ int main() {
 	}
 	int* consoleDimensions = getConsoleWindow();
 	printf("Console dimensions: %d rows, %d columns\n", consoleDimensions[0], consoleDimensions[1]);
-	clearScreen();
-	drawMap();
-	drawThings(1);
-	roomRunner();
+	// clearScreen();
+	// drawMap();
+	// drawThings(1);
+	// roomRunner();
 
 	return 0;
 }
@@ -339,13 +339,13 @@ void drawThings(int isBrief) {
 int actionChecker() {
 
 	int ch = -1;
-	   
+
 #ifdef _WIN32
 #define kbhit _kbhit
 #define getch _getch
 	if(kbhit())
 		ch = getch(); // Get the actual key code
-	
+
 #elif __unix__ || __APPLE__
 #define getch getchar
 	struct termios oldt, newt;
@@ -410,7 +410,7 @@ int actionChecker() {
 				exitAction(0);
 			default:return 0;
 		}
-   
+	return 0;
 }
 
 void changePosition() {
@@ -1158,7 +1158,7 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 	world[wallloc.x][wallloc.y].ref = '.'; // Mark the wall location as passable
 	world[wallloc.x][wallloc.y].passable = 1; // Mark the wall location as passable
 	popAdMat(wallloc); // Update the adjacency matrix for the wall location
-	
+
 
 	for (unsigned int i = 0; i < BUFFER - 1; i++) {
 		switch (wallSide) {
@@ -1254,6 +1254,7 @@ void updateWorldAdMat() {
 void cutPaths() {
 	for (unsigned int i = 0; i < rooms.size; i++) {
 		Room r = rooms.items[i];
+		printf("Room %4d: Start Location: [%6d,%6d], Dimensions: [%6d,%6d]\n",r.roomID,r.startLocation.x,r.startLocation.y,r.xdim,r.ydim);
 		Room* nearestRooms = malloc(2 * sizeof(Room));
 		int* visited = malloc(rooms.size * sizeof(int));
 		if (nearestRooms == NULL || visited == NULL) {
@@ -1268,14 +1269,16 @@ void cutPaths() {
 			free(visited);
 			return;
 		}
-		
+
+		printf("Nearest Rooms: %d, %d\n", nearestRooms[0].roomID, nearestRooms[1].roomID);
+
 		Dun_Coord wallLoc[2];
 		Dun_Coord endLoc[2];
 
 
 		wallLoc[0] = getSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[0]))));
 		wallLoc[1] = getSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[1]))));
-		
+
 		PFCL path1, path2;
 		DCL path1Coords, path2Coords;
 		endLoc[0] = getSpotOnWall(nearestRooms[0], getVector(getRoomCenter(nearestRooms[0]), getRoomCenter(r)));
@@ -1290,7 +1293,7 @@ void cutPaths() {
 				world[path1Coords.items[j].x][path1Coords.items[j].y].passable = 1; // Mark the path as passable
 			}
 		}
-		
+
 		if(!isThereAPath(wallLoc[1], endLoc[1])) {
 			path2 = AStar(wallLoc[1], endLoc[1], 1);
 			path2Coords = ExtractCoordinates(path2);
@@ -1335,7 +1338,7 @@ void popItemsOnFloor() {
 						j--; // Decrement j to try again
 					}
 				}
-				
+
 			}
 		}
 		randomItemCount = (rand() % 4);
