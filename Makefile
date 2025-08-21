@@ -10,7 +10,11 @@ SRC_DIR = Dungeon-Runner
 SRC = $(wildcard $(SRC_DIR)/*.c)
 OUT_DIR = $(SRC_DIR)/build
 OBJ = $(SRC:.c=.o)
-EXECUTABLE = Dungeon-Runner
+EXECUTABLE = $(SRC_DIR)/Dungeon-Runner
+
+# Clean up
+clean:
+	rm -f $(SRC_DIR)/*.o $(EXECUTABLE)
 
 # Default target
 all: $(EXECUTABLE)
@@ -23,9 +27,6 @@ $(EXECUTABLE): $(OBJ)
 %.o: %.c %.h
 	$(CC) $(CFLAGS) -c $< -o $@ -lm
 
-# Clean up
-clean:
-	rm -f $(SRC_DIR)/*.o $(EXECUTABLE)
 
 # Run the program
 run: $(EXECUTABLE)
