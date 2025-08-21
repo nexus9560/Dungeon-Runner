@@ -30,13 +30,14 @@ void path__join(const char *path1, const char *path2, char *destination) {
       }
     }
   }
-  else if (path2 && *path2)
-    #ifdef _WIN32
-        strcpy_s(destination, PATHLIB_MAX_PATH, path2);
-    #else
-        strncpy(destination, path2, PATHLIB_MAX_PATH - 1);
-        destination[PATHLIB_MAX_PATH - 1] = '\0';
-    #endif
+  else if (path2 && *path2) {
+#ifdef _WIN32
+      strcpy_s(destination, PATHLIB_MAX_PATH, path2);
+#else
+      strncpy(destination, path2, PATHLIB_MAX_PATH - 1);
+      destination[PATHLIB_MAX_PATH - 1] = '\0';
+#endif
+  }
   else
     destination[0] = '\0';
 }
