@@ -10,7 +10,7 @@ SRC_DIR = Dungeon-Runner
 SRC = $(wildcard $(SRC_DIR)/*.c)
 OUT_DIR = $(SRC_DIR)/build
 OBJ = $(SRC:.c=.o)
-EXECUTABLE = $(SRC_DIR)
+EXECUTABLE = $(SRC_DIR)/
 
 # Default target
 all: $(EXECUTABLE)
