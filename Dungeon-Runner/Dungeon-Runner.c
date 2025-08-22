@@ -1272,8 +1272,7 @@ void cutPaths() {
 			return;
 		}
 
-		printf("Nearest Rooms: %d, %d\n", nearestRooms[0].roomID, nearestRooms[1].roomID);
-
+		
 		Dun_Coord wallLoc[2];
 		Dun_Coord endLoc[2];
 
@@ -1285,6 +1284,10 @@ void cutPaths() {
 		DCL path1Coords, path2Coords;
 		endLoc[0] = getSpotOnWall(nearestRooms[0], getVector(getRoomCenter(nearestRooms[0]), getRoomCenter(r)));
 		endLoc[1] = getSpotOnWall(nearestRooms[1], getVector(getRoomCenter(nearestRooms[1]), getRoomCenter(r)));
+
+		printf("Cutting paths between Room %d and Room %d, and Room %d and Room %d.\n", r.roomID, nearestRooms[0].roomID, r.roomID, nearestRooms[1].roomID);
+		printf("Wall Locations: [%d,%d] and [%d,%d]\n", wallLoc[0].x, wallLoc[0].y, wallLoc[1].x, wallLoc[1].y);
+		printf("End Locations: [%d,%d] and [%d,%d]\n", endLoc[0].x, endLoc[0].y, endLoc[1].x, endLoc[1].y);
 
 
 		if (!isThereAPath(wallLoc[0],endLoc[0])) {
@@ -1304,6 +1307,7 @@ void cutPaths() {
 				world[path2Coords.items[j].x][path2Coords.items[j].y].passable = 1; // Mark the path as passable
 			}
 		}
+
 
 	}
 
