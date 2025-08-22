@@ -1181,11 +1181,11 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 	}
 
 	if(r.exitNodes[wallSide][2].x > XBOUND && r.exitNodes[wallSide][2].y > YBOUND) {
-		r.exitNodes[wallSide][2] = wallloc; // Update the exit node for the wall side
+		r.exitNodes[wallSide][2] = copyCoord(wallloc); // Update the exit node for the wall side
 	} else {
-		r.exitNodes[wallSide][3] = wallloc; // Update the exit node for the wall side
+		r.exitNodes[wallSide][3] = copyCoord(wallloc); // Update the exit node for the wall side
 	}
-	return wallloc;
+	return copyCoord(wallloc);
 }
 
 Dun_Coord copyCoord(Dun_Coord d) {
