@@ -704,7 +704,6 @@ void showPlayerInventory() {
 }
 
 int getRandomEnemyIndex() {
-	srand((unsigned int)time(NULL)); // Seed the random number generator with the current time
 	return rand() % masterEntityList.size; // Generate a random number between 0 and MAX_ENTITIES - 1
 }
 
@@ -762,8 +761,16 @@ void makeRooms(Room__List* r) {
 	Room__List_init(r, roomCount); // Initialize the room list with the calculated size
 	//roomCount = 3;
 	Room temp;
+	memset(&temp, 0, sizeof(Room));
+	temp.startLocation = (Dun_Coord){XBOUND+1,YBOUND+1};
+	temp.xdim = XBOUND+1;
+	temp.ydim = YBOUND+1;
+	temp.roomID = 0;
+	for (int side = 0; side < 4; ++side)
+		for (int node = 0; node < 4; ++node)
+			temp.exitNodes[side][node] = (Dun_Coord){ XBOUND + 1, YBOUND + 1 };
     // srand returns void, so call it separately, then use rand() for random numbers
-    srand((unsigned int)time(NULL));
+    
 
 	for (unsigned int i = 0; i < roomCount; i++) {
 		unsigned int randX = (unsigned int)(rand() % (unsigned int)(XBOUND * 0.08));
@@ -1055,7 +1062,6 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 		wallSide = getVectorDirection(d); // Get the direction of the vector
 	// 0 = Up, 1 = Right, 2 = Down, 3 = Left
 	if (!(r.exitNodes[wallSide][0].x > XBOUND && r.exitNodes[wallSide][0].y > YBOUND) && !(r.exitNodes[wallSide][1].x > XBOUND && r.exitNodes[wallSide][1].y > YBOUND)) {
-		srand((unsigned int)time(NULL)); // Seed the random number generator with the current time
 		return (rand() % 2 == 0) ? r.exitNodes[wallSide][2] : r.exitNodes[wallSide][3]; // Randomly choose one of the exit nodes
 	}
 
