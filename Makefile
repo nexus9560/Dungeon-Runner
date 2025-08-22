@@ -25,7 +25,7 @@ $(EXECUTABLE): $(OBJ)
 
 # Clean up
 clean:
-	rm -f $(SRC_DIR)/*.o $(EXECUTABLE)
+	rm -f $(SRC_DIR)/*.o $(EXECUTABLE); rm -rf $(SRC_DIR)/debug-data/ ; rm -rf $(SRC_DIR)/data/player.dat ; rm -rf $(SRC_DIR)/data/rooms.dat
 
 # Run the program
 run: $(EXECUTABLE)
