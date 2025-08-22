@@ -753,7 +753,9 @@ char* printPlayerStatus(int brief) {
 }
 
 void makeRooms(Room__List* r) {
-	unsigned int roomCount = (unsigned int)(pow((XBOUND * YBOUND), (1.0 / 3.0)));
+	unsigned int roomCount;
+	roomCount = (unsigned int)(pow((XBOUND * YBOUND), (1.0 / 3.0)));
+//	roomCount = 25;
 	if(roomCount < 3) {
 		roomCount = 3; // Ensure at least 3 rooms
 	}
@@ -770,13 +772,13 @@ void makeRooms(Room__List* r) {
 		temp.ydim = (randY < 9 ? 9 : randY);
 		temp.startLocation.x = (unsigned int)(rand() % (XBOUND - temp.xdim));
 		temp.startLocation.y = (unsigned int)(rand() % (YBOUND - temp.ydim));
-		if(temp.startLocation.x == 0)
-			temp.startLocation.x = BUFFER + 1;
-		if (temp.startLocation.y == 0)
-			temp.startLocation.y = BUFFER + 1;
-		if (temp.startLocation.x + temp.xdim >= XBOUND)
+		if(temp.startLocation.x <= BUFFER)
+			temp.startLocation.x = BUFFER * 2;
+		if (temp.startLocation.y <= BUFFER)
+			temp.startLocation.y = BUFFER * 2;
+		if (temp.startLocation.x + temp.xdim >= (XBOUND - BUFFER + 1))
 			temp.startLocation.x = XBOUND - temp.xdim - (2 * BUFFER); // Adjust xdim if it exceeds bounds
-		if (temp.startLocation.y + temp.ydim >= YBOUND)
+		if (temp.startLocation.y + temp.ydim >= (YBOUND - BUFFER + 1))
 			temp.startLocation.y = YBOUND - temp.ydim - (2 * BUFFER); // Adjust ydim if it exceeds bounds
 		Room__List_push(r, temp); // Add the room to the list
 		for (unsigned int j = 0; j < i; j++) {
