@@ -228,7 +228,14 @@ void loadRooms(Room__List* r, int ovr) {
 	}
 	Room__List_init(r, roomCount);
 	Room room;
-	room = (Room){ .roomID = 0, .startLocation = {0,0}, .xdim = 0, .ydim = 0 };
+	memset(&room, 0, sizeof(Room));
+	room.startLocation = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
+	room.xdim = XBOUND + 1;
+	room.ydim = YBOUND + 1;
+	room.roomID = 0;
+	for (int side = 0; side < 4; ++side)
+		for (int node = 0; node < 4; ++node)
+			room.exitNodes[side][node] = (Dun_Coord){ XBOUND + 1, YBOUND + 1 };
 
 	for (unsigned int i = 0; i < roomCount; i++) {
 		fscanf(file, "Room %4d: Start Location: [%6d,%6d], Dimensions: [%6d,%6d]\n",
