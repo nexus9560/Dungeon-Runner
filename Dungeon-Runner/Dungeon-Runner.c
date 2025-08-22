@@ -1282,8 +1282,8 @@ void cutPaths() {
 
 		PFCL path1, path2;
 		DCL path1Coords, path2Coords;
-		endLoc[0] = getSpotOnWall(nearestRooms[0], getVector(getRoomCenter(nearestRooms[0]), getRoomCenter(r)));
-		endLoc[1] = getSpotOnWall(nearestRooms[1], getVector(getRoomCenter(nearestRooms[1]), getRoomCenter(r)));
+		endLoc[0] = getSpotOnWall(nearestRooms[0], getVectorToWallFromCenter(nearestRooms[0],getVector(getRoomCenter(nearestRooms[0]),getRoomCenter(r))));
+		endLoc[1] = getSpotOnWall(nearestRooms[1], getVectorToWallFromCenter(nearestRooms[1],getVector(getRoomCenter(nearestRooms[1]),getRoomCenter(r))));
 
 		printf("Cutting paths between Room %d and Room %d, and Room %d and Room %d.\n", r.roomID, nearestRooms[0].roomID, r.roomID, nearestRooms[1].roomID);
 		printf("Wall Locations: [%d,%d] and [%d,%d]\n", wallLoc[0].x, wallLoc[0].y, wallLoc[1].x, wallLoc[1].y);
