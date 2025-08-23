@@ -1062,8 +1062,7 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 		wallSide = getVectorDirection(d); // Get the direction of the vector
 	// 0 = Up, 1 = Right, 2 = Down, 3 = Left
 	//!(r.exitNodes[wallSide][0].x > XBOUND && r.exitNodes[wallSide][0].y > YBOUND) && !(r.exitNodes[wallSide][1].x > XBOUND && r.exitNodes[wallSide][1].y > YBOUND)
-	printf("Wall Side: %d\n", wallSide);
-	printf("Exit Nodes: [%d,%d], [%d,%d], [%d,%d], [%d,%d]\n", r.exitNodes[wallSide][0].x, r.exitNodes[wallSide][0].y, r.exitNodes[wallSide][1].x, r.exitNodes[wallSide][1].y, r.exitNodes[wallSide][2].x, r.exitNodes[wallSide][2].y, r.exitNodes[wallSide][3].x, r.exitNodes[wallSide][3].y);
+	
 	if (inRangeExclusive(r.exitNodes[wallSide][2].x,0,XBOUND) && inRangeExclusive(r.exitNodes[wallSide][2].y,0,YBOUND) && inRangeExclusive(r.exitNodes[wallSide][3].x,0,XBOUND) && inRangeExclusive(r.exitNodes[wallSide][3].y,0,YBOUND)) {
 		return (rand() % 2 == 0) ? r.exitNodes[wallSide][2] : r.exitNodes[wallSide][3]; // Randomly choose one of the exit nodes
 	}
@@ -1156,7 +1155,7 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 	}
 	if (r.exitNodes[wallSide][0].x > XBOUND && r.exitNodes[wallSide][0].y > YBOUND){
 		r.exitNodes[wallSide][0] = (Dun_Coord){ t.x,t.y };
-	} elif ((!isAdjacent(r.exitNodes[wallSide][0], t)) && r.exitNodes[wallSide][1].x > XBOUND && r.exitNodes[wallSide][1].y > YBOUND){
+	} else if ((!isAdjacent(r.exitNodes[wallSide][0], t)) && r.exitNodes[wallSide][1].x > XBOUND && r.exitNodes[wallSide][1].y > YBOUND){
 		r.exitNodes[wallSide][1] = (Dun_Coord){ t.x,t.y };
 	} else {
 		Dun_Vec d = getVector(t,r.exitNodes[wallSide][0]);
