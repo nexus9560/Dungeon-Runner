@@ -1163,8 +1163,7 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 		t.y += d.dy;
 		r.exitNodes[wallSide][1] = (Dun_Coord){ t.x,t.y };
 	}
-	wallloc.x = t.x;
-	wallloc.y = t.y;
+	wallloc = copyCoord(t);
 	world[wallloc.x][wallloc.y].ref = '.'; // Mark the wall location as passable
 	world[wallloc.x][wallloc.y].passable = 1; // Mark the wall location as passable
 	popAdMat(wallloc); // Update the adjacency matrix for the wall location
@@ -1172,11 +1171,13 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 
 	for (unsigned int i = 0; i < BUFFER - 1; i++) {
 		switch (wallSide) {
-			case 0:wallloc.x += up.dx; wallloc.y += up.dy; break; // Up
-			case 1:wallloc.x += right.dx; wallloc.y += right.dy; break; // Right
-			case 2:wallloc.x += down.dx; wallloc.y += down.dy; break; // Down
-			case 3:wallloc.x += left.dx; wallloc.y += left.dy; break; // Left
+			case 0:wallloc.x = wallloc.x + up.dx; wallloc.y = wallloc.y + up.dy; break; // Up
+			case 1:wallloc.x = wallloc.x + right.dx; wallloc.y = wallloc.y + right.dy; break; // Right
+			case 2:wallloc.x = wallloc.x + down.dx; wallloc.y = wallloc.y + down.dy; break; // Down
+			case 3:wallloc.x = wallloc.x + left.dx; wallloc.y = wallloc.y + left.dy; break; // Left
 		}
+		printf("This is the %d time running through the loop, the buffer is %d\n", i + 1, BUFFER - 1);
+		printf("\tBuffering wall at [%d,%d]\n", wallloc.x, wallloc.y);
 		world[wallloc.x][wallloc.y].ref = '.'; // Mark the wall location as passable
 		world[wallloc.x][wallloc.y].passable = 1; // Mark the wall location as passable
 		popAdMat(wallloc); // Update the adjacency matrix for the wall location
@@ -1298,7 +1299,7 @@ void cutPaths() {
 		Dun_Coord__List_push(&edLoc, getSpotOnWall(nearestRooms[0], getVectorToWallFromCenter(nearestRooms[0],getVector(getRoomCenter(nearestRooms[0]),getRoomCenter(r)))));
 		Dun_Coord__List_push(&edLoc, getSpotOnWall(nearestRooms[1], getVectorToWallFromCenter(nearestRooms[1],getVector(getRoomCenter(nearestRooms[1]),getRoomCenter(r)))));
 
-		printf("Cutting paths between Room %d and Room %d, and Room %d and Room %d.\n", r.roomID + 1, nearestRooms[0].roomID, r.roomID, nearestRooms[1].roomID);
+		printf("Cutting paths between Room %d and Room %d, and Room %d and Room %d.\n", r.roomID, nearestRooms[0].roomID, r.roomID, nearestRooms[1].roomID);
 		printf("Wall Locations: [%d,%d] and [%d,%d]\n", wlLoc.items[0].x, wlLoc.items[0].y, wlLoc.items[1].x, wlLoc.items[1].y);
 		printf("End Locations: [%d,%d] and [%d,%d]\n", edLoc.items[0].x, edLoc.items[0].y, edLoc.items[1].x, edLoc.items[1].y);
 
