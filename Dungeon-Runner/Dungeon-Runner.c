@@ -1061,7 +1061,8 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 	else
 		wallSide = getVectorDirection(d); // Get the direction of the vector
 	// 0 = Up, 1 = Right, 2 = Down, 3 = Left
-	if (!(r.exitNodes[wallSide][0].x > XBOUND && r.exitNodes[wallSide][0].y > YBOUND) && !(r.exitNodes[wallSide][1].x > XBOUND && r.exitNodes[wallSide][1].y > YBOUND)) {
+	//!(r.exitNodes[wallSide][0].x > XBOUND && r.exitNodes[wallSide][0].y > YBOUND) && !(r.exitNodes[wallSide][1].x > XBOUND && r.exitNodes[wallSide][1].y > YBOUND)
+	if (inRange(r.exitNodes[wallSide][2].x,0,XBOUND) && inRange(r.exitNodes[wallSide][2].y,0,YBOUND) && inRange(r.exitNodes[wallSide][3].x,0,XBOUND) && inRange(r.exitNodes[wallSide][3].y,0,YBOUND)) {
 		return (rand() % 2 == 0) ? r.exitNodes[wallSide][2] : r.exitNodes[wallSide][3]; // Randomly choose one of the exit nodes
 	}
 
@@ -1278,30 +1279,31 @@ void cutPaths() {
 			return;
 		}
 
-		
-		Dun_Coord wallLoc[2];
-		wallLoc[0] = (Dun_Coord){ XBOUND + 1, YBOUND + 1 };
-		wallLoc[1] = (Dun_Coord){ XBOUND + 1, YBOUND + 1 };
-		Dun_Coord endLoc[2];
-		endLoc[0] = (Dun_Coord){ XBOUND + 1, YBOUND + 1 };
-		endLoc[1] = (Dun_Coord){ XBOUND + 1, YBOUND + 1 };
+		DCL wlLoc;
+		Dun_Coord__List_init(&wlLoc, 2);
+		DCL edLoc;
+		Dun_Coord__List_init(&edLoc, 2);
 
-
-		wallLoc[0] = getSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[0]))));
-		wallLoc[1] = getSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[1]))));
+		Dun_Coord__List_push(&wlLoc, getSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[0])))));
+		Dun_Coord__List_push(&wlLoc, getSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[1])))));
 
 		PFCL path1, path2;
+		PF_Cell__List_init(&path1, 0);
+		PF_Cell__List_init(&path2, 0);
+		
 		DCL path1Coords, path2Coords;
-		endLoc[0] = getSpotOnWall(nearestRooms[0], getVectorToWallFromCenter(nearestRooms[0],getVector(getRoomCenter(nearestRooms[0]),getRoomCenter(r))));
-		endLoc[1] = getSpotOnWall(nearestRooms[1], getVectorToWallFromCenter(nearestRooms[1],getVector(getRoomCenter(nearestRooms[1]),getRoomCenter(r))));
+		Dun_Coord__List_init(&path1Coords, 0);
+		Dun_Coord__List_init(&path2Coords, 0);
+		Dun_Coord__List_push(&edLoc, getSpotOnWall(nearestRooms[0], getVectorToWallFromCenter(nearestRooms[0],getVector(getRoomCenter(nearestRooms[0]),getRoomCenter(r)))));
+		Dun_Coord__List_push(&edLoc, getSpotOnWall(nearestRooms[1], getVectorToWallFromCenter(nearestRooms[1],getVector(getRoomCenter(nearestRooms[1]),getRoomCenter(r)))));
 
 		printf("Cutting paths between Room %d and Room %d, and Room %d and Room %d.\n", r.roomID, nearestRooms[0].roomID, r.roomID, nearestRooms[1].roomID);
-		printf("Wall Locations: [%d,%d] and [%d,%d]\n", wallLoc[0].x, wallLoc[0].y, wallLoc[1].x, wallLoc[1].y);
-		printf("End Locations: [%d,%d] and [%d,%d]\n", endLoc[0].x, endLoc[0].y, endLoc[1].x, endLoc[1].y);
+		printf("Wall Locations: [%d,%d] and [%d,%d]\n", wlLoc.items[0].x, wlLoc.items[0].y, wlLoc.items[1].x, wlLoc.items[1].y);
+		printf("End Locations: [%d,%d] and [%d,%d]\n", edLoc.items[0].x, edLoc.items[0].y, edLoc.items[1].x, edLoc.items[1].y);
 
 
-		if (!isThereAPath(wallLoc[0],endLoc[0])) {
-			path1 = AStar(wallLoc[0], endLoc[0], 1);
+		if (!isThereAPath(wlLoc.items[0],edLoc.items[0])) {
+			path1 = AStar(wlLoc.items[0], edLoc.items[0], 1);
 			path1Coords = ExtractCoordinates(path1);
 			for (unsigned int j = 0; j < path1Coords.size; j++) {
 				world[path1Coords.items[j].x][path1Coords.items[j].y].ref = '.'; // Mark the path as passable
@@ -1309,8 +1311,8 @@ void cutPaths() {
 			}
 		}
 
-		if(!isThereAPath(wallLoc[1], endLoc[1])) {
-			path2 = AStar(wallLoc[1], endLoc[1], 1);
+		if(!isThereAPath(wlLoc.items[1], edLoc.items[1])) {
+			path2 = AStar(wlLoc.items[1], edLoc.items[1], 1);
 			path2Coords = ExtractCoordinates(path2);
 			for (unsigned int j = 0; j < path2Coords.size; j++) {
 				world[path2Coords.items[j].x][path2Coords.items[j].y].ref = '.'; // Mark the path as passable
