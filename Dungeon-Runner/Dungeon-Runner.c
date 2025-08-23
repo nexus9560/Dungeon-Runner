@@ -1297,7 +1297,7 @@ void cutPaths() {
 		Dun_Coord__List_push(&edLoc, getSpotOnWall(nearestRooms[0], getVectorToWallFromCenter(nearestRooms[0],getVector(getRoomCenter(nearestRooms[0]),getRoomCenter(r)))));
 		Dun_Coord__List_push(&edLoc, getSpotOnWall(nearestRooms[1], getVectorToWallFromCenter(nearestRooms[1],getVector(getRoomCenter(nearestRooms[1]),getRoomCenter(r)))));
 
-		printf("Cutting paths between Room %d and Room %d, and Room %d and Room %d.\n", r.roomID, nearestRooms[0].roomID, r.roomID, nearestRooms[1].roomID);
+		printf("Cutting paths between Room %d and Room %d, and Room %d and Room %d.\n", r.roomID + 1, nearestRooms[0].roomID, r.roomID, nearestRooms[1].roomID);
 		printf("Wall Locations: [%d,%d] and [%d,%d]\n", wlLoc.items[0].x, wlLoc.items[0].y, wlLoc.items[1].x, wlLoc.items[1].y);
 		printf("End Locations: [%d,%d] and [%d,%d]\n", edLoc.items[0].x, edLoc.items[0].y, edLoc.items[1].x, edLoc.items[1].y);
 
