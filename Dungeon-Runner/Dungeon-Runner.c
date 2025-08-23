@@ -1280,7 +1280,11 @@ void cutPaths() {
 
 		
 		Dun_Coord wallLoc[2];
+		wallLoc[0] = (Dun_Coord){ XBOUND + 1, YBOUND + 1 };
+		wallLoc[1] = (Dun_Coord){ XBOUND + 1, YBOUND + 1 };
 		Dun_Coord endLoc[2];
+		endLoc[0] = (Dun_Coord){ XBOUND + 1, YBOUND + 1 };
+		endLoc[1] = (Dun_Coord){ XBOUND + 1, YBOUND + 1 };
 
 
 		wallLoc[0] = getSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[0]))));
