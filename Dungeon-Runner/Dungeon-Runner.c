@@ -1052,142 +1052,163 @@ Dun_Vec getVectorToWallFromCenter(Room r, Dun_Vec d) {
 }
 
 Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
-	Dun_Coord wallloc = getRoomCenter(r);
-
-
-	int wallSide = -1; // Initialize wallSide to an invalid value
-	if (d.dx == 0 && d.dy == 0)
-		wallSide = rand() % 4; // Randomly choose a wall side
-	else
-		wallSide = getVectorDirection(d); // Get the direction of the vector
-	// 0 = Up, 1 = Right, 2 = Down, 3 = Left
-	//!(r.exitNodes[wallSide][0].x > XBOUND && r.exitNodes[wallSide][0].y > YBOUND) && !(r.exitNodes[wallSide][1].x > XBOUND && r.exitNodes[wallSide][1].y > YBOUND)
-	
-	if (inRangeExclusive(r.exitNodes[wallSide][2].x,0,XBOUND) && inRangeExclusive(r.exitNodes[wallSide][2].y,0,YBOUND) && inRangeExclusive(r.exitNodes[wallSide][3].x,0,XBOUND) && inRangeExclusive(r.exitNodes[wallSide][3].y,0,YBOUND)) {
-		return (rand() % 2 == 0) ? r.exitNodes[wallSide][2] : r.exitNodes[wallSide][3]; // Randomly choose one of the exit nodes
-	}
-
-	int minSearch = 0;
-	int maxSearch = 0;
-
-	switch (wallSide) {
+	Dun_Coord wallloc = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
+	int dir = getVectorDirection(d);
+	Invalid_Direction:
+	switch (dir) {
 		case 0:
-			minSearch = r.startLocation.y;
-			maxSearch = r.startLocation.y + r.ydim - 1;
+			if ((inRangeExclusive(r.exitNodes[0][0].x, 0, XBOUND) && inRangeExclusive(r.exitNodes[0][0].y, 0, YBOUND)) && (inRangeExclusive(r.exitNodes[0][1].x, 0, XBOUND) && inRangeExclusive(r.exitNodes[0][1].y, 0, YBOUND))) {
+				if (rand() % 2 == 0)
+					wallloc = r.exitNodes[0][2];
+				else
+					wallloc = r.exitNodes[0][3];
+				printf("Using pre-made exit at [%d,%d]\n", wallloc.x, wallloc.y);
+				return wallloc;
+			}
 			break;
 		case 1:
-			minSearch = r.startLocation.x;
-			maxSearch = r.startLocation.x + r.xdim - 1;
+			if ((inRangeExclusive(r.exitNodes[1][0].x, 0, XBOUND) && inRangeExclusive(r.exitNodes[1][0].y, 0, YBOUND)) && (inRangeExclusive(r.exitNodes[1][1].x, 0, XBOUND) && inRangeExclusive(r.exitNodes[1][1].y, 0, YBOUND))) {
+				if (rand() % 2 == 0)
+					wallloc = r.exitNodes[1][2];
+				else
+					wallloc = r.exitNodes[1][3];
+				printf("Using pre-made exit at [%d,%d]\n", wallloc.x, wallloc.y);
+				return wallloc;
+			}
 			break;
 		case 2:
-			minSearch = r.startLocation.y;
-			maxSearch = r.startLocation.y + r.ydim - 1;
+			if ((inRangeExclusive(r.exitNodes[2][0].x, 0, XBOUND) && inRangeExclusive(r.exitNodes[2][0].y, 0, YBOUND)) && (inRangeExclusive(r.exitNodes[2][1].x, 0, XBOUND) && inRangeExclusive(r.exitNodes[2][1].y, 0, YBOUND))) {
+				if (rand() % 2 == 0)
+					wallloc = r.exitNodes[2][2];
+				else
+					wallloc = r.exitNodes[2][3];
+				printf("Using pre-made exit at [%d,%d]\n", wallloc.x, wallloc.y);
+				return wallloc;
+			}
 			break;
 		case 3:
-			minSearch = r.startLocation.x;
-			maxSearch = r.startLocation.x + r.xdim - 1;
+			if ((inRangeExclusive(r.exitNodes[3][0].x, 0, XBOUND) && inRangeExclusive(r.exitNodes[3][0].y, 0, YBOUND)) && (inRangeExclusive(r.exitNodes[3][1].x, 0, XBOUND) && inRangeExclusive(r.exitNodes[3][1].y, 0, YBOUND))) {
+				if (rand() % 2 == 0)
+					wallloc = r.exitNodes[3][2];
+				else
+					wallloc = r.exitNodes[3][3];
+				printf("Using pre-made exit at [%d,%d]\n", wallloc.x, wallloc.y);
+				return wallloc;
+			}
+			break;
+		default:
+			printf("Error: Invalid direction vector provided to getSpotOnWall, getting random direction.\n");
+			dir = rand() % 4; // Randomly choose a direction
+			goto Invalid_Direction;
+	}
+
+	int indir = (dir + 2) % 4; // Opposite direction
+
+	unsigned int minsearch, maxsearch, wall;
+	switch (dir) {
+		case 0:
+		case 2:
+			minsearch = r.startLocation.y + 1;
+			maxsearch = r.startLocation.y + r.xdim - 3;
+			wall = (dir == 0) ? r.startLocation.x : r.startLocation.x + r.xdim - 1;
+			break;
+		case 1:
+		case 3:
+			minsearch = r.startLocation.x + 1;
+			maxsearch = r.startLocation.x + r.ydim - 3;
+			wall = (dir == 3) ? r.startLocation.y : r.startLocation.y + r.ydim - 1;
 			break;
 	}
 
-	Dun_Coord t = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
-
-	int runner = minSearch + 0;
-
-	while (runner < maxSearch) {
-		switch (wallSide) {
-			case 0: // Top Wall
-				if (world[r.startLocation.x][runner].ref == '.') {
-					t = (Dun_Coord) { r.startLocation.x, runner };
-					runner = maxSearch + 1;
-					continue;
-				}
+	for (unsigned int looker = minsearch; looker < maxsearch; looker++) {
+		if (dir == 0 || dir == 2) {
+			if (r.exitNodes[dir][0].x == wall && r.exitNodes[dir][0].y == looker) {
+				if ((looker + BUFFER) < maxsearch - BUFFER)
+					wallloc = (Dun_Coord){ wall, looker + (BUFFER / 2) + 1 };
+				elif((looker - BUFFER) > minsearch + BUFFER)
+					wallloc = (Dun_Coord){ wall, looker - (BUFFER / 2) - 1 };
+				else
+					wallloc = (Dun_Coord){ wall, looker }; // No buffer space available, just use the exit
+				r.exitNodes[dir][1] = wallloc;
 				break;
-			case 1: // Right Wall
-				if (world[runner][r.startLocation.y + r.ydim - 1].ref == '.') {
-					t = (Dun_Coord) { runner, r.startLocation.y + r.ydim - 1 };
-					runner = maxSearch + 1;
-					continue;
-				}
-				break;
-			case 2: // Bottom Wall
-				if (world[r.startLocation.x + r.xdim - 1][runner].ref == '.') {
-					t = (Dun_Coord) { r.startLocation.x + r.xdim - 1, runner };
-					runner = maxSearch + 1;
-					continue;
-				}
-				break;
-			case 3: // Left Wall
-				if (world[runner][r.startLocation.y].ref == '.') {
-					t = (Dun_Coord) { runner, r.startLocation.y };
-					runner = maxSearch + 1;
-					continue;
-				}
-				break;
-			default:
-				printf("Error: Invalid wall side chosen.\n");
-				return (Dun_Coord) { XBOUND+1, YBOUND+1 }; // Return an invalid coordinate
+			}
 		}
-		runner++;
-	}
-
-	if (!(t.x < XBOUND && t.y < YBOUND)) {
-		switch (wallSide) {
-			case 0: // Top Wall
-				t.x = r.startLocation.x;
-				t.y = (r.ydim > 7 ? r.startLocation.y + 2 + (rand() % (r.ydim - 4)) : 2);
+		elif(dir == 1 || dir == 3) {
+			if(r.exitNodes[dir][0].y == wall && r.exitNodes[dir][0].x == looker) {
+				if ((looker + BUFFER) < maxsearch)
+					wallloc = (Dun_Coord){ looker + (BUFFER / 2) + 1, wall };
+				elif((looker - BUFFER) > minsearch)
+					wallloc = (Dun_Coord){ looker - (BUFFER / 2) - 1, wall };
+				else
+					wallloc = (Dun_Coord){ looker, wall }; // No buffer space available, just use the exit
+				r.exitNodes[dir][1] = wallloc;
 				break;
-			case 1: // Right Wall
-				t.x = (r.xdim > 7 ? r.startLocation.x + 2 + (rand() % (r.xdim - 4)) : 2);
-				t.y = r.startLocation.y + r.ydim - 1;
-				break;
-			case 2: // Bottom Wall
-				t.x = r.startLocation.x + r.xdim - 1;
-				t.y = (r.ydim > 7 ? r.startLocation.y + 2 + (rand() % (r.ydim - 4)) : 2);
-				break;
-			case 3: // Left Wall
-				t.x = (r.xdim > 7 ? r.startLocation.x + 2 + (rand() % (r.xdim - 4)) : 2);;
-				t.y = r.startLocation.y;
-				break;
-			default:
-				printf("Error: Invalid wall side chosen.\n");
-				return (Dun_Coord) { XBOUND+1, YBOUND+1 }; // Return an invalid coordinate
+			}
 		}
 	}
-	if (r.exitNodes[wallSide][0].x > XBOUND && r.exitNodes[wallSide][0].y > YBOUND){
-		r.exitNodes[wallSide][0] = (Dun_Coord){ t.x,t.y };
-	} else if ((!isAdjacent(r.exitNodes[wallSide][0], t)) && r.exitNodes[wallSide][1].x > XBOUND && r.exitNodes[wallSide][1].y > YBOUND){
-		r.exitNodes[wallSide][1] = (Dun_Coord){ t.x,t.y };
-	} else {
-		Dun_Vec d = getVector(t,r.exitNodes[wallSide][0]);
-		t.x += d.dx;
-		t.y += d.dy;
-		r.exitNodes[wallSide][1] = (Dun_Coord){ t.x,t.y };
-	}
-	wallloc = copyCoord(t);
-	world[wallloc.x][wallloc.y].ref = '.'; // Mark the wall location as passable
-	world[wallloc.x][wallloc.y].passable = 1; // Mark the wall location as passable
-	popAdMat(wallloc); // Update the adjacency matrix for the wall location
 
-
-	for (unsigned int i = 0; i < BUFFER - 1; i++) {
-		switch (wallSide) {
-			case 0:wallloc.x = wallloc.x + up.dx; wallloc.y = wallloc.y + up.dy; break; // Up
-			case 1:wallloc.x = wallloc.x + right.dx; wallloc.y = wallloc.y + right.dy; break; // Right
-			case 2:wallloc.x = wallloc.x + down.dx; wallloc.y = wallloc.y + down.dy; break; // Down
-			case 3:wallloc.x = wallloc.x + left.dx; wallloc.y = wallloc.y + left.dy; break; // Left
+	if(inRangeExclusive(wallloc.x, 0, XBOUND) && inRangeExclusive(wallloc.y, 0, YBOUND)) {
+		for (unsigned int i = 0; i < BUFFER - 1; i++) {
+			world[wallloc.x][wallloc.y].ref = '.';
+			world[wallloc.x][wallloc.y].passable = 1;
+			switch (dir) {
+				case 0:
+					wallloc.x += up.dx;
+					wallloc.y += up.dy;
+					break;
+				case 1:
+					wallloc.x += right.dx;
+					wallloc.y += right.dy;
+					break;
+				case 2:
+					wallloc.x += down.dx;
+					wallloc.y += down.dy;
+					break;
+				case 3:
+					wallloc.x += left.dx;
+					wallloc.y += left.dy;
+					break;
+			}
 		}
-		printf("This is the %d time running through the loop, the buffer is %d\n", i + 1, BUFFER - 1);
-		printf("\tBuffering wall at [%d,%d]\n", wallloc.x, wallloc.y);
-		world[wallloc.x][wallloc.y].ref = '.'; // Mark the wall location as passable
-		world[wallloc.x][wallloc.y].passable = 1; // Mark the wall location as passable
-		popAdMat(wallloc); // Update the adjacency matrix for the wall location
+		r.exitNodes[dir][3] = wallloc;
+		printf("Created new exit at [%d,%d]\n", wallloc.x, wallloc.y);
+		return wallloc;
+
 	}
 
-	if(r.exitNodes[wallSide][2].x > XBOUND && r.exitNodes[wallSide][2].y > YBOUND) {
-		r.exitNodes[wallSide][2] = wallloc; // Update the exit node for the wall side
-	} else {
-		r.exitNodes[wallSide][3] = wallloc; // Update the exit node for the wall side
+	if(dir == 0 || dir == 2) {
+		wallloc = (Dun_Coord){ wall, (r.startLocation.y + (rand() % r.ydim) + 1) };
+	} elif (dir == 1 || dir == 3) {
+		wallloc = (Dun_Coord){ (r.startLocation.x + (rand() % r.xdim) + 1), wall };
 	}
+
+	if (inRangeExclusive(wallloc.x, 0, XBOUND) && inRangeExclusive(wallloc.y, 0, YBOUND)) {
+		for (unsigned int i = 0; i < BUFFER - 1; i++) {
+			world[wallloc.x][wallloc.y].ref = '.';
+			world[wallloc.x][wallloc.y].passable = 1;
+			switch (dir) {
+				case 0:
+					wallloc.x += up.dx;
+					wallloc.y += up.dy;
+					break;
+				case 1:
+					wallloc.x += right.dx;
+					wallloc.y += right.dy;
+					break;
+				case 2:
+					wallloc.x += down.dx;
+					wallloc.y += down.dy;
+					break;
+				case 3:
+					wallloc.x += left.dx;
+					wallloc.y += left.dy;
+					break;
+			}
+		}
+		r.exitNodes[dir][2] = wallloc;
+
+	}
+	printf("Created new exit at [%d,%d]\n", wallloc.x, wallloc.y);
 	return wallloc;
 }
 
