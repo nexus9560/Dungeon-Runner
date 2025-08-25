@@ -248,6 +248,8 @@ void loadRooms(Room__List* r, int ovr) {
 		for (unsigned int j = 0; j < 4;j++) {
 			room.exitNodes[j][0] = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
 			room.exitNodes[j][1] = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
+			room.exitNodes[j][2] = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
+			room.exitNodes[j][3] = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
 		}
 		Room__List_push(r, room);
 	}
