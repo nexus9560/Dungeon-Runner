@@ -1055,86 +1055,24 @@ Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
 	Dun_Coord wallloc = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
 	int dir = getVectorDirection(d);
 
-	if (dir < 0)
-        dir = rand() % 4;
-
-	if((inRangeExclusive(r.exitNodes[dir][0].x, 0, XBOUND) && inRangeExclusive(r.exitNodes[dir][0].y, 0, YBOUND)) &&
-	    (inRangeExclusive(r.exitNodes[dir][1].x, 0, XBOUND) && inRangeExclusive(r.exitNodes[dir][1].y, 0, YBOUND))) {
-		if(rand()%2 == 0){
-			wallloc.x = r.exitNodes[dir][2].x;
-			wallloc.y = r.exitNodes[dir][2].y;
-			return wallloc;
+	if ((inRangeExclusive(r.exitNodes[dir][0].x, 0, XBOUND) && inRangeExclusive(r.exitNodes[dir][0].y, 0, YBOUND))) {
+		printf("A first exit node exists, checking for second...\n");
+		if ((inRangeExclusive(r.exitNodes[dir][1].x, 0, XBOUND) && inRangeExclusive(r.exitNodes[dir][1].y, 0, YBOUND))) {
+			printf("A second exit node exists, choosing one randomly...\n");
+			if(rand() % 2 == 0) {
+				wallloc = (Dun_Coord){ r.exitNodes[dir][2].x, r.exitNodes[dir][2].y };
+				return wallloc; // Return the first exit node
+			}
+			else {
+				wallloc = (Dun_Coord){ r.exitNodes[dir][3].x, r.exitNodes[dir][3].y };
+				return wallloc; // Return the second exit node
+			}
 		}
-		else{
-			wallloc.x = r.exitNodes[dir][3].x;
-			wallloc.y = r.exitNodes[dir][3].y;
-			return wallloc;
-		}
-	} elif (inRangeExclusive(r.exitNodes[dir][0].x, 0, XBOUND) && inRangeExclusive(r.exitNodes[dir][0].y, 0, YBOUND)){
-	    if (rand()%2 == 0){
-			wallloc.x = r.exitNodes[dir][2].x;
-			wallloc.y = r.exitNodes[dir][2].y;
-			return wallloc;
+		else {
+			printf("Only one exit node exists, making second...\n");
+			
 		}
 	}
-
-	unsigned int lowband, highband, wall, spot;
-	switch(dir){
-	    case 0:
-			lowband = r.startLocation.y + 1;
-			highband = lowband + r.ydim - 2;
-			wall = r.startLocation.x;
-			break;
-		case 1:
-		    lowband = r.startLocation.x + 1;
-			highband = lowband + r.xdim - 2;
-			wall = r.startLocation.y + r.ydim - 1;
-			break;
-		case 2:
-		    lowband = r.startLocation.y + 1;
-			highband = lowband + r.ydim - 2;
-			wall = r.startLocation.x + r.xdim - 1;
-			break;
-		case 3:
-		    lowband = r.startLocation.x + 1;
-			highband = lowband + r.xdim - 2;
-			wall = r.startLocation.y;
-			break;
-	}
-	spot = rand() % (highband - lowband);
-	spot += lowband;
-	if(dir == 0 || dir == 2){
-		wallloc.x = wall;
-		wallloc.y = spot;
-	}else{
-		wallloc.x = spot;
-		wallloc.y = wall;
-	}
-
-	if(inRangeExclusive(r.exitNodes[dir][0].x,0,XBOUND)&&inRangeExclusive(r.exitNodes[dir][0].y,0,YBOUND)){
-	    Dun_Vec tooClose = getVector(r.exitNodes[dir][0],wallloc);
-		if(abs(tooClose.dx) == 1 || abs(tooClose.dy) == 1){
-			wallloc.x += tooClose.dx + tooClose.dx;
-			wallloc.y += tooClose.dy + tooClose.dy;
-		}
-	}
-	if(inRangeExclusive(r.exitNodes[dir][0].x,0,XBOUND)&&inRangeExclusive(r.exitNodes[dir][0].y,0,YBOUND))
-	    r.exitNodes[dir][1] = wallloc;
-	else
-        r.exitNodes[dir][0] = wallloc;
-
-	for(int i = 0 ; i < BUFFER-1; i++){
-	    world[wallloc.x][wallloc.y].ref = '.';
-		world[wallloc.x][wallloc.y].passable = 1;
-		popAdMat(wallloc);
-		wallloc.x += directions[dir].dx;
-		wallloc.y += directions[dir].dy;
-	}
-
-	if(inRangeExclusive(r.exitNodes[dir][0].x,0,XBOUND)&&inRangeExclusive(r.exitNodes[dir][0].y,0,YBOUND))
-	    r.exitNodes[dir][3] = wallloc;
-	else
-        r.exitNodes[dir][2] = wallloc;
 
 	return wallloc;
 }
@@ -1151,7 +1089,7 @@ int closeToZero(int a, int b) {
 int closerToZero(int value) {
 	if (value > 0)
 		return value - 1;
-	else if (value < 0)
+	elif (value < 0)
 		return value + 1;
 	else
 		return 0; // Already zero
