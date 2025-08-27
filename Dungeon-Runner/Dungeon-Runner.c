@@ -1221,7 +1221,6 @@ void cutPaths() {
 
 		DCL path;
 		Dun_Coord__List_init(&path, 0);
-		printf("Is there a path between Room %d and Room %d? %s\n", rooms.items[i].roomID, rooms.items[nearestRoomIDs[0]].roomID, (isThereAPath(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRoomIDs[0]])) ? "Yes" : "No"));
 		if (visited[nearestRoomIDs[0]] < 2 || !isThereAPath(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRoomIDs[0]])) ) {
 			visited[nearestRoomIDs[0]]++;
 			getSpotOnWall(&rooms.items[i], getVector(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRoomIDs[0]])));
@@ -1242,7 +1241,6 @@ void cutPaths() {
 		Dun_Coord__List_destroy(&path);
 		Dun_Coord__List_init(&path, 0);
 
-		printf("Is there a path between Room %d and Room %d? %s\n", rooms.items[i].roomID, rooms.items[nearestRoomIDs[1]].roomID, (isThereAPath(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRoomIDs[1]])) ? "Yes" : "No"));
 		if(visited[nearestRoomIDs[1]] < 2 || !isThereAPath(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRoomIDs[1]])) ) {
 			visited[nearestRoomIDs[1]]++;
 			getSpotOnWall(&rooms.items[i], getVector(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRoomIDs[1]])));

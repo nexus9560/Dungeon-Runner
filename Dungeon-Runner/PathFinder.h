@@ -38,7 +38,7 @@ bool isinPFCL(PFCL* list, PF_Cell* cell);
 
 bool areCoordsInPFCL(PFCL* list, Dun_Coord coords);
 
-PF_Cell PFCL_Find_by_coords(PFCL* list, Dun_Coord coords);
+void PFCL_Find_by_coords(PFCL* list, Dun_Coord coords, PF_Cell* ret);
 
 bool PFCL_List_pop_by_coords(PFCL* list, Dun_Coord coords, PF_Cell* cell);
 
