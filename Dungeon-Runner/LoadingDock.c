@@ -233,9 +233,6 @@ void loadRooms(Room__List* r, int ovr) {
 	room.xdim = XBOUND + 1;
 	room.ydim = YBOUND + 1;
 	room.roomID = 0;
-	for (int side = 0; side < 4; ++side)
-		for (int node = 0; node < 4; ++node)
-			room.exitNodes[side][node] = (Dun_Coord){ XBOUND + 1, YBOUND + 1 };
 
 	for (unsigned int i = 0; i < roomCount; i++) {
 		fscanf(file, "Room %4d: Start Location: [%6d,%6d], Dimensions: [%6d,%6d]\n",
@@ -248,8 +245,6 @@ void loadRooms(Room__List* r, int ovr) {
 		for (unsigned int j = 0; j < 4;j++) {
 			room.exitNodes[j][0] = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
 			room.exitNodes[j][1] = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
-			room.exitNodes[j][2] = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
-			room.exitNodes[j][3] = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
 		}
 		Room__List_push(r, room);
 	}

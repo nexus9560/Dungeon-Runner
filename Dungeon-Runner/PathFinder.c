@@ -8,7 +8,7 @@ DR_LIST_IMPL(Dun_Coord)
 
 //Revisit this for later optimization
 
-PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
+void AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls, DCL* ret) {
 	//if(DEBUG) {
 	//	printf("AStar called with start: (%d, %d) and goal: (%d, %d)\n", start.x, start.y, goal.x, goal.y);
 	//}
@@ -18,7 +18,7 @@ PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
 
 	if (start.x >= XBOUND || start.y >= YBOUND || goal.x >= XBOUND || goal.y >= YBOUND) {
 		printf("Error: Start or goal coordinates are out of bounds.\n");
-		return path;
+		return;
 	}
 
 	Dun_Vec delta = getVector(start, goal);
@@ -45,22 +45,16 @@ PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
 	PF_Cell__List_push(&openSet, startCell); // Add start cell to open set
 	PF_Cell__List_init(&closedSet, (2 * distance)); // Initialize closed set
 
-	//if(DEBUG) {
-	//	printf("Start cell initialized at (%d, %d) with cost %u, heuristic %u, total cost %u\n",
-	//		startCell.pos.x, startCell.pos.y, startCell.cost, startCell.heuristic, startCell.totalCost);
-	//}
 
 	while (openSet.size > 0) {
 		PF_Cell currentCell;
 		PF_Cell neighborCell;
 		PF_Cell__List_pop(&openSet, &currentCell); // Pop the cell with the lowest total cost
-		//if(DEBUG) {
-		//	printf("Current cell popped: (%d, %d) with cost %u, heuristic %u, total cost %u\n",
-		//		currentCell.pos.x, currentCell.pos.y, currentCell.cost, currentCell.heuristic, currentCell.totalCost);
-		//}
+
 		if ((start.x == XBOUND + 1 && start.y == YBOUND + 1) || (goal.x == XBOUND + 1 && goal.y == YBOUND + 1)) {
 			printf("Error: Start or goal coordinates are invalid.\n");
-			return path; // Return empty path if start or goal coordinates are invalid
+			Dun_Coord__List_destroy(ret);
+			return; // Return empty path if start or goal coordinates are invalid
 		}
 
 		if( currentCell.pos.x == goal.x && currentCell.pos.y == goal.y) {
@@ -100,7 +94,8 @@ PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
 			}
 			PF_Cell__List_push(&path, startCell); // Add the start cell to the path
 //			printf("-----------------------------------------------------------------------------------------------\n");
-			break; // Exit the loop if the goal is reached
+			ExtractCoordinates(path, ret); // Extract coordinates from the path
+			return; // Exit the loop if the goal is reached
 		}
 		else {
 			currentCell.isVisited = true; // Mark the current cell as visited
@@ -114,7 +109,7 @@ PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
 				continue; // Skip to the next iteration if neighbors cannot be retrieved
 			}
 			for (unsigned int i = 0; i < 4; i++) {
-				if(neighbors[i].x >= XBOUND+1 || neighbors[i].y >= YBOUND+1) {
+				if(neighbors[i].x > XBOUND || neighbors[i].y > YBOUND) {
 					continue; // Skip invalid neighbors
 				}else if(neighbors[i].x < 0 || neighbors[i].y < 0 || neighbors[i].x >= XBOUND || neighbors[i].y >= YBOUND) {
 					//if(DEBUG) {
@@ -159,7 +154,7 @@ PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
 					.totalCost = totalCost,
 					.parent = (Dun_Coord) { loc.x, loc.y }, // Set the parent to the current cell's position
 					.parentCounter = currentCell.parentCounter + 1, // Increment parent counter
-					.isWalkable = (world[neighbors[i].x][neighbors[i].y].passable == 1 && world[neighbors[i].x][neighbors[i].y].occupied == 0) || ignoreWalls,
+					.isWalkable = ignoreWalls && (world[neighbors[i].x][neighbors[i].y].passable && world[neighbors[i].x][neighbors[i].y].occupied == 0),
 					.isVisited = false
 				};
 
@@ -188,7 +183,9 @@ PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls) {
 
 	}
 
-	return path;
+	Dun_Coord__List_destroy(ret);
+
+
 }
 
 bool isinPFCL(PFCL* list, PF_Cell* cell) {
@@ -258,22 +255,22 @@ bool getNeighbors(Dun_Coord pos, Dun_Coord* neighbors, int ignoreWalls) {
 	return true;
 }
 
-DCL ExtractCoordinates(PFCL list) {
-	DCL coords;
-	Dun_Coord__List_init(&coords, list.size);
+void ExtractCoordinates(PFCL list, DCL* ret) {
+	Dun_Coord__List_init(ret, list.size);
 	for (unsigned int i = 0; i < list.size; i++) {
 		Dun_Coord coord = list.items[i].pos;
 		if (coord.x < XBOUND && coord.y < YBOUND) {
-			Dun_Coord__List_push(&coords, coord); // Add valid coordinates to the list
+			Dun_Coord__List_push(ret, coord); // Add valid coordinates to the list
 		}
 	}
-	return coords; // Return the list of coordinates
 }
 
 
 int isThereAPath(Dun_Coord start, Dun_Coord end) {
-	PFCL path = AStar(start, end, false);
-	int result = (path.size > 0) ? 1 : 0; // Return 1 if a path exists, otherwise 0
-	PF_Cell__List_destroy(&path);
+	DCL coords;
+	Dun_Coord__List_init(&coords, 0);
+	AStar(start, end, false, &coords);
+	int result = coords.size > 0;
+	Dun_Coord__List_destroy(&coords);
 	return result;
 }

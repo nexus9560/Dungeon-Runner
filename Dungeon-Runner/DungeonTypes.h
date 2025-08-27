@@ -171,7 +171,7 @@ typedef struct {
 	unsigned int ydim;
 	unsigned int roomID; // Number of the room in the world
 	// Side exit nodes, nodes[X][0,1] are the holes in the wall, nodes[X][2,3] are the nodes for pathing between rooms
-	Dun_Coord exitNodes[4][4];
+	Dun_Coord exitNodes[4][2];
 } Room;
 
 DR_LIST_DEF(Room)

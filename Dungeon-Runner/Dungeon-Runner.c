@@ -61,6 +61,8 @@ void popAdMat(Dun_Coord d);
 void popItemsOnFloor();
 void updateWorldAdMat();
 void drawThings(int isBrief);
+void getSpotOnWall(Room* r, Dun_Vec d);
+void getNearest2Rooms(Room r, Room__List* ret);
 
 char* printPlayerStatus(int brief);
 
@@ -81,11 +83,9 @@ int isSafeSpot(Dun_Coord d);
 int isThereAPath(Dun_Coord start, Dun_Coord end);
 
 Room getRoomByLocation(Dun_Coord d);
-Room* getNearest2Rooms(Room r);
 
 Dun_Coord getNearestSafeLocation(Dun_Coord d);
 Dun_Coord getRoomCenter(Room r);
-Dun_Coord getSpotOnWall(Room r, Dun_Vec d);
 Dun_Coord copyCoord(Dun_Coord d);
 
 Dun_Vec getVectorToWallFromCenter(Room r, Dun_Vec v);
@@ -766,8 +766,8 @@ void makeRooms(Room__List* r) {
 	temp.xdim = XBOUND+1;
 	temp.ydim = YBOUND+1;
 	temp.roomID = 0;
-	for (int side = 0; side < 4; ++side)
-		for (int node = 0; node < 4; ++node)
+	for (int side = 0; side < 4; side++)
+		for (int node = 0; node < 2; node++)
 			temp.exitNodes[side][node] = (Dun_Coord){ XBOUND + 1, YBOUND + 1 };
     // srand returns void, so call it separately, then use rand() for random numbers
 
@@ -957,13 +957,10 @@ void printAdMap() {
 }
 
 
-Room* getNearest2Rooms(Room r) {
-	Room* nearestRooms = malloc(2 * sizeof(Room));
+void getNearest2Rooms(Room r, Room__List* ret) {
+	Room__List_init(ret, 2);
 	int* nearestRoomIndices = malloc(rooms.size * sizeof(int));
-	if (nearestRooms == NULL || nearestRoomIndices == NULL) {
-		printf("Memory allocation failed\n");
-		return NULL;
-	}
+	
 	for(unsigned int i = 0; i < rooms.size; i++) {
 		nearestRoomIndices[i] = 0; // Initialize indices
 	}
@@ -993,19 +990,14 @@ Room* getNearest2Rooms(Room r) {
 		}
 		doubleCheck++;
 	}
-	nearestRooms[0].roomID = firstNearestIndex + 1; // +1 to match room IDs
-	nearestRooms[0].startLocation.x = rooms.items[firstNearestIndex].startLocation.x;
-	nearestRooms[0].startLocation.y = rooms.items[firstNearestIndex].startLocation.y;
-	nearestRooms[0].xdim = rooms.items[firstNearestIndex].xdim;
-	nearestRooms[0].ydim = rooms.items[firstNearestIndex].ydim;
-	nearestRooms[1].roomID = secondNearestIndex + 1; // +1 to match room IDs
-	nearestRooms[1].startLocation.x = rooms.items[secondNearestIndex].startLocation.x;
-	nearestRooms[1].startLocation.y = rooms.items[secondNearestIndex].startLocation.y;
-	nearestRooms[1].xdim = rooms.items[secondNearestIndex].xdim;
-	nearestRooms[1].ydim = rooms.items[secondNearestIndex].ydim;
 
+	if (firstNearestIndex != -1) {
+		Room__List_push(ret, rooms.items[firstNearestIndex]);
+	}
+	if (secondNearestIndex != -1) {
+		Room__List_push(ret, rooms.items[secondNearestIndex]);
+	}
 
-	return nearestRooms;
 }
 
 // Positions: 0 = up, 1 = right, 2 = down, 3 = left
@@ -1051,30 +1043,77 @@ Dun_Vec getVectorToWallFromCenter(Room r, Dun_Vec d) {
 	return ret;
 }
 
-Dun_Coord getSpotOnWall(Room r, Dun_Vec d) {
+void getSpotOnWall(Room* r, Dun_Vec d) {
 	Dun_Coord wallloc = (Dun_Coord){ XBOUND + 1,YBOUND + 1 };
 	int dir = getVectorDirection(d);
 
-	if ((inRangeExclusive(r.exitNodes[dir][0].x, 0, XBOUND) && inRangeExclusive(r.exitNodes[dir][0].y, 0, YBOUND))) {
-		printf("A first exit node exists, checking for second...\n");
-		if ((inRangeExclusive(r.exitNodes[dir][1].x, 0, XBOUND) && inRangeExclusive(r.exitNodes[dir][1].y, 0, YBOUND))) {
-			printf("A second exit node exists, choosing one randomly...\n");
-			if(rand() % 2 == 0) {
-				wallloc = (Dun_Coord){ r.exitNodes[dir][2].x, r.exitNodes[dir][2].y };
-				return wallloc; // Return the first exit node
-			}
-			else {
-				wallloc = (Dun_Coord){ r.exitNodes[dir][3].x, r.exitNodes[dir][3].y };
-				return wallloc; // Return the second exit node
-			}
-		}
-		else {
-			printf("Only one exit node exists, making second...\n");
-			
-		}
+	if(r->exitNodes[dir][0].x != XBOUND + 1 && r->exitNodes[dir][0].y != YBOUND + 1) {
+		//if (DEBUG)
+		//	printf("Room %d already has an exit on side %d at [%d,%d], skipping...\n", r->roomID, dir, r->exitNodes[dir][0].x, r->exitNodes[dir][0].y);
+		return; // Exit already exists on this side
 	}
 
-	return wallloc;
+	unsigned int minsearch, maxsearch, wall, looker;
+	minsearch = 0;
+	maxsearch = 0;
+	wall = 0;
+	looker = 0;
+
+	switch (dir) {
+		case 0:
+			wall = r->startLocation.x;
+			minsearch = r->startLocation.y + 2;
+			maxsearch = r->startLocation.y + r->ydim - 3;
+			break;
+		case 1:
+			wall = r->startLocation.y + r->ydim - 1;
+			minsearch = r->startLocation.x + 2;
+			maxsearch = r->startLocation.x + r->xdim - 3;
+			break;
+		case 2:
+			wall = r->startLocation.x + r->xdim - 1;
+			minsearch = r->startLocation.y + 2;
+			maxsearch = r->startLocation.y + r->ydim - 3;
+			break;
+		case 3:
+			wall = r->startLocation.y;
+			minsearch = r->startLocation.x + 2;
+			maxsearch = r->startLocation.x + r->xdim - 3;
+			break;
+	}
+
+
+	looker = (rand() % (maxsearch - minsearch + 1)) + minsearch;
+
+	
+
+	if(dir == 0 || dir == 2) {
+		wallloc.x = wall;
+		wallloc.y = looker;
+	}
+	else {
+		wallloc.x = looker;
+		wallloc.y = wall;
+	}
+
+	r->exitNodes[dir][0].x = wallloc.x;
+	r->exitNodes[dir][0].y = wallloc.y; // Store the entrance node
+
+	for (unsigned int i = 0; i < BUFFER - 1; i++) {
+		world[wallloc.x][wallloc.y].ref = '.';
+		world[wallloc.x][wallloc.y].passable = 1;
+		popAdMat(wallloc);
+		switch(dir) {
+			case 0: wallloc.x += up.dx; wallloc.y += up.dy; break;
+			case 1: wallloc.x += right.dx; wallloc.y += right.dy; break;
+			case 2: wallloc.x += down.dx; wallloc.y += down.dy; break;
+			case 3: wallloc.x += left.dx; wallloc.y += left.dy; break;
+		}
+	}
+	popAdMat(wallloc); // Update adjacency matrix for the last position
+	r->exitNodes[dir][1].x = wallloc.x;
+	r->exitNodes[dir][1].y = wallloc.y; // Store the exit node
+
 }
 
 Dun_Coord copyCoord(Dun_Coord d) {
@@ -1149,65 +1188,80 @@ void updateWorldAdMat() {
 
 
 void cutPaths() {
+	unsigned int* visited;
+	visited = malloc(rooms.size * sizeof(unsigned int));
+	if(!visited) {
+		printf("Memory allocation failed\n");
+		return;
+	}
+	memset(visited, 0, rooms.size * sizeof(unsigned int));
 	for (unsigned int i = 0; i < rooms.size; i++) {
-		Room r = rooms.items[i];
-		printf("Room %4d: Start Location: [%6d,%6d], Dimensions: [%6d,%6d]\n",r.roomID,r.startLocation.x,r.startLocation.y,r.xdim,r.ydim);
-		Room* nearestRooms = malloc(2 * sizeof(Room));
-		int* visited = malloc(rooms.size * sizeof(int));
-		if (nearestRooms == NULL || visited == NULL) {
-			printf("Memory allocation failed\n");
-			return;
+		Room__List nearestRooms;
+		unsigned int nearestRoomIDs[2] = { 0,0 };
+		Room__List_init(&nearestRooms, 2);
+		getNearest2Rooms(rooms.items[i], &nearestRooms);
+		visited[i]++;
+		if(nearestRooms.size < 2) {
+			printf("Error: Not enough rooms to connect.\n");
+			Room__List_destroy(&nearestRooms);
+			continue;
 		}
-		for (unsigned int j = 0; j < rooms.size; j++)
-			visited[j] = 0; // Initialize visited array
-		nearestRooms = getNearest2Rooms(r);
-		if (nearestRooms == NULL) {
-			printf("Error: Could not get nearest rooms.\n");
-			free(visited);
-			return;
+		else {
+			nearestRoomIDs[0] = nearestRooms.items[0].roomID - 1;
+			nearestRoomIDs[1] = nearestRooms.items[1].roomID - 1;
+			Room__List_destroy(&nearestRooms);
 		}
+		DCL entryNodes, exitNodes;
+		Dun_Coord__List_init(&entryNodes, 2);
+		Dun_Coord__List_init(&exitNodes, 2);
 
-		DCL wlLoc;
-		Dun_Coord__List_init(&wlLoc, 2);
-		DCL edLoc;
-		Dun_Coord__List_init(&edLoc, 2);
+		int dir[2] = { -1,-1 };
+		dir[0] = getVectorDirection(getVector(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRoomIDs[0]])));
+		dir[1] = getVectorDirection(getVector(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRoomIDs[1]])));
 
-		Dun_Coord__List_push(&wlLoc, getSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[0])))));
-		Dun_Coord__List_push(&wlLoc, getSpotOnWall(r, getVectorToWallFromCenter(r, getVector(getRoomCenter(r), getRoomCenter(nearestRooms[1])))));
-
-		PFCL path1, path2;
-		PF_Cell__List_init(&path1, 0);
-		PF_Cell__List_init(&path2, 0);
-
-		DCL path1Coords, path2Coords;
-		Dun_Coord__List_init(&path1Coords, 0);
-		Dun_Coord__List_init(&path2Coords, 0);
-		Dun_Coord__List_push(&edLoc, getSpotOnWall(nearestRooms[0], getVectorToWallFromCenter(nearestRooms[0],getVector(getRoomCenter(nearestRooms[0]),getRoomCenter(r)))));
-		Dun_Coord__List_push(&edLoc, getSpotOnWall(nearestRooms[1], getVectorToWallFromCenter(nearestRooms[1],getVector(getRoomCenter(nearestRooms[1]),getRoomCenter(r)))));
-
-		printf("Cutting paths between Room %d and Room %d, and Room %d and Room %d.\n", r.roomID, nearestRooms[0].roomID, r.roomID, nearestRooms[1].roomID);
-		printf("Wall Locations: [%d,%d] and [%d,%d]\n", wlLoc.items[0].x, wlLoc.items[0].y, wlLoc.items[1].x, wlLoc.items[1].y);
-		printf("End Locations: [%d,%d] and [%d,%d]\n", edLoc.items[0].x, edLoc.items[0].y, edLoc.items[1].x, edLoc.items[1].y);
-
-
-		if (!isThereAPath(wlLoc.items[0],edLoc.items[0])) {
-			path1 = AStar(wlLoc.items[0], edLoc.items[0], 1);
-			path1Coords = ExtractCoordinates(path1);
-			for (unsigned int j = 0; j < path1Coords.size; j++) {
-				world[path1Coords.items[j].x][path1Coords.items[j].y].ref = '.'; // Mark the path as passable
-				world[path1Coords.items[j].x][path1Coords.items[j].y].passable = 1; // Mark the path as passable
+		DCL path;
+		Dun_Coord__List_init(&path, 0);
+		printf("Is there a path between Room %d and Room %d? %s\n", rooms.items[i].roomID, rooms.items[nearestRoomIDs[0]].roomID, (isThereAPath(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRoomIDs[0]])) ? "Yes" : "No"));
+		if (visited[nearestRoomIDs[0]] < 2 || !isThereAPath(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRoomIDs[0]])) ) {
+			visited[nearestRoomIDs[0]]++;
+			getSpotOnWall(&rooms.items[i], getVector(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRoomIDs[0]])));
+			Dun_Coord__List_push(&entryNodes, rooms.items[i].exitNodes[dir[0]][1]);
+			getSpotOnWall(&rooms.items[nearestRoomIDs[0]], getVector(getRoomCenter(rooms.items[nearestRoomIDs[0]]), getRoomCenter(rooms.items[i])));
+			Dun_Coord__List_push(&exitNodes, rooms.items[nearestRoomIDs[0]].exitNodes[(dir[0] + 2) % 4][1]);
+			AStar(entryNodes.items[0], exitNodes.items[0], 1,  &path);
+			for (unsigned int j = 0; j < path.size; j++) {
+				if(world[path.items[j].x][path.items[j].y].passable == 0) {
+					world[path.items[j].x][path.items[j].y].ref = '.';
+					world[path.items[j].x][path.items[j].y].passable = 1;
+					popAdMat(path.items[j]);
+				}
 			}
-		}
+		}else
+			printf("A path already exists between Room %d and Room %d, skipping...\n", rooms.items[i].roomID, rooms.items[nearestRoomIDs[0]].roomID);
 
-		if(!isThereAPath(wlLoc.items[1], edLoc.items[1])) {
-			path2 = AStar(wlLoc.items[1], edLoc.items[1], 1);
-			path2Coords = ExtractCoordinates(path2);
-			for (unsigned int j = 0; j < path2Coords.size; j++) {
-				world[path2Coords.items[j].x][path2Coords.items[j].y].ref = '.'; // Mark the path as passable
-				world[path2Coords.items[j].x][path2Coords.items[j].y].passable = 1; // Mark the path as passable
+		Dun_Coord__List_destroy(&path);
+		Dun_Coord__List_init(&path, 0);
+
+		printf("Is there a path between Room %d and Room %d? %s\n", rooms.items[i].roomID, rooms.items[nearestRoomIDs[1]].roomID, (isThereAPath(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRoomIDs[1]])) ? "Yes" : "No"));
+		if(visited[nearestRoomIDs[1]] < 2 || !isThereAPath(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRoomIDs[1]])) ) {
+			visited[nearestRoomIDs[1]]++;
+			getSpotOnWall(&rooms.items[i], getVector(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRoomIDs[1]])));
+			Dun_Coord__List_push(&entryNodes, rooms.items[i].exitNodes[dir[1]][1]);
+			getSpotOnWall(&rooms.items[nearestRoomIDs[1]], getVector(getRoomCenter(rooms.items[nearestRoomIDs[1]]), getRoomCenter(rooms.items[i])));
+			Dun_Coord__List_push(&exitNodes, rooms.items[nearestRoomIDs[1]].exitNodes[(dir[1] + 2) % 4][1]);
+			AStar(entryNodes.items[1], exitNodes.items[1], 1, &path);
+			for (unsigned int j = 0; j < path.size; j++) {
+				if(world[path.items[j].x][path.items[j].y].passable == 0) {
+					world[path.items[j].x][path.items[j].y].ref = '.';
+					world[path.items[j].x][path.items[j].y].passable = 1;
+					popAdMat(path.items[j]);
+				}
 			}
-		}
+		}else
+			printf("A path already exists between Room %d and Room %d, skipping...\n", rooms.items[i].roomID, rooms.items[nearestRoomIDs[1]].roomID);
 
+
+		
 
 	}
 

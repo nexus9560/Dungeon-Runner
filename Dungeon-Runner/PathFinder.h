@@ -28,11 +28,11 @@ typedef Dun_Coord__List DCL;
 
 typedef PF_Cell__List PFCL;
 
-PFCL AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls);
+void AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls, DCL* ret);
 
 bool getNeighbors(Dun_Coord pos, Dun_Coord *neighbors, int ignoreWalls);
 
-DCL ExtractCoordinates(PFCL list);
+void ExtractCoordinates(PFCL list, DCL* ret);
 
 bool isinPFCL(PFCL* list, PF_Cell* cell);
 
