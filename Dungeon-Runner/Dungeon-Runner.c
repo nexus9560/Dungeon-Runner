@@ -80,7 +80,6 @@ int closeToZero(int a, int b); // Returns a if it is closer to zero than b, othe
 int isAdjacent(Dun_Coord a, Dun_Coord b); // Returns 1 if a and b are adjacent, otherwise returns 0.
 int compareVectors(Dun_Vec a, Dun_Vec b); // Returns 1 if vectors are equal, otherwise returns 0.
 int isSafeSpot(Dun_Coord d);
-int isThereAPath(Dun_Coord start, Dun_Coord end);
 
 Room getRoomByLocation(Dun_Coord d);
 
@@ -1221,8 +1220,8 @@ void cutPaths() {
 
 		DCL path;
 		Dun_Coord__List_init(&path, 0);
-		if (visited[nearestRoomIDs[0]] < 2 || !isThereAPath(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRoomIDs[0]])) ) {
-			visited[nearestRoomIDs[0]]++;
+		if ( !isThereAPath(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRoomIDs[0]])) && visited[nearestRoomIDs[0]] < 2) {
+			//visited[nearestRoomIDs[0]]++;
 			getSpotOnWall(&rooms.items[i], getVector(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRoomIDs[0]])));
 			Dun_Coord__List_push(&entryNodes, rooms.items[i].exitNodes[dir[0]][1]);
 			getSpotOnWall(&rooms.items[nearestRoomIDs[0]], getVector(getRoomCenter(rooms.items[nearestRoomIDs[0]]), getRoomCenter(rooms.items[i])));
@@ -1241,8 +1240,8 @@ void cutPaths() {
 		Dun_Coord__List_destroy(&path);
 		Dun_Coord__List_init(&path, 0);
 
-		if(visited[nearestRoomIDs[1]] < 2 || !isThereAPath(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRoomIDs[1]])) ) {
-			visited[nearestRoomIDs[1]]++;
+		if(!isThereAPath(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRoomIDs[1]])) && visited[nearestRoomIDs[1]] < 2) {
+			//visited[nearestRoomIDs[1]]++;
 			getSpotOnWall(&rooms.items[i], getVector(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRoomIDs[1]])));
 			Dun_Coord__List_push(&entryNodes, rooms.items[i].exitNodes[dir[1]][1]);
 			getSpotOnWall(&rooms.items[nearestRoomIDs[1]], getVector(getRoomCenter(rooms.items[nearestRoomIDs[1]]), getRoomCenter(rooms.items[i])));
@@ -1262,6 +1261,7 @@ void cutPaths() {
 		
 
 	}
+
 
 }
 

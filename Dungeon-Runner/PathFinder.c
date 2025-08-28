@@ -22,9 +22,8 @@ void AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls, DCL* ret) {
 	}
 
 	Dun_Vec delta = getVector(start, goal);
-	unsigned int distance = abs(delta.dx) + abs(delta.dy);
-
-	PF_Cell__List_init(&path, 2*distance);
+	unsigned int distance = (ignoreWalls ? 2 : 4) * (abs(delta.dx) + abs(delta.dy));
+	PF_Cell__List_init(&path, distance);
 
 
 	
@@ -36,14 +35,14 @@ void AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls, DCL* ret) {
 		.totalCost = abs((int)(start.x - goal.x)) + abs((int)(start.y - goal.y)),
 		.parent = (Dun_Coord){XBOUND+1,YBOUND+1},
 		.parentCounter = 0,
-		.isWalkable = (world[start.x][start.y].passable == 1 && world[start.x][start.y].occupied == 0) || ignoreWalls,
+		.isWalkable = ignoreWalls || (world[start.x][start.y].passable && !world[start.x][start.y].occupied ),
 		.isVisited = false
     };
 	PFCL openSet;
 	PFCL closedSet;
-	PF_Cell__List_init(&openSet, (2 * distance));
+	PF_Cell__List_init(&openSet, distance);
 	PF_Cell__List_push(&openSet, startCell); // Add start cell to open set
-	PF_Cell__List_init(&closedSet, (2 * distance)); // Initialize closed set
+	PF_Cell__List_init(&closedSet, distance); // Initialize closed set
 
 
 	while (openSet.size > 0) {
@@ -147,8 +146,11 @@ void AStar(Dun_Coord start, Dun_Coord goal, bool ignoreWalls, DCL* ret) {
 					//}
 					continue; // Skip if the neighbor is not passable
 				}
-				if (!neighborCell.isVisited && !isInARoom(neighborCell.pos) && neighborCell.heuristic < currentCell.heuristic ) {
-					PF_Cell__List_push(&openSet, neighborCell); // Add the neighbor to open set
+				if (!neighborCell.isVisited && neighborCell.heuristic < currentCell.heuristic ) {
+					if(!ignoreWalls)
+						PF_Cell__List_push(&openSet, neighborCell); // Add the neighbor to open set
+					elif (!isInARoom(neighborCell.pos))
+						PF_Cell__List_push(&openSet, neighborCell); // Add the neighbor to open set if not in a room when ignoring walls
 					//if (DEBUG) {
 					//	printf("Neighbor (%d, %d) added to open set with cost %u, heuristic %u, total cost %u\n",
 					//		neighborCell.pos.x, neighborCell.pos.y, neighborCell.cost, neighborCell.heuristic, neighborCell.totalCost);
