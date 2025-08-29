@@ -166,10 +166,9 @@ int main() {
 	}
 	int* consoleDimensions = getConsoleWindow();
 	printf("Console dimensions: %d rows, %d columns\n", consoleDimensions[0], consoleDimensions[1]);
-	// clearScreen();
-	// drawMap();
-	// drawThings(1);
-	// roomRunner();
+	clearScreen();
+	drawThings(1);
+	roomRunner();
 
 	return 0;
 }
@@ -309,29 +308,12 @@ void drawThings(int isBrief) {
 	drawMap();
 	printf("\n");
 	printf("%s\n", printPlayerStatus(isBrief));
-	if (OLD_ACTIONS) {
-		printf("\nYour current position is:%4d,%4d\n\n", you.base.location.x, you.base.location.y);
-		printf("What will you do?\n");
-		printf("0 - Exit\n");
-		printf("1 - Move\n");
-		printf("2 - Inspect\n");
-		printf("3 - Act\n");
-		printf("4 - Save\n");
-		printf("5 - Load\n");
-		if (DEBUG) {
-			printf("6 - Debug\n");
-		}
-		printf("\n\n");
-
-	}
-	else {
-		printf("WASD to move\n");
-		printf("Q to quit\n");
-		printf("I to Open Inventory\n");
-		printf("E to Interact\n");
-		printf("F to Inspect\n");
-		printf("Spacebar to Attack\n");
-	}
+	printf("WASD to move\n");
+	printf("Q to quit\n");
+	printf("I to Open Inventory\n");
+	printf("E to Interact\n");
+	printf("F to Inspect\n");
+	printf("Spacebar to Attack\n");
 }
 
 
@@ -718,10 +700,10 @@ char* printPlayerStatus(int brief) {
 		snprintf(ret, 256,
 			"+--------------------------------------------------->\n"
 			"| %s\n"
-			"| HP		: %4d / %4d\n"
-			"| EXP		: %4d / %4.0f\n"
-			"| Location : [%4d,%4d]\n"
-			"| Status	: %s\n"
+			"| HP\t\t: %4d / %4d\n"
+			"| EXP\t\t: %4d / %4.0f\n"
+			"| Location\t: [%4d,%4d]\n"
+			"| Status\t: %s\n"
 			"V\n",
 			you.base.name, you.base.curHealth, you.base.health, you.base.exp, experienceValue, you.base.location.y, you.base.location.x, (!you.last_action ? "" : you.last_action));
 	}
@@ -959,7 +941,7 @@ void printAdMap() {
 void getNearest2Rooms(Room r, Room__List* ret) {
 	Room__List_init(ret, 2);
 	int* nearestRoomIndices = malloc(rooms.size * sizeof(int));
-	
+
 	for(unsigned int i = 0; i < rooms.size; i++) {
 		nearestRoomIndices[i] = 0; // Initialize indices
 	}
@@ -1084,7 +1066,7 @@ void getSpotOnWall(Room* r, Dun_Vec d) {
 
 	looker = (rand() % (maxsearch - minsearch + 1)) + minsearch;
 
-	
+
 
 	if(dir == 0 || dir == 2) {
 		wallloc.x = wall;
@@ -1258,7 +1240,7 @@ void cutPaths() {
 			printf("A path already exists between Room %d and Room %d, skipping...\n", rooms.items[i].roomID, rooms.items[nearestRoomIDs[1]].roomID);
 
 
-		
+
 
 	}
 
