@@ -49,14 +49,13 @@ void makeRoomSpace(Room r);
 void makeRooms(Room__List* r);
 void roomRunner();
 void clearScreen();
-void changePosition();
 void inspectElement(Dun_Coord pos);
 void actOnYourOwn();
 void exitAction(int ec);
 void delay(int seconds);
 void showPlayerInventory();
 void cutPaths();
-void drawMap();
+void drawMap(unsigned int descHeight);
 void printMap();
 void printAdMap();
 void popAdMat(Dun_Coord d);
@@ -211,10 +210,18 @@ int* getConsoleWindow() {
    return dimensions;
 }
 
-void drawMap() {
+void drawMap(unsigned int descHeight) {
 
 	int* conDims = getConsoleWindow();
-	int renderX = (int)((conDims[0] * 0.75) > XBOUND ? XBOUND : (conDims[0] * 0.55)); // My Windows terminal is 45 rows high, so use 75% of that for rendering height
+	//int renderX = (int)((conDims[0] * 0.75) > XBOUND ? XBOUND : (conDims[0] * 0.55)); // My Windows terminal is 45 rows high, so use 75% of that for rendering height
+	int renderX;
+	if (conDims[0] - descHeight < 10) {
+		renderX = 10; // Minimum render height
+	} elif ((conDims[0] - descHeight) > XBOUND) {
+		renderX = XBOUND; // Maximum render height
+	} else {
+		renderX = conDims[0] - descHeight; // Use available space minus description height
+	}
 	int renderY = (int)((conDims[1] * 0.80) > YBOUND ? YBOUND : (conDims[1] * 0.80)); // My Windows terminal is 150 columns wide, so use 80& of that for rendering width
 	char* map = (char*)malloc(renderX * renderY);
 	if (map == NULL) {
@@ -307,8 +314,10 @@ int enemyTurn() {
 }
 
 void drawThings(int isBrief) {
-	drawMap();
+	unsigned int height = (isBrief ? 7 : 12);
+	drawMap(height + 8);
 	printf("\n");
+	printf("Message: %s\n", "Welcome to Dungeon Runner!");
 	printf("%s\n", printPlayerStatus(isBrief));
 	printf("WASD to move\n");
 	printf("Q to quit\n");
@@ -382,7 +391,7 @@ int actionChecker() {
 				printf("Interact not implemented yet.\n");
 				return 0;
 			case 'f':
-				printf("Inspect not implemented yet.\n");
+				inspectElement(you.base.location);
 				return 0;
 			case ' ':
 				printf("Attack not implemented yet.\n");
@@ -394,27 +403,6 @@ int actionChecker() {
 			default:return 0;
 		}
 	return 0;
-}
-
-void changePosition() {
-	printf("0 - Go back\n");
-	printf("1 - Move Left\n");
-	printf("2 - Move Down\n");
-	printf("3 - Move Right\n");
-	printf("4 - Move Up\n\n");
-	int dir = 0;
-	scanf("%d", &dir);
-	if(dir!=0)
-		you.stepCount++;
-	switch (dir) {
-		case 1: you.base = shiftEntity(you.base,left);break;
-		case 2: you.base = shiftEntity(you.base,down);break;
-		case 3: you.base = shiftEntity(you.base,right);break;
-		case 4: you.base = shiftEntity(you.base,up);break;
-		default:break;
-	}
-	if(!DEBUG)
-		clearScreen();
 }
 
 void exitAction(int ec) {
@@ -502,7 +490,6 @@ void inspectElement(Dun_Coord pos) {
            break;
        default: return;
    }
-   scanf("");
 }
 
 void actOnYourOwn() {
@@ -699,9 +686,10 @@ char* printPlayerStatus(int brief) {
 			printf("Memory allocation failed\n");
 			return NULL;
 		}
+		// Height here is 7
 		snprintf(ret, 256,
 			"+--------------------------------------------------->\n"
-			"| %s\n"
+			"| Name\t\t:%s\n"
 			"| HP\t\t: %4d / %4d\n"
 			"| EXP\t\t: %4d / %4.0f\n"
 			"| Location\t: [%4d,%4d]\n"
@@ -715,18 +703,19 @@ char* printPlayerStatus(int brief) {
 			printf("Memory allocation failed\n");
 			return NULL;
 		}
+		// Height here is 12
 		snprintf(ret, 512,
 			"+--------------------------------------------------->\n"
 			"| %s\n"
-			"| HP			: %d / %d\n"
-			"| Attack		: %d\n"
-			"| To-Hit		: %d\n"
-			"| Defense		: %d\n"
-			"| Experience	: %4d /%4.0f\n"
-			"| Location		: [%4d,%4d]\n"
-			"| Evasion		: %d\n"
-			"| Level		: %d\n"
-			"| Status		: %s\n"
+			"| HP\t\t\t: %d / %d\n"
+			"| Attack\t\t: %d\n"
+			"| To-Hit\t\t: %d\n"
+			"| Defense\t\t: %d\n"
+			"| Experience\t: %4d /%4.0f\n"
+			"| Location\t\t: [%4d,%4d]\n"
+			"| Evasion\t\t: %d\n"
+			"| Level\t\t: %d\n"
+			"| Status\t\t: %s\n"
 			"V\n",
 			you.base.name, you.base.curHealth, you.base.health, you.base.atk,
 			you.base.hit, you.base.def, you.base.exp, experienceValue, you.base.location.y, you.base.location.x, you.base.eva, you.base.level, (!you.last_action ? "" : you.last_action));
