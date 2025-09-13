@@ -259,7 +259,7 @@ int isThereAPath(Dun_Coord start, Dun_Coord end) {
 	AStar(start, end, false, &coords);
 	
 	int result = coords.size > 0;
-	printf("isThereAPath from (%d, %d) to (%d, %d): %s\n", start.x, start.y, end.x, end.y, result ? "true" : "false");
+	//printf("isThereAPath from (%d, %d) to (%d, %d): %s\n", start.x, start.y, end.x, end.y, result ? "true" : "false");
 	//Dun_Coord__List_destroy(&coords);
 	return result;
 }

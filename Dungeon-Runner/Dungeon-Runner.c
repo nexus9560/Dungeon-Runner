@@ -18,7 +18,6 @@
 #else
 #define CLEAR_COMMAND "" // Define it to nothing if OS is not detected
 #endif
-#define RCC 2 // Room Connection check - how many times to check for room connections when cutting paths.
 
 Cell world[XBOUND][YBOUND];
 
@@ -169,9 +168,9 @@ int main() {
 	}
 	int* consoleDimensions = getConsoleWindow();
 	printf("Console dimensions: %d rows, %d columns\n", consoleDimensions[0], consoleDimensions[1]);
-	//clearScreen();
-	//drawThings(1);
-	//roomRunner();
+	clearScreen();
+	drawThings(1);
+	roomRunner();
 
 	return 0;
 }
@@ -1172,85 +1171,69 @@ void updateWorldAdMat() {
 	}
 }
 
+int taglim = 0;
+
 
 void cutPaths() {
-	unsigned int* visited;
-	visited = malloc(rooms.size * sizeof(unsigned int));
-	if(!visited) {
-		printf("Memory allocation failed\n");
-		return;
-	}
-	memset(visited, 0, rooms.size * sizeof(unsigned int));
+
 	for (unsigned int i = 0; i < rooms.size; i++) {
 		int* nearestRooms;
 		int tag = 0;
 		if(rooms.size == 0) {
 			printf("No rooms available to connect.\n");
-			free(visited);
 			return;
 		}
 		nearestRooms = malloc(rooms.size * sizeof(int));
 		if(!nearestRooms) {
 			printf("Memory allocation failed\n");
-			free(visited);
 			return;
 		}
 		getRoomsByDistance(rooms.items[i], nearestRooms);
 
 		for (unsigned int j = 0; j < rooms.size; j++) {
-			if (nearestRooms[i] == nearestRooms[j] ) {
+			if ( rooms.items[i].roomID == nearestRooms[j] ) {
 				continue;
-			}elif(isThereAPath(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRooms[j] - 1]))) {
+			} elif ( isThereAPath(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRooms[j] - 1]))) {
 				continue;
+			} elif (tag > taglim) {
+				break;
 			}
-			if (visited[i] < 1 && visited[nearestRooms[j] - 1] < 1) {
-				visited[i]++;
-				visited[j]++;
-				DCL entryNodes, exitNodes;
-				Dun_Coord__List_init(&entryNodes, 2);
-				Dun_Coord__List_init(&exitNodes, 2);
-				int dir = -1;
-				dir = getVectorDirection(getVector(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRooms[j]-1])));
-				DCL path;
-				Dun_Coord__List_init(&path, 0);
-				getSpotOnWall(&rooms.items[i], getVector(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRooms[j]-1])));
-				Dun_Coord__List_push(&entryNodes, rooms.items[i].exitNodes[dir][1]);
-				getSpotOnWall(&rooms.items[nearestRooms[j]-1], getVector(getRoomCenter(rooms.items[nearestRooms[j]-1]), getRoomCenter(rooms.items[i])));
-				Dun_Coord__List_push(&exitNodes, rooms.items[nearestRooms[j]-1].exitNodes[(dir + 2) % 4][1]);
-				AStar(entryNodes.items[0], exitNodes.items[0], 1, &path);
-				for (unsigned int k = 0; k < path.size; k++) {
-					if(world[path.items[k].x][path.items[k].y].passable == 0) {
-						world[path.items[k].x][path.items[k].y].ref = '.';
-						world[path.items[k].x][path.items[k].y].passable = 1;
-						popAdMat(path.items[k]);
-					}
-				}
-				Dun_Coord__List_destroy(&path);
-				Dun_Coord__List_destroy(&entryNodes);
-				Dun_Coord__List_destroy(&exitNodes);
-				if(tag == 0) {
-					tag = 1;
-				}
-				else {
-					break;
+			tag++;
+			DCL entryNodes, exitNodes;
+			Dun_Coord__List_init(&entryNodes, 2);
+			Dun_Coord__List_init(&exitNodes, 2);
+			int dir = -1;
+			dir = getVectorDirection(getVector(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRooms[j] - 1])));
+			DCL path;
+			Dun_Coord__List_init(&path, 0);
+			getSpotOnWall(&rooms.items[i], getVector(getRoomCenter(rooms.items[i]), getRoomCenter(rooms.items[nearestRooms[j] - 1])));
+			Dun_Coord__List_push(&entryNodes, rooms.items[i].exitNodes[dir][1]);
+			getSpotOnWall(&rooms.items[nearestRooms[j] - 1], getVector(getRoomCenter(rooms.items[nearestRooms[j] - 1]), getRoomCenter(rooms.items[i])));
+			Dun_Coord__List_push(&exitNodes, rooms.items[nearestRooms[j] - 1].exitNodes[(dir + 2) % 4][1]);
+			AStar(entryNodes.items[0], exitNodes.items[0], 1, &path);
+			for (unsigned int k = 0; k < path.size; k++) {
+				if (world[path.items[k].x][path.items[k].y].passable == 0) {
+					world[path.items[k].x][path.items[k].y].ref = '.';
+					world[path.items[k].x][path.items[k].y].passable = 1;
+					popAdMat(path.items[k]);
 				}
 			}
+			Dun_Coord__List_destroy(&path);
+			Dun_Coord__List_destroy(&entryNodes);
+			Dun_Coord__List_destroy(&exitNodes);	
 		}
-		
-	
-
-
-
-
 	}
-	if (crcc > RCC)
-		return;
 	for(unsigned int i = 0; i < rooms.size; i++) {
 		if(!isThereAPath(getRoomCenter(rooms.items[0]), getRoomCenter(rooms.items[i]))) {
 			crcc++;
-			cutPaths();
-			return;
 		}
+	}
+	if(inRangeExclusive(crcc, 0, rooms.size)) {
+		taglim++;
+		cutPaths(); // Recursively call cutPaths until all rooms are connected
+	}
+	else {
+		return;
 	}
 
 
