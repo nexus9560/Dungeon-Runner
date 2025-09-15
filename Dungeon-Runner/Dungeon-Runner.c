@@ -226,7 +226,7 @@ int* getConsoleWindow() {
 void drawMap(unsigned int descHeight) {
 
 	conDims = getConsoleWindow();
-	
+
 	memset(worldmap, 0, sizeof(char) * ((XBOUND + 1) * (YBOUND + 1)));
 	//int renderX = (int)((conDims[0] * 0.75) > XBOUND ? XBOUND : (conDims[0] * 0.55)); // My Windows terminal is 45 rows high, so use 75% of that for rendering height
 	int renderX;
@@ -282,7 +282,7 @@ void drawMap(unsigned int descHeight) {
         }
 	}
 
-	
+
 
 }
 
@@ -322,7 +322,7 @@ void roomRunner() {
 			}
 		}
 		if (hasSomethingchanged) {
-			drawMap(height + 8);
+			drawMap(height + 11);
 			hasSomethingchanged = 0; // Reset the flag after drawing
 		}
 		//delay(1);
@@ -337,7 +337,6 @@ int enemyTurn() {
 
 void drawThings(int isBrief) {
 	printf("%s", worldmap);
-	printf("\n");
 	printf("Message: %s\n", bannerPosting(message, getConsoleWindow()[1]-13));
 	printf("%s\n", printPlayerStatus(isBrief));
 	printf("WASD to move\n");
@@ -383,19 +382,26 @@ int actionChecker() {
 
 #elif __unix__ || __APPLE__
 #define getch getchar
-	struct termios oldt, newt;
 
-	// Get the terminal settings for stdin
-	tcgetattr(STDIN_FILENO, &oldt);
-	newt = oldt; // Copy the old settings to new settings
-	newt.c_lflag &= ~(ICANON | ECHO); // Disable canonical mode and echo
-	tcsetattr(STDIN_FILENO, TCSANOW, &newt); // Apply the new settings
-	ch = getch(); // Read a single character
-	// Restore the old terminal settings
-	//if (DEBUG)
-		// printf("Key pressed: %c : %d\n", ch, ch);
-	// Restore the old terminal settings
-	tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+
+    struct termios oldt, newt;
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+
+    struct timeval tv = {0L, 0L}; // Zero timeout
+    fd_set fds;
+    FD_ZERO(&fds);
+    FD_SET(STDIN_FILENO, &fds);
+    int ret = select(STDIN_FILENO+1, &fds, NULL, NULL, &tv);
+    if (ret > 0) {
+        ch = getchar();
+    } else {
+        ch = -1; // No input
+    }
+
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 #endif
 	if(ch != -1)
 		switch (ch) {
@@ -1252,7 +1258,7 @@ void cutPaths() {
 			}
 			Dun_Coord__List_destroy(&path);
 			Dun_Coord__List_destroy(&entryNodes);
-			Dun_Coord__List_destroy(&exitNodes);	
+			Dun_Coord__List_destroy(&exitNodes);
 		}
 	}
 	for(unsigned int i = 0; i < rooms.size; i++) {
