@@ -31,7 +31,11 @@ IOG_List itemsOnFloor; // Items that are on the floor in rooms.
 
 Room__List rooms;
 
+char* message = "Look at them, they come to this place when they know they are not pure. Tenno use the keys, but they are mere trespassers. Only I, Vor, know the true power of the Void. I was cut in half, destroyed, but through it's Janus Key, the Void called to me. It brought me here and here I was reborn. We cannot blame these creatures, they are being led by a false prophet, an impostor who knows not the secrets of the Void. Behold the Tenno, come to scavenge and desecrate this sacred realm. My brothers, did I not tell of this day? Did I not prophesize this moment? Now, I will stop them. Now I am changed, reborn through the energy of the Janus Key. Forever bound to the Void. Let it be known, if the Tenno want true salvation, they will lay down their arms, and wait for the baptism of my Janus key. It is time. I will teach these trespassers the redemptive power of my Janus key. They will learn it's simple truth. The Tenno are lost, and they will resist. But I, Vor, will cleanse this place of their impurity.";
+char* worldmap;
 int crcc = 0; // Current room connection check count.
+int* conDims;
+int* prevConDims = NULL; // Previous console dimensions, used to check if the console has been resized.
 
 DR_LIST_IMPL(Room)
 DR_LIST_IMPL(Item_on_Ground)
@@ -66,6 +70,7 @@ void getSpotOnWall(Room* r, Dun_Vec d);
 void getRoomsByDistance(Room r, int* ret);
 
 char* printPlayerStatus(int brief);
+char* bannerPosting(char* c, int w);
 
 int checkBounds( Dun_Coord newPos, Dun_Vec delta);
 int checkOccupied(Dun_Coord newPos, Dun_Vec delta);
@@ -82,7 +87,7 @@ int isAdjacent(Dun_Coord a, Dun_Coord b); // Returns 1 if a and b are adjacent, 
 int compareVectors(Dun_Vec a, Dun_Vec b); // Returns 1 if vectors are equal, otherwise returns 0.
 int isSafeSpot(Dun_Coord d);
 
-int getRoomByLocation(Dun_Coord d);
+int getRoomByLocation(Dun_Coord d, Room* r, Room__List* roomList);
 
 Dun_Coord getNearestSafeLocation(Dun_Coord d);
 Dun_Coord getRoomCenter(Room r);
@@ -101,6 +106,13 @@ Entity moveEntity(Entity e, Dun_Coord newLoc);
 //int goLeft();
 
 int main() {
+
+	conDims = getConsoleWindow();
+	worldmap = malloc(sizeof(char) * ((XBOUND + 1) * (YBOUND + 1)));
+	if (worldmap == NULL) {
+		printf("Memory allocation failed\n");
+		return 1;
+	}
 
 	clearScreen();
 	loadEntities(0);
@@ -166,6 +178,7 @@ int main() {
 		}
 	}
 	int* consoleDimensions = getConsoleWindow();
+	prevConDims = consoleDimensions;
 	printf("Console dimensions: %d rows, %d columns\n", consoleDimensions[0], consoleDimensions[1]);
 	clearScreen();
 	drawThings(1);
@@ -212,7 +225,9 @@ int* getConsoleWindow() {
 
 void drawMap(unsigned int descHeight) {
 
-	int* conDims = getConsoleWindow();
+	conDims = getConsoleWindow();
+	
+	memset(worldmap, 0, sizeof(char) * ((XBOUND + 1) * (YBOUND + 1)));
 	//int renderX = (int)((conDims[0] * 0.75) > XBOUND ? XBOUND : (conDims[0] * 0.55)); // My Windows terminal is 45 rows high, so use 75% of that for rendering height
 	int renderX;
 	if (conDims[0] - descHeight < 10) {
@@ -246,28 +261,28 @@ void drawMap(unsigned int descHeight) {
 
 
 	for (int x = 0; x < renderX;x++) {
-		int xoffset = you.base.location.x - (renderX / 2) + x;
-		for (int y = 0;y < renderY;y++) {
-			int yoffset = you.base.location.y - (renderY / 2) + y;
-			if ((renderX/2)==x && (renderY/2)==y) {
-				map[x * renderY + y] = '@';
-				continue;
-			}
-			else if (xoffset < 0 || xoffset >= XBOUND || yoffset < 0 || yoffset >= YBOUND) {
-				map[x * renderY + y] = ' ';
-				continue;
-			}
-			else if (world[xoffset][yoffset].occupied == 1) {
-				map[x * renderY + y] = 'X';
-				continue;
-			}
-			else {
-				map[x * renderY + y] = world[xoffset][yoffset].ref;
-				continue;
-			}
-		}
-		printf("%.*s\n", renderY, &map[x * renderY]);
+        // Merged rendering and worldmap population, no intermediate 'map' buffer
+        for (int x = 0; x < renderX; x++) {
+            int xoffset = you.base.location.x - (renderX / 2) + x;
+            for (int y = 0; y < renderY; y++) {
+                int yoffset = you.base.location.y - (renderY / 2) + y;
+                int idx = x * (renderY + 1) + y;
+                if ((renderX / 2) == x && (renderY / 2) == y) {
+                    worldmap[idx] = '@';
+                } elif (xoffset < 0 || xoffset >= XBOUND || yoffset < 0 || yoffset >= YBOUND) {
+                    worldmap[idx] = ' ';
+                } elif (world[xoffset][yoffset].occupied == 1) {
+                    worldmap[idx] = 'X';
+                } else {
+                    worldmap[idx] = world[xoffset][yoffset].ref;
+                }
+            }
+            // Add newline at the end of each row
+            worldmap[x * (renderY + 1) + renderY] = '\n';
+        }
 	}
+
+	
 
 }
 
@@ -286,12 +301,13 @@ void clearScreen() {
 
 void roomRunner() {
 	int isBrief = 1;
+	unsigned int height = (isBrief ? 7 : 12);
 	unsigned int isPlayerTurn = 1, hasSomethingchanged = 1;
 	do {
-		if (hasSomethingchanged) {
-			clearScreen();
-			drawThings(isBrief);
-			hasSomethingchanged = 0; // Reset the flag after drawing
+		conDims = getConsoleWindow();
+		if (conDims[0] != prevConDims[0] || conDims[1] != prevConDims[1]) {
+			prevConDims = conDims;
+			hasSomethingchanged = 1; // Console was resized, so we need to update the world.
 		}
 		if (isPlayerTurn) {
 			if (actionChecker()) {
@@ -305,7 +321,13 @@ void roomRunner() {
 				hasSomethingchanged = 1; // Enemy did something, so we need to update the world.
 			}
 		}
+		if (hasSomethingchanged) {
+			drawMap(height + 8);
+			hasSomethingchanged = 0; // Reset the flag after drawing
+		}
 		//delay(1);
+		clearScreen();
+		drawThings(isBrief);
 	} while (1);
 }
 
@@ -314,10 +336,9 @@ int enemyTurn() {
 }
 
 void drawThings(int isBrief) {
-	unsigned int height = (isBrief ? 7 : 12);
-	drawMap(height + 8);
+	printf("%s", worldmap);
 	printf("\n");
-	printf("Message: %s\n", "Welcome to Dungeon Runner!");
+	printf("Message: %s\n", bannerPosting(message, getConsoleWindow()[1]-13));
 	printf("%s\n", printPlayerStatus(isBrief));
 	printf("WASD to move\n");
 	printf("Q to quit\n");
@@ -325,6 +346,28 @@ void drawThings(int isBrief) {
 	printf("E to Interact\n");
 	printf("F to Inspect\n");
 	printf("Spacebar to Attack\n");
+}
+
+int rotate = 0;
+
+char* bannerPosting(char* c, int w) {
+	int len = (int)strlen(c);
+	if (len > w) {
+		char* window = (char*)malloc((w + 1) * sizeof(char));
+		if (window == NULL) {
+			printf("Memory allocation failed\n");
+			return c;
+		}
+		for (int i = 0; i < w; i++) {
+			window[i] = c[(i + rotate) % len];
+		}
+		window[w] = '\0'; // Null-terminate the string
+		rotate = (rotate + 1) % len; // Increment rotate for next call
+		return window;
+	}
+	else {
+		return c;
+	}
 }
 
 
@@ -689,13 +732,13 @@ char* printPlayerStatus(int brief) {
 		// Height here is 7
 		snprintf(ret, 256,
 			"+--------------------------------------------------->\n"
-			"| Name\t\t:%s\n"
+			"| Name\t\t:\t%s\n"
 			"| HP\t\t: %4d / %4d\n"
-			"| EXP\t\t: %4d / %4.0f\n"
+			"| Lvl EXP\t: %4d : %4d / %4.0f\n"
 			"| Location\t: [%4d,%4d]\n"
 			"| Status\t: %s\n"
 			"V\n",
-			you.base.name, you.base.curHealth, you.base.health, you.base.exp, experienceValue, you.base.location.y, you.base.location.x, (!you.last_action ? "" : you.last_action));
+			you.base.name, you.base.curHealth, you.base.health, you.base.level, you.base.exp, experienceValue, you.base.location.y, you.base.location.x, (!you.last_action ? "" : you.last_action));
 	}
 	else {
 		ret = malloc(512);
