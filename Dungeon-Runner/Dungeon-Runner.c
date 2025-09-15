@@ -82,7 +82,7 @@ int isAdjacent(Dun_Coord a, Dun_Coord b); // Returns 1 if a and b are adjacent, 
 int compareVectors(Dun_Vec a, Dun_Vec b); // Returns 1 if vectors are equal, otherwise returns 0.
 int isSafeSpot(Dun_Coord d);
 
-Room getRoomByLocation(Dun_Coord d);
+int getRoomByLocation(Dun_Coord d);
 
 Dun_Coord getNearestSafeLocation(Dun_Coord d);
 Dun_Coord getRoomCenter(Room r);
@@ -643,16 +643,16 @@ Dun_Coord getNearestSafeLocation(Dun_Coord d) {
 	return safeLocation; // Default return value, should be replaced with actual logic
 }
 
-Room getRoomByLocation(Dun_Coord d) {
-	Room temp = { {0,0},XBOUND,YBOUND };
+int getRoomByLocation(Dun_Coord d, Room* r, Room__List* roomList) {
 
-	for (unsigned int i = 0; i < rooms.size;i++) {
-		if (isInRoom(rooms.items[i], d)) {
-			return rooms.items[i];
+	for (unsigned int i = 0; i < roomList->size; i++) {
+		if (isInRoom(roomList->items[i], d)) {
+			*r = roomList->items[i];
+			return 1;
 		}
 	}
 
-	return temp;
+	return 0;
 }
 
 void showPlayerInventory() {
