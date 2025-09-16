@@ -31,9 +31,10 @@ IOG_List itemsOnFloor; // Items that are on the floor in rooms.
 
 Room__List rooms;
 
-char* message = "Look at them, they come to this place when they know they are not pure. Tenno use the keys, but they are mere trespassers. Only I, Vor, know the true power of the Void. I was cut in half, destroyed, but through it's Janus Key, the Void called to me. It brought me here and here I was reborn. We cannot blame these creatures, they are being led by a false prophet, an impostor who knows not the secrets of the Void. Behold the Tenno, come to scavenge and desecrate this sacred realm. My brothers, did I not tell of this day? Did I not prophesize this moment? Now, I will stop them. Now I am changed, reborn through the energy of the Janus Key. Forever bound to the Void. Let it be known, if the Tenno want true salvation, they will lay down their arms, and wait for the baptism of my Janus key. It is time. I will teach these trespassers the redemptive power of my Janus key. They will learn it's simple truth. The Tenno are lost, and they will resist. But I, Vor, will cleanse this place of their impurity.";
+char* message = "";
 char* worldmap;
 int crcc = 0; // Current room connection check count.
+unsigned int messageFade = 0;
 int* conDims;
 int* prevConDims = NULL; // Previous console dimensions, used to check if the console has been resized.
 
@@ -324,6 +325,13 @@ void roomRunner() {
 		if (hasSomethingchanged) {
 			drawMap(height + 11);
 			hasSomethingchanged = 0; // Reset the flag after drawing
+			if (strlen(message) > 0) {
+				messageFade++;
+				if (messageFade > 10) {
+					message = "";
+					messageFade = 0;
+				}
+			}
 		}
 		//delay(1);
 		clearScreen();
@@ -607,6 +615,7 @@ int checkOverlappingArea(Room room1, Room room2) {
 	return 0;
 }
 
+
 Entity shiftEntity(Entity e, Dun_Vec delta) {
 	//if(DEBUG)
 	//	printf("Entity %s is moving from [%d,%d] to [%d,%d]\n", e.name, e.location.x, e.location.y, e.location.x + delta.dx, e.location.y + delta.dy);
@@ -615,6 +624,23 @@ Entity shiftEntity(Entity e, Dun_Vec delta) {
 		e.location.x += delta.dx;
 		e.location.y += delta.dy;
 		world[e.location.x][e.location.y].occupied = 1;
+		for(unsigned int i = 0; i < itemsOnFloor.size; i++) {
+			if(itemsOnFloor.items[i].loc.x == e.location.x && itemsOnFloor.items[i].loc.y == e.location.y) {
+                // With the following code block:
+                char* msgbuf = malloc(strlen(e.name) + strlen(" steps on ") + strlen(itemsOnFloor.items[i].item->name) + strlen(".") + 1);
+                if (msgbuf != NULL) {
+                    strcpy(msgbuf, e.name);
+                    strcat(msgbuf, " steps on ");
+                    strcat(msgbuf, itemsOnFloor.items[i].item->name);
+                    strcat(msgbuf, ".");
+                    message = msgbuf;
+                } else {
+                    message = "Memory allocation failed for message.";
+                }
+				break;
+			}
+
+		}
 	}
 	//elif(DEBUG)
 	//	printf("Error: %s cannot move out of bounds.\n",e.name);
