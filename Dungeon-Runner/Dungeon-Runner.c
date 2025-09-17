@@ -302,9 +302,12 @@ void clearScreen() {
 
 void roomRunner() {
 	int isBrief = 1;
+	time_t now = time(NULL);
+	time_t then = now;
 	unsigned int height = (isBrief ? 7 : 12);
 	unsigned int isPlayerTurn = 1, hasSomethingchanged = 1;
 	do {
+		now = time(NULL);
 		conDims = getConsoleWindow();
 		if (conDims[0] != prevConDims[0] || conDims[1] != prevConDims[1]) {
 			prevConDims = conDims;
@@ -324,15 +327,19 @@ void roomRunner() {
 		}
 		if (hasSomethingchanged) {
 			drawMap(height + 11);
-			hasSomethingchanged = 0; // Reset the flag after drawing
+		}
+		if ((now - then) >= 1) { // Update every second
+			then = now;
+			hasSomethingchanged = 1; // Time has passed, so we need to update the world.
 			if (strlen(message) > 0) {
 				messageFade++;
-				if (messageFade > 10) {
+				if (messageFade > 5) {
 					message = "";
 					messageFade = 0;
 				}
 			}
 		}
+
 		//delay(1);
 		clearScreen();
 		drawThings(isBrief);
