@@ -49,56 +49,57 @@ unsigned int currRoomCount = 0;
 //const Dun_Vec left =	{  0,-1 };
 //const Dun_Vec directions[4] = { { -1, 0 }, { 0, 1 }, { 1, 0 }, { 0, -1 } };
 
-void mapClearing();
-void makeRoomSpace(Room r);
-void makeRooms(Room__List* r);
-void roomRunner();
-void clearScreen();
-void inspectElement(Dun_Coord pos);
 void actOnYourOwn();
-void exitAction(int ec);
-void delay(int seconds);
-void showPlayerInventory();
+void clearScreen();
 void cutPaths();
+void delay(int seconds);
 void drawMap(unsigned int descHeight);
-void printMap();
-void printAdMap();
+void drawThings(int isBrief);
+void exitAction(int ec);
+void getRoomsByDistance(Room r, int* ret);
+void getSpotOnWall(Room* r, Dun_Vec d);
+void inspectElement(Dun_Coord pos);
+void makeRooms(Room__List* r);
+void makeRoomSpace(Room r);
+void mapClearing();
 void popAdMat(Dun_Coord d);
 void popItemsOnFloor();
+void printAdMap();
+void printMap();
+void roomRunner();
+void showPlayerInventory();
 void updateWorldAdMat();
-void drawThings(int isBrief);
-void getSpotOnWall(Room* r, Dun_Vec d);
-void getRoomsByDistance(Room r, int* ret);
 
-char* printPlayerStatus(int brief);
+
 char* bannerPosting(char* c, int w);
+char* printPlayerStatus(int brief);
 
-int checkBounds( Dun_Coord newPos, Dun_Vec delta);
+int actionChecker();
+int checkBounds(Dun_Coord newPos, Dun_Vec delta);
 int checkOccupied(Dun_Coord newPos, Dun_Vec delta);
 int checkOverlappingArea(Room room1, Room room2);
-int actionChecker();
-int enemyTurn();
-int* getConsoleWindow();
-int getRandomEnemyIndex();
-int isInRoom(Room r, Dun_Coord d);
-int getVectorDirection(Dun_Vec d);
 int closerToZero(int value); // Brings passed value closer to zero.
 int closeToZero(int a, int b); // Returns a if it is closer to zero than b, otherwise returns b.
-int isAdjacent(Dun_Coord a, Dun_Coord b); // Returns 1 if a and b are adjacent, otherwise returns 0.
 int compareVectors(Dun_Vec a, Dun_Vec b); // Returns 1 if vectors are equal, otherwise returns 0.
-int isSafeSpot(Dun_Coord d);
-
+int enemyTurn();
+int getRandomEnemyIndex();
 int getRoomByLocation(Dun_Coord d, Room* r, Room__List* roomList);
+int getVectorDirection(Dun_Vec d);
+int isAdjacent(Dun_Coord a, Dun_Coord b); // Returns 1 if a and b are adjacent, otherwise returns 0.
+int isInRoom(Room r, Dun_Coord d);
+int isSafeSpot(Dun_Coord d);
+int* getConsoleWindow();
 
+
+Dun_Coord copyCoord(Dun_Coord d);
 Dun_Coord getNearestSafeLocation(Dun_Coord d);
 Dun_Coord getRoomCenter(Room r);
-Dun_Coord copyCoord(Dun_Coord d);
 
 Dun_Vec getVectorToWallFromCenter(Room r, Dun_Vec v);
 
 Entity logStep(Entity e);
-Entity shiftEntity(Entity e, Dun_Vec delta);
 Entity moveEntity(Entity e, Dun_Coord newLoc);
+Entity shiftEntity(Entity e, Dun_Vec delta);
 
 
 //int goUp();
