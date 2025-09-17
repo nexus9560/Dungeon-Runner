@@ -18,54 +18,54 @@
     <ClCompile Include="Dungeon-Runner.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="adlibs\LoadingDock.c">
+    <ClCompile Include="LoadingDock.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="adlibs\DungeonTypes.c">
+    <ClCompile Include="DungeonTypes.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="adlibs\Effect_Manager.c">
+    <ClCompile Include="Effect_Manager.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="adlibs\pathlib.c">
+    <ClCompile Include="pathlib.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="adlibs\Player.c">
+    <ClCompile Include="Player.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="adlibs\PathFinder.c">
+    <ClCompile Include="PathFinder.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="adlibs\EntityList.c">
+    <ClCompile Include="EntityList.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="adlibs\DungeonTypes.h">
+    <ClInclude Include="DungeonTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="adlibs\LoadingDock.h">
+    <ClInclude Include="LoadingDock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="adlibs\Effect_Manager.h">
+    <ClInclude Include="Effect_Manager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="adlibs\list.h">
+    <ClInclude Include="list.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="adlibs\pathlib.h">
+    <ClInclude Include="pathlib.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="adlibs\queue.h">
+    <ClInclude Include="queue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="adlibs\Player.h">
+    <ClInclude Include="Player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="adlibs\PathFinder.h">
+    <ClInclude Include="PathFinder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="adlibs\EntityList.h">
+    <ClInclude Include="EntityList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

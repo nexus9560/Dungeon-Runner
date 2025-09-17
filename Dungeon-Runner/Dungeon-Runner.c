@@ -1,9 +1,9 @@
 ﻿
-#include "adlibs/DungeonTypes.h"
-#include "adlibs/LoadingDock.h"
-#include "adlibs/PathFinder.h"
-#include "adlibs/Player.h"
-#include "adlibs/pathlib.h"
+#include "DungeonTypes.h"
+#include "LoadingDock.h"
+#include "PathFinder.h"
+#include "Player.h"
+#include "pathlib.h"
 
 #ifdef _WIN32
 #define CLEAR_COMMAND "cls"

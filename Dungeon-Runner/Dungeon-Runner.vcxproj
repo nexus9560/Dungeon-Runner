@@ -131,24 +131,24 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Dungeon-Runner.c" />
-    <ClCompile Include="adlibs\DungeonTypes.c" />
-    <ClCompile Include="adlibs\EntityList.c" />
-    <ClCompile Include="adlibs\LoadingDock.c" />
-    <ClCompile Include="adlibs\Effect_Manager.c" />
-    <ClCompile Include="adlibs\PathFinder.c" />
-    <ClCompile Include="adlibs\pathlib.c" />
-    <ClCompile Include="adlibs\Player.c" />
+    <ClCompile Include="DungeonTypes.c" />
+    <ClCompile Include="EntityList.c" />
+    <ClCompile Include="LoadingDock.c" />
+    <ClCompile Include="Effect_Manager.c" />
+    <ClCompile Include="PathFinder.c" />
+    <ClCompile Include="pathlib.c" />
+    <ClCompile Include="Player.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="adlibs\DungeonTypes.h" />
-    <ClInclude Include="adlibs\EntityList.h" />
-    <ClInclude Include="adlibs\list.h" />
-    <ClInclude Include="adlibs\LoadingDock.h" />
-    <ClInclude Include="adlibs\Effect_Manager.h" />
-    <ClInclude Include="adlibs\PathFinder.h" />
-    <ClInclude Include="adlibs\pathlib.h" />
-    <ClInclude Include="adlibs\Player.h" />
-    <ClInclude Include="adlibs\queue.h" />
+    <ClInclude Include="DungeonTypes.h" />
+    <ClInclude Include="EntityList.h" />
+    <ClInclude Include="list.h" />
+    <ClInclude Include="LoadingDock.h" />
+    <ClInclude Include="Effect_Manager.h" />
+    <ClInclude Include="PathFinder.h" />
+    <ClInclude Include="pathlib.h" />
+    <ClInclude Include="Player.h" />
+    <ClInclude Include="queue.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="data\entities.dat" />
