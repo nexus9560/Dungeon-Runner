@@ -133,6 +133,7 @@
     <ClCompile Include="Dungeon-Runner.c" />
     <ClCompile Include="DungeonTypes.c" />
     <ClCompile Include="EntityList.c" />
+    <ClCompile Include="InventoryManager.c" />
     <ClCompile Include="LoadingDock.c" />
     <ClCompile Include="Effect_Manager.c" />
     <ClCompile Include="PathFinder.c" />
@@ -142,6 +143,7 @@
   <ItemGroup>
     <ClInclude Include="DungeonTypes.h" />
     <ClInclude Include="EntityList.h" />
+    <ClInclude Include="InventoryManager.h" />
     <ClInclude Include="list.h" />
     <ClInclude Include="LoadingDock.h" />
     <ClInclude Include="Effect_Manager.h" />
