@@ -24,7 +24,7 @@
 #define YBOUND 512
 #define DEBUG 1
 #define MAX_ITEMS 10
-#define PLAYER_INVENTORY_BASE 16
+#define PLAYER_INVENTORY_BASE 32
 #define OLD_ACTIONS 0
 #define LOG_BUFFER 4
 #define inRange(x, min, max) ((x) >= (min) && (x) < (max)) // Check if x is in the range [min, max)
@@ -34,6 +34,14 @@
 #define BUFFER 4 // Buffer to check for room collisions and out of bounds cases.
 #define elif else if
 
+typedef struct {
+	unsigned int width;
+	unsigned int height;
+	signed int offset_x;
+	signed int offset_y;
+} Render_Window;
+
+typedef Render_Window RW;
 
 typedef struct {
 	int dx;
@@ -45,39 +53,11 @@ typedef struct {
 	unsigned int y;
 } Dun_Coord;
 
-typedef struct {
-    unsigned int capacity;
-    unsigned int head;
-    unsigned int tail;
-    Dun_Coord * items;
-} Dun_Coord_Queue;
-
-typedef Dun_Coord_Queue DCQ;
-
-
-void DCQ_init(DCQ* instance, unsigned int capacity);
-void DCQ_destroy(DCQ *dcq);
-
-bool DCQ_is_empty(DCQ *dcq);
-void DCQ_append(DCQ *dcq, Dun_Coord coord);
-Dun_Coord DCQ_pop(DCQ *dcq);
-
 int isInARoom(Dun_Coord d);
-
-void DCQ_resize(DCQ *dcq, unsigned int new_capacity);
-
 
 Dun_Vec getVector(Dun_Coord start, Dun_Coord end);
 
-
-
-
-// typedef struct {
-//     Dun_Coord * items;
-//     unsigned int capacity;
-// } Dun_Coord_Vector;
-
-// Dun_Coord* DCQ_to_DC_Vec(Dun_Coord_Queue *dcq);
+int getKeyPress();
 
 typedef struct {
 	char name[32];

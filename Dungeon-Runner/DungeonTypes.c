@@ -25,59 +25,6 @@ int checkItemOverlap(IOG_List* itemList, Item_on_Ground newItem) {
     return 0; // No overlap found
 }
 
-void DCQ_init(DCQ* instance, unsigned int capacity) {
-    instance->head = 0;
-    instance->tail = 0;
-    instance->capacity = capacity;
-    instance->items = malloc(sizeof(Dun_Coord*) * capacity);
-}
-
-void DCQ_destroy(Dun_Coord_Queue *dcq) {
-    free(dcq->items);
-}
-
-bool DCQ_is_empty(Dun_Coord_Queue *dcq) {
-    return dcq->head == dcq->tail;
-}
-
-unsigned int DCQ_size(Dun_Coord_Queue *dcq) {
-    return (dcq->tail - dcq->head + dcq->capacity) % dcq->capacity;
-}
-
-Dun_Coord DCQ_pop(Dun_Coord_Queue *dcq) {
-  if (dcq->head == dcq->tail) {
-    return (Dun_Coord){XBOUND + 1, YBOUND + 1};
-  }
-  Dun_Coord coord = dcq->items[dcq->head];
-  dcq->head = (dcq->head + 1) % dcq->capacity;
-  return coord;
-}
-void DCQ_resize(Dun_Coord_Queue *dcq, unsigned int new_capacity) {
-  if (dcq->capacity >= new_capacity) {
-    return;
-  }
-
-  // perform resize
-  dcq->items =(Dun_Coord *) realloc(dcq->items, new_capacity * sizeof(Dun_Coord));
-
-  if (dcq->head > dcq->tail) {
-    memcpy(&(dcq->items)[new_capacity - (dcq->head - dcq->capacity)],
-           &(dcq->items)[dcq->head],
-           (dcq->capacity - dcq->head) * sizeof(Dun_Coord));
-    dcq->head = 0;
-    dcq->tail = dcq->capacity - (dcq->head - dcq->tail);
-  }
-  dcq->capacity = new_capacity;
-}
-
-void DCQ_append(Dun_Coord_Queue *dcq, Dun_Coord coord) {
-  if (dcq->head == (dcq->tail + 1) % dcq->capacity) {
-    DCQ_resize(dcq, dcq->capacity * 2);
-  }
-  dcq->items[dcq->tail] = coord;
-  dcq->tail = (dcq->tail + 1) % dcq->capacity;
-}
-
 char* Entity_tostring(Entity ent) {
     char* buffer = malloc(256 * sizeof(char));
     snprintf(buffer, 256, "[HP:%3d,ATK:%3d,AGR:%3d,TOH:%3d,DEF:%3d,EXP:%3d,EVA:%3d,LVL:%3d]:%32s\n",
@@ -94,4 +41,41 @@ char* Entity__List_tostring(Entity__List *l) {
         free(as_string);
     }
     return buffer;
+}
+
+int getKeyPress() {
+    int ch = -1;
+
+#ifdef _WIN32
+#define kbhit _kbhit
+#define getch _getch
+    if (kbhit())
+        ch = getch(); // Get the actual key code
+
+#elif __unix__ || __APPLE__
+#define getch getchar
+
+
+    struct termios oldt, newt;
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+
+    struct timeval tv = { 0L, 0L }; // Zero timeout
+    fd_set fds;
+    FD_ZERO(&fds);
+    FD_SET(STDIN_FILENO, &fds);
+    int ret = select(STDIN_FILENO + 1, &fds, NULL, NULL, &tv);
+    if (ret > 0) {
+        ch = getchar();
+    }
+    else {
+        ch = -1; // No input
+    }
+
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+#endif
+
+    return ch;
 }

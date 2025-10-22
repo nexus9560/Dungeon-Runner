@@ -19,7 +19,7 @@ int player_init(Player* p) {
 	add_Limb(&leftLeg, &lowerBody);
 	add_Limb(&rightLeg, &lowerBody);
 
-	Item__List_init(&p->inventory, 32); // Initialize the inventory with a capacity of 32 items
+	Item__List_init(&p->inventory, PLAYER_INVENTORY_BASE); // Initialize the inventory with a capacity of 32 items
 
 	return 1;
 }

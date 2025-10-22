@@ -67,7 +67,6 @@ void popItemsOnFloor();
 void printAdMap();
 void printMap();
 void roomRunner();
-void showPlayerInventory();
 void updateWorldAdMat();
 
 
@@ -389,36 +388,7 @@ char* bannerPosting(char* c, int w) {
 int actionChecker() {
 
 	int ch = -1;
-
-#ifdef _WIN32
-#define kbhit _kbhit
-#define getch _getch
-	if(kbhit())
-		ch = getch(); // Get the actual key code
-
-#elif __unix__ || __APPLE__
-#define getch getchar
-
-
-    struct termios oldt, newt;
-    tcgetattr(STDIN_FILENO, &oldt);
-    newt = oldt;
-    newt.c_lflag &= ~(ICANON | ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-
-    struct timeval tv = {0L, 0L}; // Zero timeout
-    fd_set fds;
-    FD_ZERO(&fds);
-    FD_SET(STDIN_FILENO, &fds);
-    int ret = select(STDIN_FILENO+1, &fds, NULL, NULL, &tv);
-    if (ret > 0) {
-        ch = getchar();
-    } else {
-        ch = -1; // No input
-    }
-
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-#endif
+	ch = getKeyPress();
 	if(ch != -1)
 		switch (ch) {
 			case 'w':
@@ -736,24 +706,6 @@ int getRoomByLocation(Dun_Coord d, Room* r, Room__List* roomList) {
 	}
 
 	return 0;
-}
-
-void showPlayerInventory() {
-	Item__List* inventory = &you.inventory;
-	if (inventory == NULL || inventory->size == 0) {
-		printf("Inventory is empty.\n");
-		return;
-	}
-
-	printf("Inventory:\n");
-	for (int i = 0; i < inventory->size; i++) {
-		if (inventory->items[i].equipped == 1) {
-			printf("%s (Equipped)\n", inventory->items[i].name);
-		}
-		else {
-			printf("%s\n", inventory->items[i].name);
-		}
-	}
 }
 
 int getRandomEnemyIndex() {
