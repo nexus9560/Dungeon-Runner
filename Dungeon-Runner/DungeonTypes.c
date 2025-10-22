@@ -43,6 +43,43 @@ char* Entity__List_tostring(Entity__List *l) {
     return buffer;
 }
 
+int initRenderWindow(RW* renwin, unsigned int width, unsigned int height, signed int offset_x, signed int offset_y) {
+	if (!renwin) return 0; // Check for null pointer
+
+	renwin->width = width;
+	renwin->height = height;
+	renwin->offset_x = offset_x;
+	renwin->offset_y = offset_y;
+
+	renwin->content = malloc(height * sizeof(char*));
+	for (unsigned int i = 0; i < height; i++) {
+		renwin->content[i] = malloc((width + 1) * sizeof(char));
+		memset(renwin->content[i], ' ', width);
+		renwin->content[i][width] = '\0';
+	}
+
+	return 1;
+}
+
+int resizeRenderWindow(RW* renwin, unsigned int new_width, unsigned int new_height) {
+    if (!renwin) return 0; // Check for null pointer
+    // Free existing content
+    for (unsigned int i = 0; i < renwin->height; i++) {
+        free(renwin->content[i]);
+    }
+    free(renwin->content);
+    // Allocate new content
+    renwin->width = new_width;
+    renwin->height = new_height;
+    renwin->content = malloc(new_height * sizeof(char*));
+    for (unsigned int i = 0; i < new_height; i++) {
+        renwin->content[i] = malloc((new_width + 1) * sizeof(char));
+        memset(renwin->content[i], ' ', new_width);
+        renwin->content[i][new_width] = '\0';
+    }
+    return 1;
+}
+
 int getKeyPress() {
     int ch = -1;
 

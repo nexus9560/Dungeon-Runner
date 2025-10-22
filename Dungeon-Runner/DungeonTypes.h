@@ -39,9 +39,15 @@ typedef struct {
 	unsigned int height;
 	signed int offset_x;
 	signed int offset_y;
+	char** content;
 } Render_Window;
 
 typedef Render_Window RW;
+
+extern RW currentRenderWindow;
+
+int initRenderWindow(RW* renwin, unsigned int width, unsigned int height, signed int offset_x, signed int offset_y);
+int resizeRenderWindow(RW* renwin, unsigned int new_width, unsigned int new_height);
 
 typedef struct {
 	int dx;

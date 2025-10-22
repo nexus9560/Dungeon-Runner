@@ -35,13 +35,16 @@ char* message = "";
 char* worldmap;
 int crcc = 0; // Current room connection check count.
 unsigned int messageFade = 0;
-int* conDims;
 int* prevConDims = NULL; // Previous console dimensions, used to check if the console has been resized.
 
 DR_LIST_IMPL(Room)
 DR_LIST_IMPL(Item_on_Ground)
 
 unsigned int currRoomCount = 0;
+
+RW currentRenderWindow;
+RW mapRenderWindow;
+RW descRenderWindow;
 
 //const Dun_Vec up = { -1, 0 };
 //const Dun_Vec right =	{  0, 1 };
@@ -87,7 +90,9 @@ int getVectorDirection(Dun_Vec d);
 int isAdjacent(Dun_Coord a, Dun_Coord b); // Returns 1 if a and b are adjacent, otherwise returns 0.
 int isInRoom(Room r, Dun_Coord d);
 int isSafeSpot(Dun_Coord d);
-int* getConsoleWindow();
+int getConsoleWindow(RW* renwin);
+int updateMapRenderWindowDimensions(RW* mapren);
+int updateDescriptionRenderWindowDimensions(RW* descren);
 
 
 Dun_Coord copyCoord(Dun_Coord d);
@@ -107,8 +112,19 @@ Entity shiftEntity(Entity e, Dun_Vec delta);
 //int goLeft();
 
 int main() {
-
-	conDims = getConsoleWindow();
+	initRenderWindow(&mapRenderWindow, 20, 50, 0, 0);
+	initRenderWindow(&currentRenderWindow, 80, 24, 0, 0);
+	initRenderWindow(&descRenderWindow, 20, 50, 0, 0);
+	getConsoleWindow(&currentRenderWindow);
+	updateMapRenderWindowDimensions(&mapRenderWindow);
+	currentRenderWindow.content = malloc(currentRenderWindow.height * sizeof(char*));
+	for(unsigned int x = 0; x < currentRenderWindow.height; x++) {
+		currentRenderWindow.content[x] = malloc((currentRenderWindow.width + 1) * sizeof(char));
+		for(unsigned int y = 0; y < currentRenderWindow.width; y++) {
+			currentRenderWindow.content[x][y] = ' ';
+		}
+		currentRenderWindow.content[x][currentRenderWindow.width] = '\0';
+	}
 	worldmap = malloc(sizeof(char) * ((XBOUND + 1) * (YBOUND + 1)));
 	if (worldmap == NULL) {
 		printf("Memory allocation failed\n");
@@ -178,9 +194,11 @@ int main() {
 			you.base.location = getNearestSafeLocation(you.base.location);
 		}
 	}
-	int* consoleDimensions = getConsoleWindow();
-	prevConDims = consoleDimensions;
-	printf("Console dimensions: %d rows, %d columns\n", consoleDimensions[0], consoleDimensions[1]);
+	prevConDims = malloc(2 * sizeof(unsigned int));
+	prevConDims[0] = currentRenderWindow.height;
+	prevConDims[1] = currentRenderWindow.width;
+	if(DEBUG)
+		printf("Console dimensions: %d rows, %d columns\n", currentRenderWindow.height, currentRenderWindow.width);
 	clearScreen();
 	drawThings(1);
 	roomRunner();
@@ -201,8 +219,16 @@ void mapClearing() {
 
 }
 
-int* getConsoleWindow() {
-   static int dimensions[2] = {0, 0}; // [rows, columns]
+int getConsoleWindow(RW* renwin) {
+	//if (!renwin) {
+	//	renwin = malloc(sizeof(RW));
+	//	renwin->height = 0;
+	//	renwin->width = 0;
+	//	renwin->offset_x = 0;
+	//	renwin->offset_y = 0;
+	//	renwin->content = NULL;
+	//}
+	static int dimensions[2] = {0, 0}; // [rows, columns]
 
 #ifdef _WIN32
    CONSOLE_SCREEN_BUFFER_INFO csbi;
@@ -220,30 +246,28 @@ int* getConsoleWindow() {
    dimensions[0] = 24; // Default rows
    dimensions[1] = 80; // Default columns
 #endif
-
-   return dimensions;
+   if (!renwin) return 0;
+   renwin->height = dimensions[0];
+   renwin->width = dimensions[1];
+   return 1;
 }
 
 void drawMap(unsigned int descHeight) {
 
-	conDims = getConsoleWindow();
+	
 
 	memset(worldmap, 0, sizeof(char) * ((XBOUND + 1) * (YBOUND + 1)));
 	//int renderX = (int)((conDims[0] * 0.75) > XBOUND ? XBOUND : (conDims[0] * 0.55)); // My Windows terminal is 45 rows high, so use 75% of that for rendering height
 	int renderX;
-	if (conDims[0] - descHeight < 10) {
+	if (currentRenderWindow.height - descHeight < 10) {
 		renderX = 10; // Minimum render height
-	} elif ((conDims[0] - descHeight) > XBOUND) {
+	} elif ((currentRenderWindow.height - descHeight) > XBOUND) {
 		renderX = XBOUND; // Maximum render height
 	} else {
-		renderX = conDims[0] - descHeight; // Use available space minus description height
+		renderX = currentRenderWindow.height - descHeight; // Use available space minus description height
 	}
-	int renderY = (int)((conDims[1] * 0.80) > YBOUND ? YBOUND : (conDims[1] * 0.80)); // My Windows terminal is 150 columns wide, so use 80& of that for rendering width
-	char* map = (char*)malloc(renderX * renderY);
-	if (map == NULL) {
-		printf("Memory allocation failed\n");
-		return;
-	}
+	int renderY = (int)((currentRenderWindow.width * 0.80) > YBOUND ? YBOUND : (currentRenderWindow.width * 0.80)); // My Windows terminal is 150 columns wide, so use 80& of that for rendering width
+	
 	/*
 
 	if ((xoffset == 0 && yoffset == 0) || (xoffset == 0 && yoffset == (YBOUND - 1)) || (xoffset == (XBOUND - 1) && yoffset == 0) || (xoffset == (XBOUND - 1) && yoffset == (YBOUND - 1))) {
@@ -261,27 +285,27 @@ void drawMap(unsigned int descHeight) {
 	*/
 
 
-	for (int x = 0; x < renderX;x++) {
-        // Merged rendering and worldmap population, no intermediate 'map' buffer
-        for (int x = 0; x < renderX; x++) {
-            int xoffset = you.base.location.x - (renderX / 2) + x;
-            for (int y = 0; y < renderY; y++) {
-                int yoffset = you.base.location.y - (renderY / 2) + y;
-                int idx = x * (renderY + 1) + y;
-                if ((renderX / 2) == x && (renderY / 2) == y) {
-                    worldmap[idx] = '@';
-                } elif (xoffset < 0 || xoffset >= XBOUND || yoffset < 0 || yoffset >= YBOUND) {
-                    worldmap[idx] = ' ';
-                } elif (world[xoffset][yoffset].occupied == 1) {
-                    worldmap[idx] = 'X';
-                } else {
-                    worldmap[idx] = world[xoffset][yoffset].ref;
-                }
+	
+    // Merged rendering and worldmap population, no intermediate 'map' buffer
+    for (int x = 0; x < renderX; x++) {
+        int xoffset = you.base.location.x - (renderX / 2) + x;
+        for (int y = 0; y < renderY; y++) {
+            int yoffset = you.base.location.y - (renderY / 2) + y;
+            int idx = x * (renderY + 1) + y;
+            if ((renderX / 2) == x && (renderY / 2) == y) {
+                worldmap[idx] = '@';
+            } elif (xoffset < 0 || xoffset >= XBOUND || yoffset < 0 || yoffset >= YBOUND) {
+                worldmap[idx] = ' ';
+            } elif (world[xoffset][yoffset].occupied == 1) {
+                worldmap[idx] = 'X';
+            } else {
+                worldmap[idx] = world[xoffset][yoffset].ref;
             }
-            // Add newline at the end of each row
-            worldmap[x * (renderY + 1) + renderY] = '\n';
         }
-	}
+        // Add newline at the end of each row
+        worldmap[x * (renderY + 1) + renderY] = '\n';
+    }
+	
 
 
 
@@ -308,9 +332,10 @@ void roomRunner() {
 	unsigned int isPlayerTurn = 1, hasSomethingchanged = 1;
 	do {
 		now = time(NULL);
-		conDims = getConsoleWindow();
-		if (conDims[0] != prevConDims[0] || conDims[1] != prevConDims[1]) {
-			prevConDims = conDims;
+		if (currentRenderWindow.height != prevConDims[0] || currentRenderWindow.width != prevConDims[1]) {
+			prevConDims[0] = currentRenderWindow.height;
+			prevConDims[1] = currentRenderWindow.width;
+			getConsoleWindow(&currentRenderWindow);
 			hasSomethingchanged = 1; // Console was resized, so we need to update the world.
 		}
 		if (isPlayerTurn) {
@@ -352,7 +377,7 @@ int enemyTurn() {
 
 void drawThings(int isBrief) {
 	printf("%s", worldmap);
-	printf("Message: %s\n", bannerPosting(message, getConsoleWindow()[1]-13));
+	printf("Message: %s\n", bannerPosting(message, currentRenderWindow.width - 13));
 	printf("%s\n", printPlayerStatus(isBrief));
 	printf("WASD to move\n");
 	printf("Q to quit\n");
@@ -1300,4 +1325,32 @@ void popItemsOnFloor() {
 		randomItemCount = (rand() % 4);
 	}
 
+}
+
+int updateMapRenderWindowDimensions(RW* mapren) {
+	if (!mapren) {
+		return 0;
+	}
+	/*
+	* int renderX;
+	if (currentRenderWindow.height - descHeight < 10) {
+		renderX = 10; // Minimum render height
+	} elif ((currentRenderWindow.height - descHeight) > XBOUND) {
+		renderX = XBOUND; // Maximum render height
+	} else {
+		renderX = currentRenderWindow.height - descHeight; // Use available space minus description height
+	}
+	int renderY = (int)((currentRenderWindow.width * 0.80) > YBOUND ? YBOUND : (currentRenderWindow.width * 0.80)); // My Windows terminal is 150 columns wide, so use 80& of that for rendering width
+	*/
+	mapren->width = (unsigned int)((currentRenderWindow.width * 0.80) > YBOUND ? YBOUND : (currentRenderWindow.width * 0.80));
+	mapren->height = (unsigned int)(currentRenderWindow.height - 23 < 10 ? 10 : (currentRenderWindow.height - 23 > XBOUND ? XBOUND : currentRenderWindow.height - 23));
+
+	return 1;
+
+}
+
+int updateDescriptionRenderWindowDimensions(RW* descren) {
+	if(!descren) {
+		return 0;
+	}
 }
